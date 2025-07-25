@@ -23,6 +23,8 @@ const Outpatient = () => {
   const [selectedLabItems, setSelectedLabItems] = useState<MedicalItem[]>([]);
   const [dropdownSelectedItems, setDropdownSelectedItems] = useState<MedicalItem[]>([]);
   const [dropdownValue, setDropdownValue] = useState<string>('');
+  const [highlightedDropdownIndex, setHighlightedDropdownIndex] = useState<number>(-1);
+  const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { format } = useTakaFormat();
   const queryClient = useQueryClient();
@@ -200,6 +202,8 @@ const Outpatient = () => {
     setSelectedLabItems([]); // Clear lab selections when exiting
     setDropdownSelectedItems([]); // Clear dropdown selections when exiting
     setDropdownValue(''); // Reset dropdown value
+    setHighlightedDropdownIndex(-1); // Reset highlighted index
+    setIsDropdownOpen(false); // Close dropdown
   };
 
   // Handle dropdown selection
@@ -212,6 +216,37 @@ const Outpatient = () => {
       setCategorySearchQuery('');
     }
     setDropdownValue(''); // Reset dropdown after selection
+    setHighlightedDropdownIndex(-1); // Reset highlighted index
+    setIsDropdownOpen(false); // Close dropdown
+  };
+
+  // Handle keyboard navigation for dropdown
+  const handleDropdownKeyDown = (e: React.KeyboardEvent) => {
+    const orderedItems = getOrderedDropdownItems();
+    
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedDropdownIndex(prev => 
+        prev < orderedItems.length - 1 ? prev + 1 : 0
+      );
+      if (!isDropdownOpen) setIsDropdownOpen(true);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedDropdownIndex(prev => 
+        prev > 0 ? prev - 1 : orderedItems.length - 1
+      );
+      if (!isDropdownOpen) setIsDropdownOpen(true);
+    } else if (e.key === 'Enter' && highlightedDropdownIndex >= 0) {
+      e.preventDefault();
+      const selectedItem = orderedItems[highlightedDropdownIndex];
+      if (selectedItem) {
+        handleDropdownSelect(selectedItem.id.toString());
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setIsDropdownOpen(false);
+      setHighlightedDropdownIndex(-1);
+    }
   };
 
   // Get sorted lab suggestions with closest match first
@@ -285,6 +320,24 @@ const Outpatient = () => {
     });
     setDropdownSelectedItems([]);
   };
+
+  // Handle click outside dropdown to close it
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+        setHighlightedDropdownIndex(-1);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
 
   // Get dropdown items sorted by relevance when user is typing in search
   const getOrderedDropdownItems = () => {
@@ -584,28 +637,67 @@ const Outpatient = () => {
                         <div className="text-sm font-medium text-muted-foreground">
                           Alternative: Select from dropdown
                         </div>
-                        <Select value={dropdownValue} onValueChange={handleDropdownSelect}>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select lab test from dropdown..." />
-                          </SelectTrigger>
-                          <SelectContent className="bg-popover border border-border max-h-60">
-                            {getOrderedDropdownItems().map((item: MedicalItem) => (
-                              <SelectItem key={item.id} value={item.id.toString()}>
-                                <div className="flex items-center justify-between w-full">
-                                  <span>{item.name}</span>
-                                  <span className="ml-4 text-medical-primary font-semibold">
+                        <div className="relative" ref={dropdownRef}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsDropdownOpen(!isDropdownOpen);
+                              setHighlightedDropdownIndex(-1);
+                            }}
+                            onKeyDown={handleDropdownKeyDown}
+                            className="w-full flex items-center justify-between px-3 py-2 border border-border rounded-md bg-background hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-medical-primary focus:ring-offset-2"
+                          >
+                            <span className="text-sm text-muted-foreground">
+                              Select lab test from dropdown... (Use arrow keys to navigate)
+                            </span>
+                            <ChevronRight className={`h-4 w-4 transition-transform ${isDropdownOpen ? 'rotate-90' : ''}`} />
+                          </button>
+                          
+                          {isDropdownOpen && (
+                            <div 
+                              className="absolute top-full left-0 right-0 z-50 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-y-auto"
+                            >
+                              {getOrderedDropdownItems().map((item: MedicalItem, index) => (
+                                <div
+                                  key={item.id}
+                                  onClick={() => handleDropdownSelect(item.id.toString())}
+                                  className={`px-3 py-2 cursor-pointer text-sm flex items-center justify-between hover:bg-muted/50 ${
+                                    index === highlightedDropdownIndex 
+                                      ? 'bg-medical-primary/10 border-l-4 border-medical-primary' 
+                                      : ''
+                                  } ${
+                                    dropdownSelectedItems.find(selected => selected.id === item.id)
+                                      ? 'bg-blue-500/10 text-blue-600'
+                                      : ''
+                                  }`}
+                                >
+                                  <div className="flex items-center">
+                                    <span>{item.name}</span>
+                                    {dropdownSelectedItems.find(selected => selected.id === item.id) && (
+                                      <span className="ml-2 text-blue-600 text-xs">✓ Selected</span>
+                                    )}
+                                    {index === highlightedDropdownIndex && (
+                                      <span className="ml-2 text-medical-primary text-xs">← Highlighted</span>
+                                    )}
+                                  </div>
+                                  <span className="text-medical-primary font-semibold">
                                     {format(item.price)}
                                   </span>
                                 </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                              ))}
+                              {getOrderedDropdownItems().length === 0 && (
+                                <div className="px-3 py-2 text-sm text-muted-foreground">
+                                  No lab tests available
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       <div className="text-sm text-muted-foreground">
                         • Type to search and press comma/enter to add as tags<br/>
-                        • Dropdown below automatically reorders items based on your search<br/>
+                        • Dropdown: Use arrow keys to navigate, Enter to select, Escape to close<br/>
                         • Both methods access same database but work independently
                       </div>
                     </div>
