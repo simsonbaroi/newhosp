@@ -747,14 +747,24 @@ const Outpatient = () => {
   // Handle medicine item selection (redirect to dosage selection)
   const handleMedicineItemSelect = (item: MedicalItem) => {
     console.log('Medicine item selected:', item.name, 'Category:', item.category);
+    console.log('Setting selectedMedicineForDosage to:', item);
+    console.log('Setting showMedicineDosageSelection to: true');
+    
     setSelectedMedicineForDosage(item);
     setShowMedicineDosageSelection(true);
+    
     // Reset dosage fields when selecting new medicine
     setDosePrescribed('');
     setMedType('');
     setDoseFrequency('');
     setTotalDays('');
-    console.log('Medicine dosage selection state set to true');
+    
+    // Auto-focus the dose input after a short delay
+    setTimeout(() => {
+      if (doseInputRef.current) {
+        doseInputRef.current.focus();
+      }
+    }, 100);
   };
 
   // Handle comma-separated X-Ray item selection
@@ -2322,11 +2332,11 @@ const Outpatient = () => {
                       )}
 
                       {/* Medicine Dosage Selection Interface */}
-                      {showMedicineDosageSelection && selectedMedicineForDosage && (
-                        <div className="mt-6 p-4 border border-medical-primary/20 rounded-lg bg-medical-primary/5">
+                      {showMedicineDosageSelection && selectedMedicineForDosage ? (
+                        <div className="mt-6 p-4 border-2 border-medical-primary rounded-lg bg-medical-primary/10 shadow-lg">
                           <div className="flex items-center justify-between mb-4">
                             <h3 className="text-lg font-semibold text-medical-primary">
-                              Set Dosage for: {selectedMedicineForDosage.name}
+                              🏥 Set Dosage for: {selectedMedicineForDosage.name}
                             </h3>
                             <Button
                               onClick={cancelMedicineDosageSelection}
