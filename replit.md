@@ -125,6 +125,13 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: ADDED: Inpatient medicine dosage interface with radio button selection for Ward Medicine (partial allowed) vs Discharge Medicine (full bottles)
 - **2025-01-25**: PERFECTED: Medicine calculation accuracy with proper rounding, fraction handling, and medical safety requirements
 - **2025-01-25**: COMPLETED: Full separation of outpatient and inpatient medicine calculation logic while sharing core mathematical functions
+- **2025-01-25**: IMPLEMENTED: Batch medicine selection workflow - users can select multiple medicines before adding all to bill together
+- **2025-01-25**: ADDED: Click-outside-to-close functionality for medicine dropdown with proper focus management
+- **2025-01-25**: CHANGED: "Add to Bill" button to "Add" for individual medicine selection in dosage calculator
+- **2025-01-25**: CREATED: Temporary medicine storage system allowing multiple medicine selections before final bill addition
+- **2025-01-25**: ENHANCED: Selected medicines display with numbered items, colorful dosage badges, and improved contrast
+- **2025-01-25**: REPOSITIONED: Selected medicines section now appears above dosage calculator for better workflow
+- **2025-01-25**: FIXED: Color contrast and readability issues with white background and dark emerald text for selected medicines
 
 ## Project Architecture
 - **Frontend**: React with TypeScript, using shadcn/ui components and wouter for routing
