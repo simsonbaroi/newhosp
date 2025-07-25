@@ -2416,9 +2416,9 @@ const Outpatient = () => {
                               {format(tempSelectedMedicines.reduce((sum, medicine) => sum + parseFloat(medicine.price), 0))}
                             </span>
                           </div>
-                          <div className="space-y-2">
+                          <div className="space-y-1">
                             {tempSelectedMedicines.map((medicine, index) => (
-                              <div key={medicine.tempId} className="medicine-item-card flex items-center justify-between text-sm p-3 rounded-lg">
+                              <div key={medicine.tempId} className="medicine-item-card flex items-center justify-between text-sm p-2 rounded-lg">
                                 <div className="flex items-center space-x-3 flex-1 min-w-0">
                                   <span className="text-xs font-bold text-medical-primary bg-medical-primary/10 px-2 py-1 rounded-md flex-shrink-0">
                                     #{index + 1}
