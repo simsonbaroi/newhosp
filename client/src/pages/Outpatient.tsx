@@ -1375,7 +1375,7 @@ const Outpatient = () => {
     if (xRayViews.AP) selectedViews.push('AP');
     if (xRayViews.LAT) selectedViews.push('LAT');
     if (xRayViews.OBLIQUE) selectedViews.push('OBLIQUE');
-    if (xRayViews.BOTH) selectedViews.push('BOTH');
+    if (xRayViews.BOTH) selectedViews.push('AP and LAT');
 
     const viewsText = selectedViews.join(' + ');
     const newXRayName = `${selectedXRayForViews.name} (${viewsText})`;

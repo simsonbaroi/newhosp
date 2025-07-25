@@ -110,6 +110,7 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: ENHANCED: Off-Charge/Portable button only appears when at least 1 film is selected
 - **2025-01-25**: IMPROVED: X-Ray view selection automatically resets Off-Charge/Portable when film count changes
 - **2025-01-25**: UPDATED: X-Ray help text to reflect new duplicate prevention and Off-Charge/Portable rules
+- **2025-01-25**: FIXED: X-Ray "BOTH" selection now displays as "AP and LAT" in bill instead of "BOTH"
 
 ## Project Architecture
 - **Frontend**: React with TypeScript, using shadcn/ui components and wouter for routing
