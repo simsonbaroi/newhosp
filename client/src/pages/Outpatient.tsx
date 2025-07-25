@@ -551,58 +551,7 @@ const Outpatient = () => {
                         </div>
                       )}
                       
-                      {/* Dropdown */}
-                      {isDropdownOpen && (
-                        <div className="relative" ref={dropdownRef}>
-                          <div className="absolute top-0 left-0 right-0 z-10 bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-y-auto">
-                            {getDropdownOptions().map((item: MedicalItem) => (
-                              <div
-                                key={item.id}
-                                className={`p-2 text-sm cursor-pointer hover:bg-muted/50 border-b border-border/50 last:border-b-0 ${
-                                  dropdownSelectedItems.find(selected => selected.id === item.id) 
-                                    ? 'bg-blue-500/10 text-blue-600' 
-                                    : 'text-foreground'
-                                }`}
-                                onClick={() => handleDropdownSelect(item)}
-                              >
-                                <div className="flex items-center justify-between">
-                                  <span className="font-medium">{item.name}</span>
-                                  <span className="text-medical-primary font-semibold">
-                                    {format(item.price)}
-                                  </span>
-                                </div>
-                                {item.description && (
-                                  <div className="text-xs text-muted-foreground mt-1">{item.description}</div>
-                                )}
-                              </div>
-                            ))}
-                            {getDropdownOptions().length === 0 && (
-                              <div className="p-4 text-center text-muted-foreground text-sm">
-                                No items found
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex justify-center mt-2">
-                            <Button 
-                              onClick={() => setIsDropdownOpen(false)} 
-                              variant="medical-outline" 
-                              size="sm"
-                            >
-                              Close Dropdown
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {!isDropdownOpen && dropdownSelectedItems.length === 0 && (
-                        <Button 
-                          onClick={() => setIsDropdownOpen(true)} 
-                          variant="medical-outline" 
-                          className="w-full"
-                        >
-                          Open Dropdown to Select Multiple Items
-                        </Button>
-                      )}
+
                       
 
                       
