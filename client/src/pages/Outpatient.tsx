@@ -139,6 +139,9 @@ const Outpatient = () => {
     'Physical Therapy', 'Others'
   ];
 
+  // Categories that should not have search functionality
+  const categoriesWithoutSearch = ['Registration Fees', 'Dr. Fees', 'Medic Fee'];
+
   const orderedCategories = categoryOrder.filter(cat => categories.includes(cat))
     .concat(categories.filter(cat => !categoryOrder.includes(cat)));
 
@@ -227,17 +230,19 @@ const Outpatient = () => {
               <Card className="glass-card">
                 <CardHeader>
                   <CardTitle className="text-medical-primary">{selectedCategory}</CardTitle>
-                  <Input
-                    placeholder={`Search in ${selectedCategory}...`}
-                    value={categorySearchQuery}
-                    onChange={(e) => setCategorySearchQuery(e.target.value)}
-                    className="w-full"
-                  />
+                  {!categoriesWithoutSearch.includes(selectedCategory) && (
+                    <Input
+                      placeholder={`Search in ${selectedCategory}...`}
+                      value={categorySearchQuery}
+                      onChange={(e) => setCategorySearchQuery(e.target.value)}
+                      className="w-full"
+                    />
+                  )}
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {filteredCategoryItems.length > 0 ? (
-                      filteredCategoryItems.map((item: MedicalItem) => (
+                    {(categoriesWithoutSearch.includes(selectedCategory) ? categoryItems : filteredCategoryItems).length > 0 ? (
+                      (categoriesWithoutSearch.includes(selectedCategory) ? categoryItems : filteredCategoryItems).map((item: MedicalItem) => (
                         <div key={item.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
                           <div className="flex-1">
                             <div className="font-medium text-foreground">{item.name}</div>
@@ -257,7 +262,7 @@ const Outpatient = () => {
                       ))
                     ) : (
                       <div className="text-center text-muted-foreground py-8">
-                        {categorySearchQuery ? 'No items found matching your search.' : 'No items in this category.'}
+                        {!categoriesWithoutSearch.includes(selectedCategory) && categorySearchQuery ? 'No items found matching your search.' : 'No items in this category.'}
                       </div>
                     )}
                   </div>
