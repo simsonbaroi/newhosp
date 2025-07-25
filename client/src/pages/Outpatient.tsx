@@ -628,9 +628,24 @@ const Outpatient = () => {
                   {/* Show search + dropdown for Medicine, Laboratory, X-Ray categories */}
                   {selectedCategory === 'Laboratory' ? (
                     <div className="space-y-4">
-                      {/* Total price counter and Add to Bill button above search */}
+                      {/* Selected items, price counter and Add to Bill button above search */}
                       {selectedLabItems.length > 0 && (
                         <div className="space-y-2">
+                          {/* Selected items tags */}
+                          <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md">
+                            {selectedLabItems.map((item) => (
+                              <div key={item.id} className="inline-flex items-center bg-medical-primary/10 text-medical-primary px-2 py-1 rounded text-xs">
+                                <span className="mr-1">{item.name}</span>
+                                <button
+                                  onClick={() => removeLabItem(item.id)}
+                                  className="hover:bg-medical-primary/20 rounded-full p-0.5"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+
                           {/* Right-aligned price counter */}
                           <div className="flex justify-end">
                             <div className="flex items-center gap-4 p-2 bg-medical-primary/5 rounded-md border border-medical-primary/20">
@@ -700,23 +715,6 @@ const Outpatient = () => {
                         )}
                       </div>
 
-                      {/* Selected items tags below search */}
-                      {selectedLabItems.length > 0 && (
-                        <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md">
-                          {selectedLabItems.map((item) => (
-                            <div key={item.id} className="inline-flex items-center bg-medical-primary/10 text-medical-primary px-2 py-1 rounded text-xs">
-                              <span className="mr-1">{item.name}</span>
-                              <button
-                                onClick={() => removeLabItem(item.id)}
-                                className="hover:bg-medical-primary/20 rounded-full p-0.5"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      
                       {/* Dropdown selected items as tags */}
                       {dropdownSelectedItems.length > 0 && (
                         <div className="space-y-2">
