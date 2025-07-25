@@ -5,6 +5,12 @@ A professional medical billing calculator application for hospitals and clinics.
 
 ## Recent Changes
 - **2025-01-25**: Successfully migrated from Replit Agent to standard Replit environment
+- **2025-01-25**: ADDED: Complete React Native mobile app structure for Android development
+- **2025-01-25**: CREATED: Mobile app with 4 main screens (Home, Outpatient, Inpatient, Database)
+- **2025-01-25**: IMPLEMENTED: API service layer for mobile-backend communication
+- **2025-01-25**: ADDED: Professional medical theme for React Native with dark green color scheme
+- **2025-01-25**: CONFIGURED: TypeScript support and React Navigation for mobile app
+- **2025-01-25**: STRUCTURED: Separate mobile directory with independent package.json and configuration
 - **2025-01-25**: Converted from PostgreSQL to in-memory storage for Replit compatibility
 - **2025-01-25**: Fixed all TypeScript and LSP errors in storage system
 - **2025-01-25**: Implemented complete API routes for medical items and bills management
@@ -163,19 +169,26 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: COMPLETED: Professional medical theme styling applied to all medicine selection components
 
 ## Project Architecture
-- **Frontend**: React with TypeScript, using shadcn/ui components and wouter for routing
+- **Web Frontend**: React with TypeScript, using shadcn/ui components and wouter for routing
+- **Mobile Frontend**: React Native with TypeScript, React Navigation, and React Native Paper
 - **Backend**: Express.js server with in-memory storage (MemoryStorage class)
 - **API**: Complete REST API with medical items and bills endpoints
-- **Styling**: Tailwind CSS with professional dark green medical theme
-- **Data Management**: TanStack Query for server state, in-memory storage for persistence
+- **Web Styling**: Tailwind CSS with professional dark green medical theme
+- **Mobile Styling**: React Native Paper with custom medical theme and glass morphism effects
+- **Data Management**: TanStack Query for web state, AsyncStorage for mobile, in-memory storage for persistence
 - **Theme**: Glass morphism effects, consistent medical color palette, proper contrast ratios
 
 ## Key Features
-- Outpatient bill calculation with 10+ categories
-- Inpatient bill calculation with 19+ categories and daily rates
-- Database management for medical items and procedures
-- Real-time search and filtering
-- Bill persistence in local storage
+- **Web Application**: Outpatient bill calculation with 10+ categories
+- **Web Application**: Inpatient bill calculation with 19+ categories and daily rates
+- **Web Application**: Database management for medical items and procedures
+- **Web Application**: Real-time search and filtering, Bill persistence in local storage
+- **Mobile Application**: Native Android app with React Native
+- **Mobile Application**: Professional medical theme with React Native Paper components
+- **Mobile Application**: Full API integration with backend server
+- **Mobile Application**: Offline support with AsyncStorage caching
+- **Both Platforms**: Bangladeshi Taka (৳) currency support
+- **Both Platforms**: Real-time synchronization between web and mobile
 
 ## User Preferences
 - Language: English
