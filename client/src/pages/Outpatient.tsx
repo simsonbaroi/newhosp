@@ -25,7 +25,9 @@ const Outpatient = () => {
   const [dropdownValue, setDropdownValue] = useState<string>('');
   const [highlightedDropdownIndex, setHighlightedDropdownIndex] = useState<number>(-1);
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
+  const [dropdownFilterQuery, setDropdownFilterQuery] = useState<string>('');
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const dropdownButtonRef = useRef<HTMLButtonElement>(null);
   const { format } = useTakaFormat();
   const queryClient = useQueryClient();
 
@@ -204,6 +206,7 @@ const Outpatient = () => {
     setDropdownValue(''); // Reset dropdown value
     setHighlightedDropdownIndex(-1); // Reset highlighted index
     setIsDropdownOpen(false); // Close dropdown
+    setDropdownFilterQuery(''); // Reset filter query
   };
 
   // Handle dropdown selection
@@ -222,7 +225,7 @@ const Outpatient = () => {
 
   // Handle keyboard navigation for dropdown
   const handleDropdownKeyDown = (e: React.KeyboardEvent) => {
-    const orderedItems = getOrderedDropdownItems();
+    const orderedItems = getFilteredDropdownItems();
     
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -246,6 +249,18 @@ const Outpatient = () => {
       e.preventDefault();
       setIsDropdownOpen(false);
       setHighlightedDropdownIndex(-1);
+      setDropdownFilterQuery('');
+    } else if (e.key.length === 1 && e.key.match(/[a-zA-Z0-9\s]/)) {
+      // Handle typing to filter dropdown items
+      e.preventDefault();
+      const newQuery = dropdownFilterQuery + e.key.toLowerCase();
+      setDropdownFilterQuery(newQuery);
+      setHighlightedDropdownIndex(0); // Highlight first filtered result
+      if (!isDropdownOpen) setIsDropdownOpen(true);
+    } else if (e.key === 'Backspace') {
+      e.preventDefault();
+      setDropdownFilterQuery(prev => prev.slice(0, -1));
+      setHighlightedDropdownIndex(0);
     }
   };
 
@@ -370,6 +385,32 @@ const Outpatient = () => {
       // Default alphabetical sort
       return aName.localeCompare(bName);
     });
+  };
+
+  // Get dropdown items filtered by direct typing in dropdown
+  const getFilteredDropdownItems = () => {
+    if (!dropdownFilterQuery.trim()) return getOrderedDropdownItems();
+    
+    const query = dropdownFilterQuery.toLowerCase();
+    
+    // Filter and sort by relevance
+    return categoryItems
+      .filter(item => item.name.toLowerCase().includes(query))
+      .sort((a, b) => {
+        const aName = a.name.toLowerCase();
+        const bName = b.name.toLowerCase();
+        
+        // Exact match gets highest priority
+        if (aName === query) return -1;
+        if (bName === query) return 1;
+        
+        // Starts with gets second priority
+        if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
+        if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
+        
+        // Contains gets third priority - already filtered above
+        return aName.localeCompare(bName);
+      });
   };
 
   return (
@@ -639,6 +680,7 @@ const Outpatient = () => {
                         </div>
                         <div className="relative" ref={dropdownRef}>
                           <button
+                            ref={dropdownButtonRef}
                             type="button"
                             onClick={() => {
                               setIsDropdownOpen(!isDropdownOpen);
@@ -648,7 +690,7 @@ const Outpatient = () => {
                             className="w-full flex items-center justify-between px-3 py-2 border border-border rounded-md bg-background hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-medical-primary focus:ring-offset-2"
                           >
                             <span className="text-sm text-muted-foreground">
-                              Select lab test from dropdown... (Use arrow keys to navigate)
+                              {dropdownFilterQuery ? `Filtering: "${dropdownFilterQuery}" (${getFilteredDropdownItems().length} matches)` : 'Select lab test from dropdown... (Type to filter)'}
                             </span>
                             <ChevronRight className={`h-4 w-4 transition-transform ${isDropdownOpen ? 'rotate-90' : ''}`} />
                           </button>
@@ -657,7 +699,7 @@ const Outpatient = () => {
                             <div 
                               className="absolute top-full left-0 right-0 z-50 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-y-auto"
                             >
-                              {getOrderedDropdownItems().map((item: MedicalItem, index) => (
+                              {getFilteredDropdownItems().map((item: MedicalItem, index) => (
                                 <div
                                   key={item.id}
                                   onClick={() => handleDropdownSelect(item.id.toString())}
@@ -685,7 +727,7 @@ const Outpatient = () => {
                                   </span>
                                 </div>
                               ))}
-                              {getOrderedDropdownItems().length === 0 && (
+                              {getFilteredDropdownItems().length === 0 && (
                                 <div className="px-3 py-2 text-sm text-muted-foreground">
                                   No lab tests available
                                 </div>
@@ -697,7 +739,8 @@ const Outpatient = () => {
 
                       <div className="text-sm text-muted-foreground">
                         • Type to search and press comma/enter to add as tags<br/>
-                        • Dropdown: Use arrow keys to navigate, Enter to select, Escape to close<br/>
+                        • Dropdown: Click or press any key to focus, then type letters to filter instantly<br/>
+                        • Arrow keys to navigate, Enter to select, Escape to close, Backspace to delete filter<br/>
                         • Both methods access same database but work independently
                       </div>
                     </div>
