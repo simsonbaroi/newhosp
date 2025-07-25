@@ -2853,15 +2853,18 @@ const Outpatient = () => {
                         />
                       </div>
 
-                      <Button
-                        onClick={addManualService}
-                        disabled={!manualServiceName.trim() || !manualServicePrice.trim()}
-                        className="w-full"
-                        variant="medical"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add {selectedCategory} Service to Bill
-                      </Button>
+                      <div className="flex justify-end">
+                        <Button
+                          onClick={addManualService}
+                          disabled={!manualServiceName.trim() || !manualServicePrice.trim()}
+                          variant="medical"
+                          size="sm"
+                          className="text-xs font-medium shadow-md hover:shadow-lg transition-shadow px-3 py-1"
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          Add to Bill
+                        </Button>
+                      </div>
 
                       <div className="text-sm text-muted-foreground">
                         • Type service name to see smart suggestions from previous entries<br/>
