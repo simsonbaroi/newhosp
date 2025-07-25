@@ -103,6 +103,9 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: SEARCH PREVENTION: Both search and dropdown check against existing bill items before allowing selection
 - **2025-01-25**: FIXED: React key warning by implementing unique billId system for duplicate items
 - **2025-01-25**: OPTIMIZED: Users can no longer accidentally select same item multiple times in Laboratory section
+- **2025-01-25**: ADDED: Complete Laboratory-style search and dropdown functionality to X-Ray category
+- **2025-01-25**: IMPLEMENTED: X-Ray category now has same advanced features: tag selection, keyboard navigation, price counter, duplicate prevention
+- **2025-01-25**: ENHANCED: X-Ray section includes search suggestions, dropdown filtering, and independent search/dropdown modes
 
 ## Project Architecture
 - **Frontend**: React with TypeScript, using shadcn/ui components and wouter for routing

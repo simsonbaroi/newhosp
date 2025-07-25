@@ -23,14 +23,23 @@ const Outpatient = () => {
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState<number>(0);
   const [selectedLabItems, setSelectedLabItems] = useState<MedicalItem[]>([]);
   const [dropdownSelectedItems, setDropdownSelectedItems] = useState<MedicalItem[]>([]);
+  const [selectedXRayItems, setSelectedXRayItems] = useState<MedicalItem[]>([]);
+  const [xRayDropdownSelectedItems, setXRayDropdownSelectedItems] = useState<MedicalItem[]>([]);
   const [dropdownValue, setDropdownValue] = useState<string>('');
   const [highlightedDropdownIndex, setHighlightedDropdownIndex] = useState<number>(-1);
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
   const [dropdownFilterQuery, setDropdownFilterQuery] = useState<string>('');
+  const [xRayDropdownValue, setXRayDropdownValue] = useState<string>('');
+  const [xRayHighlightedDropdownIndex, setXRayHighlightedDropdownIndex] = useState<number>(-1);
+  const [isXRayDropdownOpen, setIsXRayDropdownOpen] = useState<boolean>(false);
+  const [xRayDropdownFilterQuery, setXRayDropdownFilterQuery] = useState<string>('');
   const [duplicateDialog, setDuplicateDialog] = useState<{open: boolean, item: MedicalItem | null}>({open: false, item: null});
   const dropdownRef = useRef<HTMLDivElement>(null);
   const dropdownButtonRef = useRef<HTMLButtonElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const xRayDropdownRef = useRef<HTMLDivElement>(null);
+  const xRayDropdownButtonRef = useRef<HTMLButtonElement>(null);
+  const xRaySearchInputRef = useRef<HTMLInputElement>(null);
   const { format } = useTakaFormat();
   const queryClient = useQueryClient();
 
@@ -243,6 +252,12 @@ const Outpatient = () => {
     setHighlightedDropdownIndex(-1); // Reset highlighted index
     setIsDropdownOpen(false); // Close dropdown
     setDropdownFilterQuery(''); // Reset filter query
+    setSelectedXRayItems([]); // Clear X-Ray selections when exiting
+    setXRayDropdownSelectedItems([]); // Clear X-Ray dropdown selections when exiting
+    setXRayDropdownValue(''); // Reset X-Ray dropdown value
+    setXRayHighlightedDropdownIndex(-1); // Reset X-Ray highlighted index
+    setIsXRayDropdownOpen(false); // Close X-Ray dropdown
+    setXRayDropdownFilterQuery(''); // Reset X-Ray filter query
   };
 
   // Handle dropdown selection
@@ -496,6 +511,39 @@ const Outpatient = () => {
     }
   }, [selectedCategory, isCarouselMode]);
 
+  // Handle click outside X-Ray dropdown to close it
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (xRayDropdownRef.current && !xRayDropdownRef.current.contains(event.target as Node)) {
+        setIsXRayDropdownOpen(false);
+        setXRayHighlightedDropdownIndex(-1);
+        setXRayDropdownFilterQuery(''); // Reset filter when clicking outside
+      }
+    };
+
+    if (isXRayDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isXRayDropdownOpen]);
+
+  // Ensure X-Ray dropdown button stays focused for continuous keyboard input
+  useEffect(() => {
+    if (isXRayDropdownOpen && xRayDropdownButtonRef.current) {
+      xRayDropdownButtonRef.current.focus();
+    }
+  }, [xRayDropdownFilterQuery, xRayDropdownSelectedItems.length]);
+
+  // Auto-focus search input when X-Ray category is selected
+  useEffect(() => {
+    if (selectedCategory === 'X-Ray' && isCarouselMode && xRaySearchInputRef.current) {
+      xRaySearchInputRef.current.focus();
+    }
+  }, [selectedCategory, isCarouselMode]);
+
   // Get dropdown items sorted by relevance when user is typing in search
   const getOrderedDropdownItems = () => {
     if (!categorySearchQuery.trim()) return categoryItems;
@@ -534,6 +582,285 @@ const Outpatient = () => {
     if (!dropdownFilterQuery.trim()) return getOrderedDropdownItems();
     
     const query = dropdownFilterQuery.toLowerCase();
+    
+    // Filter and sort by relevance
+    return categoryItems
+      .filter(item => item.name.toLowerCase().includes(query))
+      .sort((a, b) => {
+        const aName = a.name.toLowerCase();
+        const bName = b.name.toLowerCase();
+        
+        // Exact match gets highest priority
+        if (aName === query) return -1;
+        if (bName === query) return 1;
+        
+        // Starts with gets second priority
+        if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
+        if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
+        
+        // Contains gets third priority - already filtered above
+        return aName.localeCompare(bName);
+      });
+  };
+
+  // X-Ray specific functions (same as Laboratory)
+  
+  // Get sorted X-Ray suggestions with closest match first
+  const getXRaySuggestions = () => {
+    if (!categorySearchQuery) return [];
+    
+    const query = categorySearchQuery.toLowerCase();
+    const suggestions = filteredCategoryItems.filter(item => 
+      item.name.toLowerCase().includes(query)
+    );
+    
+    // Sort by relevance: exact matches first, then starts with, then contains
+    return suggestions.sort((a, b) => {
+      const aName = a.name.toLowerCase();
+      const bName = b.name.toLowerCase();
+      
+      // Exact match gets highest priority
+      if (aName === query) return -1;
+      if (bName === query) return 1;
+      
+      // Starts with query gets second priority
+      if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
+      if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
+      
+      // Both start with or both contain - sort alphabetically
+      return aName.localeCompare(bName);
+    });
+  };
+
+  // Handle comma-separated X-Ray item selection
+  const handleXRaySearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === ',' || e.key === 'Enter') {
+      e.preventDefault();
+      const query = categorySearchQuery.trim();
+      if (query) {
+        // Get the top suggestion (closest match)
+        const suggestions = getXRaySuggestions();
+        if (suggestions.length > 0) {
+          const topMatch = suggestions[0];
+          // Check if item is already selected in search OR already in the bill
+          const alreadyInSearch = selectedXRayItems.find(item => item.id === topMatch.id);
+          const alreadyInBill = billItems.find(billItem => billItem.id === topMatch.id);
+          
+          if (!alreadyInSearch && !alreadyInBill) {
+            setSelectedXRayItems(prev => [...prev, topMatch]);
+          }
+          // If item is already selected or in bill, we ignore the selection
+        }
+        setCategorySearchQuery('');
+        // Refocus search input for continuous typing
+        setTimeout(() => {
+          if (xRaySearchInputRef.current) {
+            xRaySearchInputRef.current.focus();
+          }
+        }, 0);
+      }
+    }
+  };
+
+  // Remove X-Ray item from selection
+  const removeXRayItem = (itemId: number) => {
+    setSelectedXRayItems(prev => prev.filter(item => item.id !== itemId));
+    // Refocus search input after removing item
+    setTimeout(() => {
+      if (xRaySearchInputRef.current) {
+        xRaySearchInputRef.current.focus();
+      }
+    }, 0);
+  };
+
+  // Add all selected X-Ray items to bill
+  const addSelectedXRayItemsToBill = () => {
+    const newItems: MedicalItem[] = [];
+    const duplicateItems: MedicalItem[] = [];
+    
+    selectedXRayItems.forEach(item => {
+      const existingItem = billItems.find(billItem => billItem.id === item.id);
+      if (existingItem) {
+        duplicateItems.push(item);
+      } else {
+        newItems.push(item);
+      }
+    });
+    
+    // Add new items immediately
+    if (newItems.length > 0) {
+      const billItemsToAdd = newItems.map(item => ({ 
+        ...item, 
+        billId: `${item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` 
+      }));
+      setBillItems(prevBillItems => [...prevBillItems, ...billItemsToAdd]);
+    }
+    
+    // Handle duplicates - for now, skip them and show a message
+    if (duplicateItems.length > 0) {
+      // Show duplicate dialog for the first duplicate item
+      setDuplicateDialog({ open: true, item: duplicateItems[0] });
+    }
+    
+    setSelectedXRayItems([]);
+    // Refocus search input after adding to bill
+    setTimeout(() => {
+      if (xRaySearchInputRef.current) {
+        xRaySearchInputRef.current.focus();
+      }
+    }, 0);
+  };
+
+  // Handle X-Ray dropdown selection
+  const handleXRayDropdownSelect = (value: string) => {
+    const selectedItem = categoryItems.find(item => item.id.toString() === value);
+    
+    // Check if item is already selected in dropdown OR already in the bill
+    const alreadyInDropdown = xRayDropdownSelectedItems.find(item => item.id === selectedItem?.id);
+    const alreadyInBill = billItems.find(billItem => billItem.id === selectedItem?.id);
+    
+    if (selectedItem && !alreadyInDropdown && !alreadyInBill) {
+      setXRayDropdownSelectedItems(prev => [...prev, selectedItem]);
+      // Clear search selections when using dropdown
+      setSelectedXRayItems([]);
+      setCategorySearchQuery('');
+    }
+    // If item is already selected, we just ignore the selection (no error message needed)
+    
+    setXRayDropdownValue(''); // Reset dropdown after selection
+    setXRayHighlightedDropdownIndex(-1); // Reset highlighted index
+    setXRayDropdownFilterQuery(''); // Reset filter text for fresh start
+    
+    // Refocus the dropdown button to continue keyboard input
+    setTimeout(() => {
+      if (xRayDropdownButtonRef.current) {
+        xRayDropdownButtonRef.current.focus();
+      }
+    }, 0);
+    // Keep dropdown open for multiple selections
+  };
+
+  // Handle keyboard navigation for X-Ray dropdown
+  const handleXRayDropdownKeyDown = (e: React.KeyboardEvent) => {
+    const orderedItems = getXRayFilteredDropdownItems();
+    
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setXRayHighlightedDropdownIndex(prev => 
+        prev < orderedItems.length - 1 ? prev + 1 : 0
+      );
+      if (!isXRayDropdownOpen) setIsXRayDropdownOpen(true);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setXRayHighlightedDropdownIndex(prev => 
+        prev > 0 ? prev - 1 : orderedItems.length - 1
+      );
+      if (!isXRayDropdownOpen) setIsXRayDropdownOpen(true);
+    } else if (e.key === 'Enter' && xRayHighlightedDropdownIndex >= 0) {
+      e.preventDefault();
+      const selectedItem = orderedItems[xRayHighlightedDropdownIndex];
+      if (selectedItem) {
+        handleXRayDropdownSelect(selectedItem.id.toString());
+        // Dropdown stays open and focused for more selections
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setIsXRayDropdownOpen(false);
+      setXRayHighlightedDropdownIndex(-1);
+      setXRayDropdownFilterQuery('');
+    } else if (e.key.length === 1 && e.key.match(/[a-zA-Z0-9\s]/)) {
+      // Handle typing to filter dropdown items
+      e.preventDefault();
+      const newQuery = xRayDropdownFilterQuery + e.key.toLowerCase();
+      setXRayDropdownFilterQuery(newQuery);
+      setXRayHighlightedDropdownIndex(0); // Highlight first filtered result
+      if (!isXRayDropdownOpen) setIsXRayDropdownOpen(true);
+    } else if (e.key === 'Backspace') {
+      e.preventDefault();
+      setXRayDropdownFilterQuery(prev => prev.slice(0, -1));
+      setXRayHighlightedDropdownIndex(0);
+    }
+  };
+
+  // Remove item from X-Ray dropdown selection
+  const removeXRayDropdownItem = (itemId: number) => {
+    setXRayDropdownSelectedItems(prev => prev.filter(item => item.id !== itemId));
+  };
+
+  // Add all X-Ray dropdown selected items to bill
+  const addXRayDropdownSelectedItemsToBill = () => {
+    const newItems: MedicalItem[] = [];
+    const duplicateItems: MedicalItem[] = [];
+    
+    xRayDropdownSelectedItems.forEach(item => {
+      const existingItem = billItems.find(billItem => billItem.id === item.id);
+      if (existingItem) {
+        duplicateItems.push(item);
+      } else {
+        newItems.push(item);
+      }
+    });
+    
+    // Add new items immediately
+    if (newItems.length > 0) {
+      const billItemsToAdd = newItems.map(item => ({ 
+        ...item, 
+        billId: `${item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` 
+      }));
+      setBillItems(prevBillItems => [...prevBillItems, ...billItemsToAdd]);
+    }
+    
+    // Handle duplicates - for now, skip them and show a message
+    if (duplicateItems.length > 0) {
+      // Show duplicate dialog for the first duplicate item
+      setDuplicateDialog({ open: true, item: duplicateItems[0] });
+    }
+    
+    setXRayDropdownSelectedItems([]);
+    // Close dropdown when adding to bill
+    setIsXRayDropdownOpen(false);
+    setXRayHighlightedDropdownIndex(-1);
+    setXRayDropdownFilterQuery('');
+  };
+
+  // Get X-Ray dropdown items sorted by relevance when user is typing in search
+  const getXRayOrderedDropdownItems = () => {
+    if (!categorySearchQuery.trim()) return categoryItems;
+    
+    const query = categorySearchQuery.toLowerCase();
+    
+    // Sort items by relevance to the search query
+    return [...categoryItems].sort((a, b) => {
+      const aName = a.name.toLowerCase();
+      const bName = b.name.toLowerCase();
+      const aIncludes = aName.includes(query);
+      const bIncludes = bName.includes(query);
+      
+      // Items matching the search query come first
+      if (aIncludes && !bIncludes) return -1;
+      if (bIncludes && !aIncludes) return 1;
+      
+      // Among matching items, sort by relevance
+      if (aIncludes && bIncludes) {
+        // Exact match gets highest priority
+        if (aName === query) return -1;
+        if (bName === query) return 1;
+        
+        // Starts with query gets second priority
+        if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
+        if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
+      }
+      
+      // Default alphabetical sort
+      return aName.localeCompare(bName);
+    });
+  };
+
+  // Get X-Ray dropdown items filtered by direct typing in dropdown
+  const getXRayFilteredDropdownItems = () => {
+    if (!xRayDropdownFilterQuery.trim()) return getXRayOrderedDropdownItems();
+    
+    const query = xRayDropdownFilterQuery.toLowerCase();
     
     // Filter and sort by relevance
     return categoryItems
@@ -720,7 +1047,7 @@ const Outpatient = () => {
               <Card className="glass-card">
                 <CardHeader>
                   <CardTitle className="text-medical-primary">{selectedCategory}</CardTitle>
-                  {/* Show search + dropdown for Medicine, Laboratory, X-Ray categories */}
+                  {/* Show search + dropdown for Laboratory, X-Ray categories */}
                   {selectedCategory === 'Laboratory' ? (
                     <div className="space-y-4">
                       {/* Selected items, price counter and Add to Bill button above search */}
@@ -950,7 +1277,231 @@ const Outpatient = () => {
                         • Both methods access same database but work independently
                       </div>
                     </div>
-                  ) : ['Medicine', 'X-Ray'].includes(selectedCategory) ? (
+                  ) : selectedCategory === 'X-Ray' ? (
+                    <div className="space-y-4">
+                      {/* Selected items, price counter and Add to Bill button above search */}
+                      {selectedXRayItems.length > 0 && (
+                        <div className="space-y-2">
+                          {/* Selected items tags */}
+                          <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md">
+                            {selectedXRayItems.map((item) => (
+                              <div key={item.id} className="inline-flex items-center bg-medical-primary/10 text-medical-primary px-2 py-1 rounded text-xs">
+                                <span className="mr-1">{item.name}</span>
+                                <button
+                                  onClick={() => removeXRayItem(item.id)}
+                                  className="hover:bg-medical-primary/20 rounded-full p-0.5"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Price counter on left, Add to Bill button on right */}
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-4 p-2 bg-medical-primary/5 rounded-md border border-medical-primary/20">
+                              <span className="text-sm font-medium text-medical-primary">
+                                Total Price: {format(selectedXRayItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {selectedXRayItems.length} item{selectedXRayItems.length !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+                            <Button 
+                              onClick={addSelectedXRayItemsToBill} 
+                              variant="outline"
+                              className="border-medical-primary/20 text-medical-primary hover:bg-medical-primary/10"
+                            >
+                              Add {selectedXRayItems.length} X-Ray{selectedXRayItems.length !== 1 ? 's' : ''} to Bill
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        <Input
+                          ref={xRaySearchInputRef}
+                          placeholder="Type X-Ray name and press comma or enter to add..."
+                          value={categorySearchQuery}
+                          onChange={(e) => {
+                            setCategorySearchQuery(e.target.value);
+                            // Clear dropdown selections when switching to search
+                            if (e.target.value.trim()) {
+                              setXRayDropdownSelectedItems([]);
+                            }
+                          }}
+                          onKeyDown={handleXRaySearchKeyDown}
+                          className="w-full"
+                        />
+                        
+                        {/* Search suggestions appear right below search input */}
+                        {categorySearchQuery && getXRaySuggestions().length > 0 && (
+                          <div className="space-y-1 max-h-40 overflow-y-auto border border-border rounded-md p-2 bg-muted/10">
+                            <div className="text-sm font-medium text-muted-foreground mb-2">
+                              Matching X-Rays (press comma to add):
+                            </div>
+                            {getXRaySuggestions().slice(0, 5).map((item: MedicalItem, index) => {
+                              const alreadyInSearch = selectedXRayItems.find(selected => selected.id === item.id);
+                              const alreadyInBill = billItems.find(billItem => billItem.id === item.id);
+                              
+                              return (
+                              <div key={item.id} className={`text-xs p-2 rounded ${
+                                alreadyInBill 
+                                  ? 'bg-red-100 text-red-600 cursor-not-allowed border border-red-200'
+                                  : alreadyInSearch
+                                    ? 'bg-green-100 text-green-600 cursor-not-allowed border border-green-200'
+                                    : index === 0 
+                                      ? 'bg-medical-primary/10 border border-medical-primary/20 cursor-pointer hover:bg-muted/40' 
+                                      : 'bg-muted/20 cursor-pointer hover:bg-muted/40'
+                              }`}
+                                   onClick={() => {
+                                     // Check if item is already selected in search OR already in the bill
+                                     const alreadyInSearch = selectedXRayItems.find(selected => selected.id === item.id);
+                                     const alreadyInBill = billItems.find(billItem => billItem.id === item.id);
+                                     
+                                     if (!alreadyInSearch && !alreadyInBill) {
+                                       setSelectedXRayItems(prev => [...prev, item]);
+                                     }
+                                     setCategorySearchQuery('');
+                                     // Refocus search input after clicking suggestion
+                                     setTimeout(() => {
+                                       if (xRaySearchInputRef.current) {
+                                         xRaySearchInputRef.current.focus();
+                                       }
+                                     }, 0);
+                                   }}>
+                                <span className="font-medium">{item.name}</span> - {format(item.price)}
+                                {alreadyInBill && (
+                                  <span className="ml-2 text-red-600 text-xs">● Already in Bill</span>
+                                )}
+                                {alreadyInSearch && !alreadyInBill && (
+                                  <span className="ml-2 text-green-600 text-xs">✓ Selected</span>
+                                )}
+                                {index === 0 && !alreadyInBill && !alreadyInSearch && (
+                                  <span className="ml-2 text-medical-primary text-xs">← Will be added</span>
+                                )}
+                              </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Dropdown selected items as tags */}
+                      {xRayDropdownSelectedItems.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md">
+                            {xRayDropdownSelectedItems.map((item) => (
+                              <div key={item.id} className="inline-flex items-center bg-blue-500/10 text-blue-600 px-2 py-1 rounded text-xs">
+                                <span className="mr-1">{item.name}</span>
+                                <button
+                                  onClick={() => removeXRayDropdownItem(item.id)}
+                                  className="hover:bg-blue-500/20 rounded-full p-0.5"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          {/* Price counter on left, Add to Bill button on right */}
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-4 p-2 bg-blue-500/5 rounded-md border border-blue-500/20">
+                              <span className="text-sm font-medium text-blue-600">
+                                Total Price: {format(xRayDropdownSelectedItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {xRayDropdownSelectedItems.length} item{xRayDropdownSelectedItems.length !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+                            <Button 
+                              onClick={addXRayDropdownSelectedItemsToBill} 
+                              variant="outline"
+                              className="border-blue-500/20 text-blue-600 hover:bg-blue-500/10"
+                            >
+                              Add {xRayDropdownSelectedItems.length} X-Ray{xRayDropdownSelectedItems.length !== 1 ? 's' : ''} to Bill
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        <div ref={xRayDropdownRef} className="relative">
+                          <button
+                            ref={xRayDropdownButtonRef}
+                            onClick={() => setIsXRayDropdownOpen(!isXRayDropdownOpen)}
+                            onKeyDown={handleXRayDropdownKeyDown}
+                            className="w-full flex items-center justify-between px-3 py-2 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-medical-primary/20 hover:bg-muted/50"
+                          >
+                            <span className="text-sm text-muted-foreground">
+                              {xRayDropdownFilterQuery 
+                                ? `Filter: "${xRayDropdownFilterQuery}" (${getXRayFilteredDropdownItems().length} matches)`
+                                : 'X-Ray Dropdown - Type to filter, arrows to navigate'
+                              }
+                            </span>
+                            <ChevronRight className={`h-4 w-4 transition-transform ${isXRayDropdownOpen ? 'rotate-90' : ''}`} />
+                          </button>
+                          
+                          {/* Dropdown content */}
+                          {isXRayDropdownOpen && (
+                            <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                              {getXRayFilteredDropdownItems().map((item: MedicalItem, index) => {
+                                const alreadyInDropdown = xRayDropdownSelectedItems.find(selected => selected.id === item.id);
+                                const alreadyInBill = billItems.find(billItem => billItem.id === item.id);
+                                const isHighlighted = index === xRayHighlightedDropdownIndex;
+                                
+                                return (
+                                <div
+                                  key={item.id}
+                                  className={`px-3 py-2 cursor-pointer flex items-center justify-between hover:bg-muted/40 ${
+                                    isHighlighted ? 'bg-medical-primary/10 border-l-2 border-medical-primary' : ''
+                                  } ${
+                                    alreadyInBill ? 'bg-red-50 text-red-600 cursor-not-allowed' : ''
+                                  } ${
+                                    alreadyInDropdown ? 'bg-green-50 text-green-600' : ''
+                                  }`}
+                                  onClick={() => {
+                                    if (!alreadyInDropdown && !alreadyInBill) {
+                                      handleXRayDropdownSelect(item.id.toString());
+                                    }
+                                  }}
+                                >
+                                  <div className="flex-1">
+                                    <span className="text-sm font-medium">{item.name}</span>
+                                    {alreadyInBill && (
+                                      <span className="ml-2 text-red-600 text-xs">● Already in Bill</span>
+                                    )}
+                                    {alreadyInDropdown && !alreadyInBill && (
+                                      <span className="ml-2 text-green-600 text-xs">✓ Selected</span>
+                                    )}
+                                    {isHighlighted && (
+                                      <span className="ml-2 text-medical-primary text-xs">← Highlighted</span>
+                                    )}
+                                  </div>
+                                  <span className="text-medical-primary font-semibold">
+                                    {format(item.price)}
+                                  </span>
+                                </div>
+                                );
+                              })}
+                              {getXRayFilteredDropdownItems().length === 0 && (
+                                <div className="px-3 py-2 text-sm text-muted-foreground">
+                                  No X-Ray items available
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="text-sm text-muted-foreground">
+                        • Type to search and press comma/enter to add as tags<br/>
+                        • Dropdown: Type letters to filter instantly, stays open for multiple selections<br/>
+                        • Arrow keys to navigate, Enter to select (filter resets after each selection)<br/>
+                        • Click "Add to Bill" or outside dropdown to close • Escape to close without adding<br/>
+                        • Both methods access same database but work independently
+                      </div>
+                    </div>
+                  ) : selectedCategory === 'Medicine' ? (
                     <div className="space-y-4">
                       <Input
                         placeholder={`Search in ${selectedCategory}...`}
@@ -1006,7 +1557,17 @@ const Outpatient = () => {
                         {selectedLabItems.length > 0 ? `${selectedLabItems.length} test${selectedLabItems.length !== 1 ? 's' : ''} selected` : 'No tests selected yet'}
                       </div>
                     </div>
-                  ) : ['Medicine', 'X-Ray'].includes(selectedCategory) ? (
+                  ) : selectedCategory === 'X-Ray' ? (
+                    <div className="text-center text-muted-foreground py-4">
+                      <div className="text-lg font-medium mb-2">X-Ray Quick Selection</div>
+                      <div className="text-sm">
+                        Type X-Ray names and press comma to add as tags, or use dropdown below
+                      </div>
+                      <div className="text-xs mt-2 opacity-75">
+                        {selectedXRayItems.length > 0 ? `${selectedXRayItems.length} X-Ray${selectedXRayItems.length !== 1 ? 's' : ''} selected` : 'No X-Rays selected yet'}
+                      </div>
+                    </div>
+                  ) : selectedCategory === 'Medicine' ? (
                     <div className="space-y-2">
                       {(categorySearchQuery ? filteredCategoryItems : categoryItems).length > 0 ? (
                         <div className="text-center text-muted-foreground py-4">
