@@ -49,6 +49,9 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: Added detailed medical items for all Inpatient categories including specialized procedures and equipment
 - **2025-01-25**: ADDED: Outpatient categories (Dr. Fees, Medic Fee, Medicine) to Inpatient section per user request
 - **2025-01-25**: Enhanced Inpatient with inpatient-specific items for Dr. Fees, Medic Fee, and Medicine categories
+- **2025-01-25**: FIXED: Laboratory search and dropdown independence - both use same database but work independently
+- **2025-01-25**: Added proper mode switching between search and dropdown with automatic clearing of opposite mode selections
+- **2025-01-25**: Enhanced user experience with clear help text explaining independent search/dropdown functionality
 
 ## Project Architecture
 - **Frontend**: React with TypeScript, using shadcn/ui components and wouter for routing

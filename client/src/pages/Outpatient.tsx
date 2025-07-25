@@ -23,6 +23,7 @@ const Outpatient = () => {
   const [selectedLabItems, setSelectedLabItems] = useState<MedicalItem[]>([]);
   const [dropdownSelectedItems, setDropdownSelectedItems] = useState<MedicalItem[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isUsingSearch, setIsUsingSearch] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { format } = useTakaFormat();
   const queryClient = useQueryClient();
@@ -46,21 +47,13 @@ const Outpatient = () => {
     ? medicalItems.filter((item: MedicalItem) => item.category === selectedCategory)
     : [];
 
-  // For Laboratory: separate items for search vs dropdown
+  // For Laboratory: both search and dropdown use same database items but work independently
   const getSearchItems = () => {
-    if (selectedCategory === 'Laboratory') {
-      // Only show first 5 items for search suggestions
-      return categoryItems.slice(0, 5);
-    }
-    return categoryItems;
+    return categoryItems; // Use all items for search
   };
 
   const getDropdownItems = () => {
-    if (selectedCategory === 'Laboratory') {
-      // Show different items (items 6 onwards) for dropdown
-      return categoryItems.slice(5);
-    }
-    return categoryItems;
+    return categoryItems; // Use all items for dropdown
   };
 
   const searchItems = getSearchItems();
@@ -208,6 +201,7 @@ const Outpatient = () => {
     setSelectedLabItems([]); // Clear lab selections when exiting
     setDropdownSelectedItems([]); // Clear dropdown selections when exiting
     setIsDropdownOpen(false);
+    setIsUsingSearch(false); // Reset search mode
   };
 
   // Handle click outside dropdown to close it
@@ -529,13 +523,22 @@ const Outpatient = () => {
                         value={categorySearchQuery}
                         onChange={(e) => {
                           setCategorySearchQuery(e.target.value);
-                          // Auto-open dropdown when typing to show sorted results
-                          if (e.target.value.trim() && !isDropdownOpen) {
-                            setIsDropdownOpen(true);
+                          // When user starts typing, activate search mode and close dropdown
+                          if (e.target.value.trim()) {
+                            setIsUsingSearch(true);
+                            setIsDropdownOpen(false);
+                            setDropdownSelectedItems([]); // Clear dropdown selections when switching to search
+                          } else {
+                            setIsUsingSearch(false);
                           }
                         }}
                         onKeyDown={handleLabSearchKeyDown}
-                        onFocus={() => setIsDropdownOpen(true)}
+                        onFocus={() => {
+                          // Only open dropdown if not using search mode and no text in input
+                          if (!categorySearchQuery.trim()) {
+                            setIsDropdownOpen(true);
+                          }
+                        }}
                         className="w-full"
                       />
                       {selectedLabItems.length > 0 && (
@@ -573,11 +576,18 @@ const Outpatient = () => {
                       
 
                       
-                      {/* Dropdown with same style as suggestions */}
-                      {!categorySearchQuery && (
+                      {/* Dropdown with same style as suggestions - only show when not using search */}
+                      {!isUsingSearch && !categorySearchQuery && (
                         <div className="space-y-2">
                           <Button 
-                            onClick={() => setIsDropdownOpen(!isDropdownOpen)} 
+                            onClick={() => {
+                              setIsDropdownOpen(!isDropdownOpen);
+                              if (!isDropdownOpen) {
+                                // When opening dropdown, clear search mode
+                                setIsUsingSearch(false);
+                                setSelectedLabItems([]); // Clear search selections when switching to dropdown
+                              }
+                            }} 
                             variant="medical-outline" 
                             className="w-full"
                           >
@@ -611,8 +621,9 @@ const Outpatient = () => {
                       )}
 
                       <div className="text-sm text-muted-foreground">
-                        • Type and press comma for quick tag selection<br/>
-                        • Search shows basic tests, dropdown shows additional tests
+                        • Type to search and press comma/enter to add as tags<br/>
+                        • Use dropdown button below for different selection method<br/>
+                        • Both search and dropdown access the same test database independently
                       </div>
                     </div>
                   ) : ['Medicine', 'X-Ray'].includes(selectedCategory) ? (
