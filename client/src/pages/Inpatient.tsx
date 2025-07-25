@@ -266,7 +266,7 @@ const Inpatient = () => {
                               <div className="flex justify-between items-center w-full">
                                 <span>{item.name}</span>
                                 <div className="ml-4 flex items-center space-x-2">
-                                  <span className="font-bold text-primary">₱{item.price.toLocaleString()}</span>
+                                  <span className="font-bold text-primary">৳{item.price.toLocaleString()}</span>
                                   {isDailyItem(item.category) && (
                                     <span className="text-xs bg-accent text-accent-foreground px-1 py-0.5 rounded">
                                       per day
@@ -324,7 +324,7 @@ const Inpatient = () => {
                           <p className="text-sm text-muted-foreground">{item.category}</p>
                           <div className="flex items-center space-x-2">
                             <p className="text-sm font-medium text-primary">
-                              ₱{item.price.toLocaleString()}
+                              ৳{item.price.toLocaleString()}
                               {isDailyItem(item.category) ? ' per day' : ' each'}
                             </p>
                             {isDailyItem(item.category) && (
@@ -352,31 +352,31 @@ const Inpatient = () => {
                           </Button>
                         </div>
                         <div className="ml-4 text-right">
-                          <p className="font-bold text-lg">₱{getItemTotal(item).toLocaleString()}</p>
+                          <p className="font-bold text-lg">৳{getItemTotal(item).toLocaleString()}</p>
                         </div>
                       </div>
                     ))}
                     
                     <div className="border-t pt-4">
-                      <div className="bg-gradient-to-r from-emerald-800 to-green-900 text-white p-6 rounded-xl shadow-2xl border border-emerald-700">
+                      <div style={{background: 'linear-gradient(to right, #065f46, #14532d)', borderColor: '#047857'}} className="text-white p-6 rounded-xl shadow-2xl border-2">
                         <div className="flex justify-between items-center">
                           <div className="flex flex-col">
-                            <span className="text-emerald-200 text-sm font-medium mb-1">Grand Total</span>
-                            <span className="text-2xl font-bold">₱{total.toLocaleString()}</span>
+                            <span style={{color: '#a7f3d0'}} className="text-sm font-medium mb-1">Grand Total</span>
+                            <span className="text-2xl font-bold">৳{total.toLocaleString()}</span>
                           </div>
-                          <div className="bg-emerald-700/50 p-3 rounded-full">
-                            <Calculator className="h-6 w-6 text-emerald-100" />
+                          <div style={{backgroundColor: 'rgba(5, 150, 105, 0.5)'}} className="p-3 rounded-full">
+                            <Calculator className="h-6 w-6" style={{color: '#a7f3d0'}} />
                           </div>
                         </div>
-                        <div className="mt-3 flex items-center justify-between text-emerald-200 text-sm">
+                        <div className="mt-3 flex items-center justify-between text-sm" style={{color: '#a7f3d0'}}>
                           <div className="flex items-center">
-                            <span className="bg-emerald-700/30 px-2 py-1 rounded-full text-xs mr-2">
+                            <span style={{backgroundColor: 'rgba(5, 150, 105, 0.3)'}} className="px-2 py-1 rounded-full text-xs mr-2">
                               {billItems.length} item{billItems.length !== 1 ? 's' : ''}
                             </span>
                             <span>Inpatient Services</span>
                           </div>
                           <div className="flex items-center">
-                            <span className="bg-emerald-700/30 px-2 py-1 rounded-full text-xs">
+                            <span style={{backgroundColor: 'rgba(5, 150, 105, 0.3)'}} className="px-2 py-1 rounded-full text-xs">
                               {daysAdmitted} day{daysAdmitted !== 1 ? 's' : ''}
                             </span>
                           </div>
