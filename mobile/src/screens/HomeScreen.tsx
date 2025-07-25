@@ -1,9 +1,8 @@
 import React from 'react';
 import {View, StyleSheet, ScrollView, SafeAreaView, Platform, StatusBar} from 'react-native';
-import {Card, Title, Paragraph} from 'react-native-paper';
+import {Button, Card, Title, Paragraph} from 'react-native-paper';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../App';
-import SlideButton from '../components/SlideButton';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -29,23 +28,29 @@ const HomeScreen: React.FC<Props> = ({navigation}) => {
         </Card>
 
         <View style={styles.buttonContainer}>
-          <SlideButton
-            title="Outpatient Calculator"
+          <Button
+            mode="contained"
             onPress={() => navigation.navigate('Outpatient')}
-            delay={0}
-          />
+            style={styles.mainButton}
+            contentStyle={styles.buttonContent}>
+            Outpatient Calculator
+          </Button>
 
-          <SlideButton
-            title="Inpatient Calculator"
+          <Button
+            mode="contained"
             onPress={() => navigation.navigate('Inpatient')}
-            delay={150}
-          />
+            style={styles.mainButton}
+            contentStyle={styles.buttonContent}>
+            Inpatient Calculator
+          </Button>
 
-          <SlideButton
-            title="Medical Items Database"
+          <Button
+            mode="outlined"
             onPress={() => navigation.navigate('Database')}
-            delay={300}
-          />
+            style={styles.secondaryButton}
+            contentStyle={styles.buttonContent}>
+            Medical Items Database
+          </Button>
         </View>
 
         <Card style={styles.infoCard}>

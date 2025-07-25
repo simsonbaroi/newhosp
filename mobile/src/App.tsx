@@ -1,7 +1,7 @@
 import React from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import {StatusBar, Platform, Animated} from 'react-native';
+import {StatusBar, Platform} from 'react-native';
 import {Provider as PaperProvider, MD3DarkTheme} from 'react-native-paper';
 
 // Import screens
@@ -72,17 +72,13 @@ const App: React.FC = () => {
             headerPressColorAndroid: '#10b981',
             headerBackButtonMenuEnabled: true,
             headerShown: true,
-            // Add slide animation for screen transitions
-            animation: 'slide_from_right',
-            animationDuration: 300,
           }}>
           <Stack.Screen 
             name="Home" 
             component={HomeScreen}
             options={{ 
               title: 'Hospital Bill Calculator',
-              headerShown: true,
-              animation: 'fade'
+              headerShown: true
             }}
           />
           <Stack.Screen 
@@ -91,9 +87,7 @@ const App: React.FC = () => {
             options={{ 
               title: 'Outpatient Calculator',
               headerShown: true,
-              headerBackVisible: true,
-              animation: 'slide_from_right',
-              animationDuration: 300
+              headerBackVisible: true
             }}
           />
           <Stack.Screen 
@@ -102,9 +96,7 @@ const App: React.FC = () => {
             options={{ 
               title: 'Inpatient Calculator',
               headerShown: true,
-              headerBackVisible: true,
-              animation: 'slide_from_right',
-              animationDuration: 300
+              headerBackVisible: true
             }}
           />
           <Stack.Screen 
@@ -113,9 +105,7 @@ const App: React.FC = () => {
             options={{ 
               title: 'Medical Items Database',
               headerShown: true,
-              headerBackVisible: true,
-              animation: 'slide_from_right',
-              animationDuration: 300
+              headerBackVisible: true
             }}
           />
         </Stack.Navigator>
