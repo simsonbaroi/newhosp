@@ -739,7 +739,8 @@ const Outpatient = () => {
                             </div>
                             <Button 
                               onClick={addDropdownSelectedItemsToBill} 
-                              variant="medical"
+                              variant="outline"
+                              className="border-blue-500/20 text-blue-600 hover:bg-blue-500/10"
                             >
                               Add {dropdownSelectedItems.length} Test{dropdownSelectedItems.length !== 1 ? 's' : ''} to Bill
                             </Button>
