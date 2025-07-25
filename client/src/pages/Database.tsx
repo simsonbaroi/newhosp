@@ -466,13 +466,8 @@ const Database = () => {
                     }}
                     disabled={isAdding}
                   >
-                    <div className="flex items-center">
-                      <Plus className="h-4 w-4 mr-2" />
-                      <div>
-                        <div className="font-semibold text-sm">Add Item to {filterCategory}</div>
-                        <div className="text-xs opacity-75">Create new item in this category</div>
-                      </div>
-                    </div>
+                    <Plus className="h-4 w-4 mr-2" />
+                    <span className="font-semibold">Add Item</span>
                   </Button>
                 </div>
               </div>
