@@ -41,6 +41,7 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: UPDATED: Moved "Add Items" to appear under carousel categories for current category context
 - **2025-01-25**: Pre-populates category field when adding items from carousel view for better workflow
 - **2025-01-25**: CLEANED: Removed duplicate "Add Item" button from carousel - using existing button before search
+- **2025-01-25**: CORRECTED: Removed "Add Item" from grid view, kept it in carousel view for category-specific item creation
 
 ## Project Architecture
 - **Frontend**: React with TypeScript, using shadcn/ui components and wouter for routing

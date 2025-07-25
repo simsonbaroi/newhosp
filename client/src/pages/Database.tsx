@@ -353,22 +353,6 @@ const Database = () => {
             {!isCarouselMode ? (
               // Normal grid mode
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {/* Add Items Button - Always visible */}
-                <Button
-                  variant="medical"
-                  className="h-auto p-3 text-left justify-start border-2 border-dashed border-medical-primary/50"
-                  onClick={() => setIsAdding(true)}
-                  disabled={isAdding}
-                >
-                  <div>
-                    <div className="font-semibold text-sm flex items-center">
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add Items
-                    </div>
-                    <div className="text-xs opacity-75">Create new medical item</div>
-                  </div>
-                </Button>
-                
                 {allCategories.map((category) => {
                   const itemCount = items.filter(item => item.category === category).length;
                   return (
@@ -388,7 +372,7 @@ const Database = () => {
               </div>
             ) : (
               // Carousel mode with preview buttons
-              <div>
+              <div className="space-y-4">
                 {/* Category Navigation */}
                 <div className="flex items-center justify-center space-x-2">
                   {/* Previous preview button */}
@@ -449,6 +433,25 @@ const Database = () => {
                         {allCategories[(currentCategoryIndex + 1) % allCategories.length]}
                       </div>
                     </div>
+                  </Button>
+                </div>
+
+                {/* Add Items Button for Current Category */}
+                <div className="flex justify-center">
+                  <Button
+                    variant="medical"
+                    className="h-auto p-3 border-2 border-dashed border-medical-primary/50"
+                    onClick={() => {
+                      setFormData({
+                        ...formData,
+                        category: filterCategory
+                      });
+                      setIsAdding(true);
+                    }}
+                    disabled={isAdding}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    <span className="font-semibold">Add Item</span>
                   </Button>
                 </div>
               </div>
