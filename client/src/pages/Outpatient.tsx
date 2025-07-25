@@ -2406,7 +2406,7 @@ const Outpatient = () => {
                     <div className="space-y-4">
                       {/* Compact Selected Medicines Display - positioned below Medicine label */}
                       {tempSelectedMedicines.length > 0 && (
-                        <div className="glass-card p-4 border border-medical-primary/30 bg-gradient-to-br from-medical-primary/5 to-medical-primary/10 backdrop-blur-sm">
+                        <div className="medicine-dosage-card p-4">
                           <div className="flex items-center justify-between mb-3">
                             <span className="text-sm font-semibold text-medical-primary flex items-center">
                               <Calculator className="h-4 w-4 mr-2" />
@@ -2418,7 +2418,7 @@ const Outpatient = () => {
                           </div>
                           <div className="space-y-2">
                             {tempSelectedMedicines.map((medicine, index) => (
-                              <div key={medicine.tempId} className="flex items-center justify-between text-sm bg-white/80 dark:bg-gray-800/80 p-3 rounded-lg border border-medical-primary/10 hover:border-medical-primary/20 transition-colors">
+                              <div key={medicine.tempId} className="medicine-item-card flex items-center justify-between text-sm p-3 rounded-lg">
                                 <div className="flex items-center space-x-3 flex-1 min-w-0">
                                   <span className="bg-gradient-to-r from-medical-primary to-medical-secondary text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0 shadow-md">
                                     {index + 1}
@@ -2458,7 +2458,7 @@ const Outpatient = () => {
 
                       {/* Medicine Dosage Selection Interface */}
                       {showMedicineDosageSelection && selectedMedicineForDosage && (
-                        <div className="glass-card mt-6 p-6 border border-medical-primary/30 bg-gradient-to-br from-medical-primary/5 to-medical-primary/10 backdrop-blur-sm shadow-lg">
+                        <div className="medicine-dosage-card mt-6 p-6">
                           <div className="flex items-center justify-between mb-6">
                             <h3 className="text-lg font-semibold text-medical-primary flex items-center">
                               <Calculator className="h-5 w-5 mr-2" />
@@ -2560,7 +2560,7 @@ const Outpatient = () => {
 
                             {/* Calculation Details (Optional) */}
                             {isDosageSelectionComplete() && (
-                              <div className="glass-card p-4 bg-gradient-to-r from-medical-primary/5 to-medical-secondary/5 border border-medical-primary/20 rounded-lg">
+                              <div className="medicine-dosage-card p-4 rounded-lg">
                                 <div className="text-sm font-medium text-medical-primary mb-3 flex items-center">
                                   <Calculator className="h-4 w-4 mr-2" />
                                   Calculation Preview
