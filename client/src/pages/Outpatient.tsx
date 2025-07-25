@@ -25,6 +25,8 @@ const Outpatient = () => {
   const [dropdownSelectedItems, setDropdownSelectedItems] = useState<MedicalItem[]>([]);
   const [selectedXRayItems, setSelectedXRayItems] = useState<MedicalItem[]>([]);
   const [xRayDropdownSelectedItems, setXRayDropdownSelectedItems] = useState<MedicalItem[]>([]);
+  const [selectedMedicineItems, setSelectedMedicineItems] = useState<MedicalItem[]>([]);
+  const [medicineDropdownSelectedItems, setMedicineDropdownSelectedItems] = useState<MedicalItem[]>([]);
   const [dropdownValue, setDropdownValue] = useState<string>('');
   const [highlightedDropdownIndex, setHighlightedDropdownIndex] = useState<number>(-1);
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
@@ -33,6 +35,10 @@ const Outpatient = () => {
   const [xRayHighlightedDropdownIndex, setXRayHighlightedDropdownIndex] = useState<number>(-1);
   const [isXRayDropdownOpen, setIsXRayDropdownOpen] = useState<boolean>(false);
   const [xRayDropdownFilterQuery, setXRayDropdownFilterQuery] = useState<string>('');
+  const [medicineDropdownValue, setMedicineDropdownValue] = useState<string>('');
+  const [medicineHighlightedDropdownIndex, setMedicineHighlightedDropdownIndex] = useState<number>(-1);
+  const [isMedicineDropdownOpen, setIsMedicineDropdownOpen] = useState<boolean>(false);
+  const [medicineDropdownFilterQuery, setMedicineDropdownFilterQuery] = useState<string>('');
   const [duplicateDialog, setDuplicateDialog] = useState<{open: boolean, item: MedicalItem | null}>({open: false, item: null});
   const dropdownRef = useRef<HTMLDivElement>(null);
   const dropdownButtonRef = useRef<HTMLButtonElement>(null);
@@ -40,6 +46,9 @@ const Outpatient = () => {
   const xRayDropdownRef = useRef<HTMLDivElement>(null);
   const xRayDropdownButtonRef = useRef<HTMLButtonElement>(null);
   const xRaySearchInputRef = useRef<HTMLInputElement>(null);
+  const medicineDropdownRef = useRef<HTMLDivElement>(null);
+  const medicineDropdownButtonRef = useRef<HTMLButtonElement>(null);
+  const medicineSearchInputRef = useRef<HTMLInputElement>(null);
   const { format } = useTakaFormat();
   const queryClient = useQueryClient();
 
@@ -258,6 +267,12 @@ const Outpatient = () => {
     setXRayHighlightedDropdownIndex(-1); // Reset X-Ray highlighted index
     setIsXRayDropdownOpen(false); // Close X-Ray dropdown
     setXRayDropdownFilterQuery(''); // Reset X-Ray filter query
+    setSelectedMedicineItems([]); // Clear Medicine selections when exiting
+    setMedicineDropdownSelectedItems([]); // Clear Medicine dropdown selections when exiting
+    setMedicineDropdownValue(''); // Reset Medicine dropdown value
+    setMedicineHighlightedDropdownIndex(-1); // Reset Medicine highlighted index
+    setIsMedicineDropdownOpen(false); // Close Medicine dropdown
+    setMedicineDropdownFilterQuery(''); // Reset Medicine filter query
   };
 
   // Handle dropdown selection
@@ -541,6 +556,13 @@ const Outpatient = () => {
   useEffect(() => {
     if (selectedCategory === 'X-Ray' && isCarouselMode && xRaySearchInputRef.current) {
       xRaySearchInputRef.current.focus();
+    }
+  }, [selectedCategory, isCarouselMode]);
+
+  // Auto-focus search input when Medicine category is selected
+  useEffect(() => {
+    if (selectedCategory === 'Medicine' && isCarouselMode && medicineSearchInputRef.current) {
+      medicineSearchInputRef.current.focus();
     }
   }, [selectedCategory, isCarouselMode]);
 
@@ -916,6 +938,215 @@ const Outpatient = () => {
         if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
         
         // Contains gets third priority - already filtered above
+        return aName.localeCompare(bName);
+      });
+  };
+
+  // Medicine tag selection handlers
+  const handleMedicineTagKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === ',' || e.key === 'Enter') {
+      e.preventDefault();
+      const query = categorySearchQuery.trim();
+      if (query) {
+        const matchingItems = categoryItems.filter(item => 
+          item.name.toLowerCase().includes(query.toLowerCase())
+        );
+        
+        if (matchingItems.length > 0) {
+          const itemToAdd = matchingItems[0];
+          if (!selectedMedicineItems.find(selected => selected.id === itemToAdd.id)) {
+            setSelectedMedicineItems(prev => [...prev, itemToAdd]);
+            // Clear dropdown selections when using tags
+            setMedicineDropdownSelectedItems([]);
+          }
+        }
+        setCategorySearchQuery('');
+      }
+    }
+  };
+
+  const removeMedicineTagItem = (itemId: number) => {
+    setSelectedMedicineItems(prev => prev.filter(item => item.id !== itemId));
+  };
+
+  const addMedicineTagItemsToBill = () => {
+    const newItems: MedicalItem[] = [];
+    const duplicateItems: MedicalItem[] = [];
+    
+    selectedMedicineItems.forEach(item => {
+      const existingItem = billItems.find(billItem => billItem.id === item.id);
+      if (existingItem) {
+        duplicateItems.push(item);
+      } else {
+        newItems.push(item);
+      }
+    });
+    
+    if (newItems.length > 0) {
+      const billItemsToAdd = newItems.map(item => ({ 
+        ...item, 
+        billId: `${item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` 
+      }));
+      setBillItems(prevBillItems => [...prevBillItems, ...billItemsToAdd]);
+    }
+    
+    if (duplicateItems.length > 0) {
+      setDuplicateDialog({ open: true, item: duplicateItems[0] });
+    }
+    
+    setSelectedMedicineItems([]);
+    setCategorySearchQuery('');
+    
+    setTimeout(() => {
+      if (medicineSearchInputRef.current) {
+        medicineSearchInputRef.current.focus();
+      }
+    }, 0);
+  };
+
+  // Medicine dropdown selection handlers
+  const handleMedicineDropdownSelect = (value: string) => {
+    const selectedItem = categoryItems.find(item => item.id.toString() === value);
+    
+    const alreadyInDropdown = medicineDropdownSelectedItems.find(item => item.id === selectedItem?.id);
+    const alreadyInBill = billItems.find(billItem => billItem.id === selectedItem?.id);
+    
+    if (selectedItem && !alreadyInDropdown && !alreadyInBill) {
+      setMedicineDropdownSelectedItems(prev => [...prev, selectedItem]);
+      setSelectedMedicineItems([]);
+      setCategorySearchQuery('');
+    }
+    
+    setMedicineDropdownValue('');
+    setMedicineHighlightedDropdownIndex(-1);
+    setMedicineDropdownFilterQuery('');
+    
+    setTimeout(() => {
+      if (medicineDropdownButtonRef.current) {
+        medicineDropdownButtonRef.current.focus();
+      }
+    }, 0);
+  };
+
+  const handleMedicineDropdownKeyDown = (e: React.KeyboardEvent) => {
+    const orderedItems = getMedicineFilteredDropdownItems();
+    
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setMedicineHighlightedDropdownIndex(prev => 
+        prev < orderedItems.length - 1 ? prev + 1 : 0
+      );
+      if (!isMedicineDropdownOpen) setIsMedicineDropdownOpen(true);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setMedicineHighlightedDropdownIndex(prev => 
+        prev > 0 ? prev - 1 : orderedItems.length - 1
+      );
+      if (!isMedicineDropdownOpen) setIsMedicineDropdownOpen(true);
+    } else if (e.key === 'Enter' && medicineHighlightedDropdownIndex >= 0) {
+      e.preventDefault();
+      const selectedItem = orderedItems[medicineHighlightedDropdownIndex];
+      if (selectedItem) {
+        handleMedicineDropdownSelect(selectedItem.id.toString());
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setIsMedicineDropdownOpen(false);
+      setMedicineHighlightedDropdownIndex(-1);
+      setMedicineDropdownFilterQuery('');
+    } else if (e.key.length === 1 && e.key.match(/[a-zA-Z0-9\s]/)) {
+      e.preventDefault();
+      const newQuery = medicineDropdownFilterQuery + e.key.toLowerCase();
+      setMedicineDropdownFilterQuery(newQuery);
+      setMedicineHighlightedDropdownIndex(0);
+      if (!isMedicineDropdownOpen) setIsMedicineDropdownOpen(true);
+    } else if (e.key === 'Backspace') {
+      e.preventDefault();
+      setMedicineDropdownFilterQuery(prev => prev.slice(0, -1));
+      setMedicineHighlightedDropdownIndex(0);
+    }
+  };
+
+  const removeMedicineDropdownItem = (itemId: number) => {
+    setMedicineDropdownSelectedItems(prev => prev.filter(item => item.id !== itemId));
+  };
+
+  const addMedicineDropdownSelectedItemsToBill = () => {
+    const newItems: MedicalItem[] = [];
+    const duplicateItems: MedicalItem[] = [];
+    
+    medicineDropdownSelectedItems.forEach(item => {
+      const existingItem = billItems.find(billItem => billItem.id === item.id);
+      if (existingItem) {
+        duplicateItems.push(item);
+      } else {
+        newItems.push(item);
+      }
+    });
+    
+    if (newItems.length > 0) {
+      const billItemsToAdd = newItems.map(item => ({ 
+        ...item, 
+        billId: `${item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` 
+      }));
+      setBillItems(prevBillItems => [...prevBillItems, ...billItemsToAdd]);
+    }
+    
+    if (duplicateItems.length > 0) {
+      setDuplicateDialog({ open: true, item: duplicateItems[0] });
+    }
+    
+    setMedicineDropdownSelectedItems([]);
+    setIsMedicineDropdownOpen(false);
+    setMedicineHighlightedDropdownIndex(-1);
+    setMedicineDropdownFilterQuery('');
+  };
+
+  // Get Medicine dropdown items ordered by relevance
+  const getMedicineOrderedDropdownItems = () => {
+    if (!categorySearchQuery.trim()) return categoryItems;
+    
+    const query = categorySearchQuery.toLowerCase();
+    
+    return [...categoryItems].sort((a, b) => {
+      const aName = a.name.toLowerCase();
+      const bName = b.name.toLowerCase();
+      const aIncludes = aName.includes(query);
+      const bIncludes = bName.includes(query);
+      
+      if (aIncludes && !bIncludes) return -1;
+      if (bIncludes && !aIncludes) return 1;
+      
+      if (aIncludes && bIncludes) {
+        if (aName === query) return -1;
+        if (bName === query) return 1;
+        
+        if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
+        if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
+      }
+      
+      return aName.localeCompare(bName);
+    });
+  };
+
+  // Get Medicine dropdown items filtered by direct typing
+  const getMedicineFilteredDropdownItems = () => {
+    if (!medicineDropdownFilterQuery.trim()) return getMedicineOrderedDropdownItems();
+    
+    const query = medicineDropdownFilterQuery.toLowerCase();
+    
+    return categoryItems
+      .filter(item => item.name.toLowerCase().includes(query))
+      .sort((a, b) => {
+        const aName = a.name.toLowerCase();
+        const bName = b.name.toLowerCase();
+        
+        if (aName === query) return -1;
+        if (bName === query) return 1;
+        
+        if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
+        if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
+        
         return aName.localeCompare(bName);
       });
   };
@@ -1551,34 +1782,165 @@ const Outpatient = () => {
                     </div>
                   ) : selectedCategory === 'Medicine' ? (
                     <div className="space-y-4">
-                      <Input
-                        placeholder={`Search in ${selectedCategory}...`}
-                        value={categorySearchQuery}
-                        onChange={(e) => setCategorySearchQuery(e.target.value)}
-                        className="w-full"
-                      />
-                      <Select onValueChange={(value) => {
-                        const selectedItem = (categorySearchQuery ? filteredCategoryItems : categoryItems).find(item => item.id.toString() === value);
-                        if (selectedItem) addToBill(selectedItem);
-                      }}>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder={`Select ${selectedCategory} item...`} />
-                        </SelectTrigger>
-                        <SelectContent className="bg-popover border border-border max-h-60">
-                          {(categorySearchQuery ? filteredCategoryItems : categoryItems).map((item: MedicalItem) => (
-                            <SelectItem key={item.id} value={item.id.toString()}>
-                              <div className="flex items-center justify-between w-full">
-                                <span>{item.name}</span>
-                                <span className="ml-4 text-medical-primary font-semibold">
-                                  {format(item.price)}
+                      {/* Medicine tag-based search input */}
+                      <div className="space-y-2">
+                        <Input
+                          ref={medicineSearchInputRef}
+                          placeholder="Type medicine names, press comma/enter to add as tags..."
+                          value={categorySearchQuery}
+                          onChange={(e) => setCategorySearchQuery(e.target.value)}
+                          onKeyDown={handleMedicineTagKeyPress}
+                          className="w-full"
+                        />
+
+                        {/* Selected items as tags */}
+                        {selectedMedicineItems.length > 0 && (
+                          <div className="space-y-2">
+                            <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md">
+                              {selectedMedicineItems.map((item) => (
+                                <div key={item.id} className="inline-flex items-center bg-green-500/10 text-green-600 px-2 py-1 rounded text-xs">
+                                  <span className="mr-1">{item.name}</span>
+                                  <button
+                                    onClick={() => removeMedicineTagItem(item.id)}
+                                    className="hover:bg-green-500/20 rounded-full p-0.5"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <div className="flex items-center gap-4 p-2 bg-green-500/5 rounded-md border border-green-500/20">
+                                <span className="text-sm font-medium text-green-600">
+                                  Total Price: {format(selectedMedicineItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {selectedMedicineItems.length} item{selectedMedicineItems.length !== 1 ? 's' : ''}
                                 </span>
                               </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                              <Button 
+                                onClick={addMedicineTagItemsToBill} 
+                                variant="outline"
+                                className="border-green-500/20 text-green-600 hover:bg-green-500/10"
+                              >
+                                Add {selectedMedicineItems.length} Medicine{selectedMedicineItems.length !== 1 ? 's' : ''} to Bill
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Dropdown selected items as tags */}
+                      {medicineDropdownSelectedItems.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md">
+                            {medicineDropdownSelectedItems.map((item) => (
+                              <div key={item.id} className="inline-flex items-center bg-blue-500/10 text-blue-600 px-2 py-1 rounded text-xs">
+                                <span className="mr-1">{item.name}</span>
+                                <button
+                                  onClick={() => removeMedicineDropdownItem(item.id)}
+                                  className="hover:bg-blue-500/20 rounded-full p-0.5"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-4 p-2 bg-blue-500/5 rounded-md border border-blue-500/20">
+                              <span className="text-sm font-medium text-blue-600">
+                                Total Price: {format(medicineDropdownSelectedItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {medicineDropdownSelectedItems.length} item{medicineDropdownSelectedItems.length !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+                            <Button 
+                              onClick={addMedicineDropdownSelectedItemsToBill} 
+                              variant="outline"
+                              className="border-blue-500/20 text-blue-600 hover:bg-blue-500/10"
+                            >
+                              Add {medicineDropdownSelectedItems.length} Medicine{medicineDropdownSelectedItems.length !== 1 ? 's' : ''} to Bill
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        <div ref={medicineDropdownRef} className="relative">
+                          <button
+                            ref={medicineDropdownButtonRef}
+                            onClick={() => setIsMedicineDropdownOpen(!isMedicineDropdownOpen)}
+                            onKeyDown={handleMedicineDropdownKeyDown}
+                            className="w-full flex items-center justify-between px-3 py-2 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-medical-primary/20 hover:bg-muted/50"
+                          >
+                            <span className="text-sm text-muted-foreground">
+                              {medicineDropdownFilterQuery 
+                                ? `Filter: "${medicineDropdownFilterQuery}" (${getMedicineFilteredDropdownItems().length} matches)`
+                                : 'Medicine Dropdown - Type to filter, arrows to navigate'
+                              }
+                            </span>
+                            <ChevronRight className={`h-4 w-4 transition-transform ${isMedicineDropdownOpen ? 'rotate-90' : ''}`} />
+                          </button>
+                          
+                          {isMedicineDropdownOpen && (
+                            <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                              {getMedicineFilteredDropdownItems().map((item: MedicalItem, index) => {
+                                const alreadyInDropdown = medicineDropdownSelectedItems.find(selected => selected.id === item.id);
+                                const alreadyInBill = billItems.find(billItem => billItem.id === item.id);
+                                const isHighlighted = index === medicineHighlightedDropdownIndex;
+                                
+                                return (
+                                <div
+                                  key={item.id}
+                                  className={`px-3 py-2 cursor-pointer flex items-center justify-between hover:bg-muted/40 ${
+                                    isHighlighted ? 'bg-medical-primary/10 border-l-2 border-medical-primary' : ''
+                                  } ${
+                                    alreadyInBill ? 'bg-red-50 text-red-600 cursor-not-allowed' : ''
+                                  } ${
+                                    alreadyInDropdown ? 'bg-green-50 text-green-600' : ''
+                                  }`}
+                                  onClick={() => {
+                                    if (!alreadyInDropdown && !alreadyInBill) {
+                                      handleMedicineDropdownSelect(item.id.toString());
+                                    }
+                                  }}
+                                >
+                                  <div className="flex-1">
+                                    <span className="text-sm font-medium">{item.name}</span>
+                                    {alreadyInBill && (
+                                      <span className="ml-2 text-red-600 text-xs">● Already in Bill</span>
+                                    )}
+                                    {alreadyInDropdown && !alreadyInBill && (
+                                      <span className="ml-2 text-green-600 text-xs">✓ Selected</span>
+                                    )}
+                                    {isHighlighted && (
+                                      <span className="ml-2 text-medical-primary text-xs">← Highlighted</span>
+                                    )}
+                                  </div>
+                                  <span className="text-medical-primary font-semibold">
+                                    {format(item.price)}
+                                  </span>
+                                </div>
+                                );
+                              })}
+                              {getMedicineFilteredDropdownItems().length === 0 && (
+                                <div className="px-3 py-2 text-sm text-muted-foreground">
+                                  No Medicine items available
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
                       <div className="text-sm text-muted-foreground">
-                        {categorySearchQuery ? 'Filtered results' : 'All items'} - Select from dropdown to add to bill
+                        • Type to search and press comma/enter to add as tags<br/>
+                        • Dropdown: Type letters to filter instantly, stays open for multiple selections<br/>
+                        • Arrow keys to navigate, Enter to select (filter resets after each selection)<br/>
+                        • Click "Add to Bill" or outside dropdown to close • Escape to close without adding<br/>
+                        • Both methods access same database but work independently<br/>
+                        • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
                       </div>
                     </div>
                   ) : (
@@ -1616,25 +1978,14 @@ const Outpatient = () => {
                       </div>
                     </div>
                   ) : selectedCategory === 'Medicine' ? (
-                    <div className="space-y-2">
-                      {(categorySearchQuery ? filteredCategoryItems : categoryItems).length > 0 ? (
-                        <div className="text-center text-muted-foreground py-4">
-                          <div className="text-lg font-medium mb-2">
-                            {categorySearchQuery ? 'Search Results' : `Available ${selectedCategory} Items`}
-                          </div>
-                          <div className="text-sm">
-                            {(categorySearchQuery ? filteredCategoryItems : categoryItems).length} item{(categorySearchQuery ? filteredCategoryItems : categoryItems).length !== 1 ? 's' : ''} 
-                            {categorySearchQuery ? ' found' : ' available in database'}
-                          </div>
-                          <div className="text-xs mt-2 opacity-75">
-                            Use the dropdown above to select and add items to your bill
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-center text-muted-foreground py-8">
-                          {categorySearchQuery ? 'No items found matching your search.' : 'No items available in this category.'}
-                        </div>
-                      )}
+                    <div className="text-center text-muted-foreground py-4">
+                      <div className="text-lg font-medium mb-2">Medicine Quick Selection</div>
+                      <div className="text-sm">
+                        Type medicine names and press comma to add as tags, or use dropdown below
+                      </div>
+                      <div className="text-xs mt-2 opacity-75">
+                        {selectedMedicineItems.length > 0 ? `${selectedMedicineItems.length} medicine${selectedMedicineItems.length !== 1 ? 's' : ''} selected` : 'No medicines selected yet'}
+                      </div>
                     </div>
                   ) : (
                     /* Regular item list for other categories */
