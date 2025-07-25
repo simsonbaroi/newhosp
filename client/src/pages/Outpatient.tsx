@@ -21,6 +21,8 @@ const Outpatient = () => {
   const [isCarouselMode, setIsCarouselMode] = useState<boolean>(false);
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState<number>(0);
   const [selectedLabItems, setSelectedLabItems] = useState<MedicalItem[]>([]);
+  const [dropdownSelectedItems, setDropdownSelectedItems] = useState<MedicalItem[]>([]);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { format } = useTakaFormat();
   const queryClient = useQueryClient();
 
@@ -183,6 +185,8 @@ const Outpatient = () => {
     setCategorySearchQuery('');
     setGlobalSearchQuery(''); // Clear global search when exiting carousel
     setSelectedLabItems([]); // Clear lab selections when exiting
+    setDropdownSelectedItems([]); // Clear dropdown selections when exiting
+    setIsDropdownOpen(false);
   };
 
   // Get sorted lab suggestions with closest match first
@@ -242,6 +246,55 @@ const Outpatient = () => {
       addToBill(item);
     });
     setSelectedLabItems([]);
+  };
+
+  // Handle dropdown item selection
+  const handleDropdownSelect = (item: MedicalItem) => {
+    if (!dropdownSelectedItems.find(selected => selected.id === item.id)) {
+      setDropdownSelectedItems(prev => [...prev, item]);
+    }
+    // Keep dropdown open for multiple selections
+  };
+
+  // Remove item from dropdown selection
+  const removeDropdownItem = (itemId: number) => {
+    setDropdownSelectedItems(prev => prev.filter(item => item.id !== itemId));
+  };
+
+  // Add all dropdown selected items to bill
+  const addDropdownSelectedItemsToBill = () => {
+    dropdownSelectedItems.forEach(item => {
+      addToBill(item);
+    });
+    setDropdownSelectedItems([]);
+    setIsDropdownOpen(false);
+  };
+
+  // Get dropdown options sorted by relevance
+  const getDropdownOptions = () => {
+    if (!categorySearchQuery) return categoryItems;
+    
+    const query = categorySearchQuery.toLowerCase();
+    const filtered = categoryItems.filter(item => 
+      item.name.toLowerCase().includes(query)
+    );
+    
+    // Sort by relevance: exact matches first, then starts with, then contains
+    return filtered.sort((a, b) => {
+      const aName = a.name.toLowerCase();
+      const bName = b.name.toLowerCase();
+      
+      // Exact match gets highest priority
+      if (aName === query) return -1;
+      if (bName === query) return 1;
+      
+      // Starts with query gets second priority
+      if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
+      if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
+      
+      // Both start with or both contain - sort alphabetically
+      return aName.localeCompare(bName);
+    });
   };
 
   return (
@@ -433,15 +486,93 @@ const Outpatient = () => {
                         value={categorySearchQuery}
                         onChange={(e) => setCategorySearchQuery(e.target.value)}
                         onKeyDown={handleLabSearchKeyDown}
+                        onFocus={() => setIsDropdownOpen(true)}
                         className="w-full"
                       />
                       {selectedLabItems.length > 0 && (
                         <Button onClick={addSelectedLabItemsToBill} variant="medical" className="w-full">
-                          Add {selectedLabItems.length} Lab Test{selectedLabItems.length !== 1 ? 's' : ''} to Bill
+                          Add {selectedLabItems.length} Lab Test{selectedLabItems.length !== 1 ? 's' : ''} to Bill (Tags)
                         </Button>
                       )}
+                      
+                      {/* Dropdown selected items as tags */}
+                      {dropdownSelectedItems.length > 0 && (
+                        <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md">
+                          {dropdownSelectedItems.map((item) => (
+                            <div key={item.id} className="inline-flex items-center bg-blue-500/10 text-blue-600 px-2 py-1 rounded text-xs">
+                              <span className="mr-1">{item.name}</span>
+                              <button
+                                onClick={() => removeDropdownItem(item.id)}
+                                className="hover:bg-blue-500/20 rounded-full p-0.5"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* Dropdown */}
+                      {isDropdownOpen && (
+                        <div className="relative">
+                          <div className="absolute top-0 left-0 right-0 z-10 bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                            {getDropdownOptions().map((item: MedicalItem) => (
+                              <div
+                                key={item.id}
+                                className={`p-2 text-sm cursor-pointer hover:bg-muted/50 border-b border-border/50 last:border-b-0 ${
+                                  dropdownSelectedItems.find(selected => selected.id === item.id) 
+                                    ? 'bg-blue-500/10 text-blue-600' 
+                                    : 'text-foreground'
+                                }`}
+                                onClick={() => handleDropdownSelect(item)}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="font-medium">{item.name}</span>
+                                  <span className="text-medical-primary font-semibold">
+                                    {format(item.price)}
+                                  </span>
+                                </div>
+                                {item.description && (
+                                  <div className="text-xs text-muted-foreground mt-1">{item.description}</div>
+                                )}
+                              </div>
+                            ))}
+                            {getDropdownOptions().length === 0 && (
+                              <div className="p-4 text-center text-muted-foreground text-sm">
+                                No items found
+                              </div>
+                            )}
+                          </div>
+                          <Button 
+                            onClick={() => setIsDropdownOpen(false)} 
+                            variant="medical-outline" 
+                            size="sm"
+                            className="mt-2"
+                          >
+                            Close Dropdown
+                          </Button>
+                        </div>
+                      )}
+                      
+                      {!isDropdownOpen && dropdownSelectedItems.length === 0 && (
+                        <Button 
+                          onClick={() => setIsDropdownOpen(true)} 
+                          variant="medical-outline" 
+                          className="w-full"
+                        >
+                          Open Dropdown to Select Multiple Items
+                        </Button>
+                      )}
+                      
+                      {dropdownSelectedItems.length > 0 && (
+                        <Button onClick={addDropdownSelectedItemsToBill} variant="medical" className="w-full">
+                          Add {dropdownSelectedItems.length} Selected Item{dropdownSelectedItems.length !== 1 ? 's' : ''} to Bill (Dropdown)
+                        </Button>
+                      )}
+                      
                       <div className="text-sm text-muted-foreground">
-                        Type test names and use comma to add as tags, then click "Add to Bill"
+                        • Type and press comma for quick tag selection<br/>
+                        • Use dropdown for multiple precise selections
                       </div>
                     </div>
                   ) : ['Medicine', 'X-Ray'].includes(selectedCategory) ? (
