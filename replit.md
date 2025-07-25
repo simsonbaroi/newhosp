@@ -11,6 +11,8 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: Updated navigation header with emerald gradient and enhanced styling
 - **2025-01-25**: Modified category buttons to use emerald color scheme
 - **2025-01-25**: Changed currency from Philippine Peso (₱) to Bangladeshi Taka (৳)
+- **2025-01-25**: Fixed Outpatient button order: Registration, Dr. Fee, Medic Fee, Off-Charge, Laboratory, X-Ray, Medicine, Procedure, O.R, Physical therapy, Others
+- **2025-01-25**: Implemented professional-level dark theme with glass morphism effects, backdrop blur, and neo-morphic shadows
 
 ## Project Architecture
 - **Frontend**: React with TypeScript, using shadcn/ui components
@@ -31,10 +33,11 @@ A professional medical billing calculator application for hospitals and clinics.
 - Technical Level: Non-technical user interface
 - Focus: Professional medical billing accuracy
 - Currency: Bangladeshi Taka (৳)
-- Color Scheme: Comprehensive dark green/emerald theme throughout entire system
+- Color Scheme: Professional-level dark theme with glass morphism effects
+- UI Design: Glass cards with backdrop blur, neo-morphic shadows, and emerald accents
 - UI Layout: Grid button layout for categories (6 buttons per row preferred)
 - Button Style: Left-aligned text, rounded corners, enhanced shadows and hover effects
-- Navigation: Dark green gradient header with emerald accents
+- Navigation: Dark gradient header with glass effects and emerald accents
 - Total Section: Dark green color scheme with emerald gradient background
 
 ## Migration Tasks - COMPLETED

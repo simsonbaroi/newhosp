@@ -18,7 +18,7 @@ const Layout = ({ children }: LayoutProps) => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header style={{background: 'linear-gradient(135deg, #065f46, #047857)'}} className="text-white shadow-2xl sticky top-0 z-50 border-b-4 border-emerald-600">
+      <header className="glass-card text-white sticky top-0 z-50 border-b border-emerald-500/20" style={{background: 'linear-gradient(135deg, rgba(6, 95, 70, 0.9), rgba(4, 120, 87, 0.9))'}}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
@@ -39,8 +39,8 @@ const Layout = ({ children }: LayoutProps) => {
                     href={item.href}
                     className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
                       isActive
-                        ? 'bg-emerald-700/60 text-white font-medium shadow-lg ring-2 ring-emerald-400/30'
-                        : 'text-emerald-100 hover:text-white hover:bg-emerald-700/40 hover:shadow-md'
+                        ? 'glass-button bg-emerald-600/40 text-white font-medium shadow-lg ring-1 ring-emerald-400/40 neo-shadow'
+                        : 'text-emerald-100/90 hover:text-white hover:bg-emerald-700/30 hover:backdrop-blur-sm hover:shadow-md'
                     }`}
                   >
                     <Icon className="h-4 w-4 mr-2" />

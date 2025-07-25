@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, Minus, Calculator, Bed } from 'lucide-react';
+import { Search, Plus, Minus, Calculator, Bed, Grid3X3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -153,9 +153,9 @@ const Inpatient = () => {
           {/* Left Column - Categories and Items */}
           <div className="space-y-6">
             {/* Days Admitted */}
-            <Card className="shadow-card border-l-4 border-l-accent">
-              <CardHeader>
-                <CardTitle className="text-accent">Admission Details</CardTitle>
+            <Card className="glass-card neo-shadow border-l-4 border-l-emerald-500/60">
+              <CardHeader className="bg-emerald-900/20 rounded-t-lg border-b border-emerald-500/20">
+                <CardTitle className="text-emerald-300">Admission Details</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center space-x-4">
@@ -175,12 +175,11 @@ const Inpatient = () => {
             </Card>
 
             {/* Search */}
-            <Card className="shadow-card">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Search className="h-5 w-5 mr-2 text-primary" />
-                  Search Items
-                </CardTitle>
+            <Card className="glass-card neo-shadow">
+              <CardHeader className="bg-emerald-900/20 rounded-t-lg border-b border-emerald-500/20 pb-3">
+                <div className="flex items-center">
+                  <Search className="h-5 w-5 text-emerald-400" />
+                </div>
               </CardHeader>
               <CardContent>
                 <Input
@@ -200,9 +199,11 @@ const Inpatient = () => {
             </Card>
 
             {/* Category Selection */}
-            <Card className="shadow-card">
-              <CardHeader>
-                <CardTitle>Select Category</CardTitle>
+            <Card className="glass-card neo-shadow">
+              <CardHeader className="bg-emerald-900/20 rounded-t-lg border-b border-emerald-500/20 pb-3">
+                <div className="flex items-center">
+                  <Grid3X3 className="h-5 w-5 text-emerald-400" />
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-6 gap-3">
@@ -226,11 +227,11 @@ const Inpatient = () => {
 
             {/* Category Items */}
             {selectedCategory && (
-              <Card className="shadow-card">
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
+              <Card className="glass-card neo-shadow">
+                <CardHeader className="bg-emerald-900/20 rounded-t-lg border-b border-emerald-500/20">
+                  <CardTitle className="flex items-center justify-between text-emerald-100">
                     <span>{selectedCategory} Items</span>
-                    <span className="text-sm font-normal text-muted-foreground">
+                    <span className="text-sm font-normal text-emerald-300/80">
                       {filteredCategoryItems.length} item{filteredCategoryItems.length !== 1 ? 's' : ''}
                     </span>
                   </CardTitle>
@@ -304,12 +305,12 @@ const Inpatient = () => {
 
           {/* Right Column - Live Bill */}
           <div className="lg:sticky lg:top-6 lg:h-fit">
-            <Card className="shadow-card">
-              <CardHeader className="bg-medical-gradient text-white rounded-t-lg">
-                <CardTitle className="flex items-center">
-                  <Calculator className="h-5 w-5 mr-2" />
+            <Card className="glass-card neo-shadow">
+              <CardHeader className="glass-card border-b border-emerald-500/20" style={{background: 'linear-gradient(135deg, rgba(6, 95, 70, 0.6), rgba(4, 120, 87, 0.6))'}}>
+                <CardTitle className="flex items-center text-white">
+                  <Calculator className="h-5 w-5 mr-2 text-emerald-200" />
                   Live Bill Calculation
-                  <span className="ml-auto text-sm bg-white/20 px-2 py-1 rounded">
+                  <span className="ml-auto text-sm bg-emerald-800/40 px-2 py-1 rounded backdrop-blur-sm">
                     {daysAdmitted} day{daysAdmitted !== 1 ? 's' : ''}
                   </span>
                 </CardTitle>
@@ -318,7 +319,7 @@ const Inpatient = () => {
                 {billItems.length > 0 ? (
                   <div className="space-y-4">
                     {billItems.map(item => (
-                      <div key={item.id} className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                      <div key={item.id} className="flex justify-between items-center p-4 glass-button rounded-xl neo-shadow-inset">
                         <div className="flex-1">
                           <h4 className="font-medium text-foreground">{item.name}</h4>
                           <p className="text-sm text-muted-foreground">{item.category}</p>
