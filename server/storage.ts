@@ -204,17 +204,73 @@ export class MemoryStorage implements IStorage {
       
       // Inpatient items
       { category: 'Blood', name: 'Blood Transfusion', price: '2500.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Blood', name: 'Blood Cross-matching', price: '800.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Blood', name: 'Platelet Transfusion', price: '3500.00', currency: 'BDT', isOutpatient: false },
+      
       { category: 'Laboratory', name: 'Complete Blood Count', price: '300.00', currency: 'BDT', isOutpatient: false },
       { category: 'Laboratory', name: 'Blood Chemistry Panel', price: '500.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Laboratory', name: 'Liver Function Test', price: '600.00', currency: 'BDT', isOutpatient: false },
+      
+      { category: 'Limb and Brace', name: 'Post-surgical Brace', price: '2000.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Limb and Brace', name: 'Hospital Walker', price: '1800.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Limb and Brace', name: 'Compression Stockings', price: '900.00', currency: 'BDT', isOutpatient: false },
+      
       { category: 'Food', name: 'Regular Diet (per day)', price: '350.00', currency: 'BDT', isOutpatient: false },
       { category: 'Food', name: 'Special Diet (per day)', price: '450.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Registration Fees', name: 'Admission Fee', price: '500.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Medicine', name: 'IV Antibiotics', price: '800.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Medicine', name: 'Pain Medication', price: '200.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Food', name: 'Liquid Diet (per day)', price: '300.00', currency: 'BDT', isOutpatient: false },
+      
       { category: 'Halo, O2, NO2, etc.', name: 'Oxygen Therapy (per day)', price: '400.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Halo, O2, NO2, etc.', name: 'Nitrous Oxide', price: '600.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Halo, O2, NO2, etc.', name: 'Halo Traction', price: '1200.00', currency: 'BDT', isOutpatient: false },
+      
       { category: 'Surgery, O.R. & Delivery', name: 'Minor Surgery', price: '15000.00', currency: 'BDT', isOutpatient: false },
       { category: 'Surgery, O.R. & Delivery', name: 'Major Surgery', price: '35000.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Surgery, O.R. & Delivery', name: 'Normal Delivery', price: '8000.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Surgery, O.R. & Delivery', name: 'C-Section Delivery', price: '25000.00', currency: 'BDT', isOutpatient: false },
+      
+      { category: 'Registration Fees', name: 'Admission Fee', price: '500.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Registration Fees', name: 'ICU Admission', price: '1000.00', currency: 'BDT', isOutpatient: false },
+      
+      { category: 'Discharge Medicine', name: 'Discharge Medication Package', price: '800.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Discharge Medicine', name: 'Pain Relief Package', price: '400.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Discharge Medicine', name: 'Antibiotic Course', price: '600.00', currency: 'BDT', isOutpatient: false },
+      
+      { category: 'Medicine, ORS & Anesthesia, Ket, Spinal', name: 'General Anesthesia', price: '3000.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Medicine, ORS & Anesthesia, Ket, Spinal', name: 'Spinal Anesthesia', price: '2000.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Medicine, ORS & Anesthesia, Ket, Spinal', name: 'Ketamine', price: '800.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Medicine, ORS & Anesthesia, Ket, Spinal', name: 'ORS Solution', price: '50.00', currency: 'BDT', isOutpatient: false },
+      
+      { category: 'Physical Therapy', name: 'Physical Therapy Session', price: '400.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Physical Therapy', name: 'Rehabilitation Package', price: '1200.00', currency: 'BDT', isOutpatient: false },
+      
+      { category: 'IV.\'s', name: 'IV Fluid (Normal Saline)', price: '200.00', currency: 'BDT', isOutpatient: false },
+      { category: 'IV.\'s', name: 'IV Antibiotics', price: '800.00', currency: 'BDT', isOutpatient: false },
+      { category: 'IV.\'s', name: 'IV Pain Medication', price: '300.00', currency: 'BDT', isOutpatient: false },
+      
+      { category: 'Plaster/Milk', name: 'Plaster Cast Application', price: '1500.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Plaster/Milk', name: 'Cast Removal', price: '500.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Plaster/Milk', name: 'Milk Formula (per day)', price: '150.00', currency: 'BDT', isOutpatient: false },
+      
+      { category: 'Procedures', name: 'Wound Dressing', price: '300.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Procedures', name: 'Catheter Insertion', price: '800.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Procedures', name: 'Suture Removal', price: '200.00', currency: 'BDT', isOutpatient: false },
+      
       { category: 'Seat & Ad. Fee', name: 'Admission Processing (per day)', price: '200.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Seat & Ad. Fee', name: 'Bed Fee (General Ward)', price: '500.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Seat & Ad. Fee', name: 'Bed Fee (Private Room)', price: '1200.00', currency: 'BDT', isOutpatient: false },
+      
+      { category: 'X-Ray', name: 'Chest X-Ray', price: '800.00', currency: 'BDT', isOutpatient: false },
+      { category: 'X-Ray', name: 'Extremity X-Ray', price: '600.00', currency: 'BDT', isOutpatient: false },
+      { category: 'X-Ray', name: 'CT Scan', price: '4000.00', currency: 'BDT', isOutpatient: false },
+      
+      { category: 'Lost Laundry', name: 'Hospital Gown Replacement', price: '300.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Lost Laundry', name: 'Bed Sheet Replacement', price: '200.00', currency: 'BDT', isOutpatient: false },
+      
+      { category: 'Travel', name: 'Ambulance Service (Local)', price: '1500.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Travel', name: 'Ambulance Service (Long Distance)', price: '3000.00', currency: 'BDT', isOutpatient: false },
+      
+      { category: 'Other', name: 'Miscellaneous Charges', price: '500.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Other', name: 'Administrative Fee', price: '300.00', currency: 'BDT', isOutpatient: false },
     ];
 
     for (const item of defaultItems) {
