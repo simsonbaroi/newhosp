@@ -2330,7 +2330,9 @@ const Outpatient = () => {
                           </div>
                         </div>
                       )}
-
+                    </div>
+                  ) : selectedCategory === 'Medicine' ? (
+                    <div className="space-y-4">
                       {/* Medicine Dosage Selection Interface */}
                       {showMedicineDosageSelection && selectedMedicineForDosage && (
                         <div className="mt-6 p-4 border border-medical-primary/20 rounded-lg bg-medical-primary/5">
