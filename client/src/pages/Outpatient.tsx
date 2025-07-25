@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Plus, Minus, Calculator, Grid3X3, ChevronLeft, ChevronRight, X, AlertTriangle } from 'lucide-react';
+import { Search, Plus, Minus, Calculator, Grid3X3, ChevronLeft, ChevronRight, X, AlertTriangle, FileX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -58,6 +58,17 @@ const Outpatient = () => {
   const [highlightedSuggestionIndex, setHighlightedSuggestionIndex] = useState(-1);
   const manualNameInputRef = useRef<HTMLInputElement>(null);
   const manualPriceInputRef = useRef<HTMLInputElement>(null);
+
+  // X-Ray film view selection state
+  const [selectedXRayForViews, setSelectedXRayForViews] = useState<any>(null);
+  const [xRayViews, setXRayViews] = useState({
+    AP: false,
+    LAT: false,
+    OBLIQUE: false,
+    BOTH: false
+  });
+  const [isOffChargePortable, setIsOffChargePortable] = useState(false);
+  const [showXRayViewSelection, setShowXRayViewSelection] = useState(false);
   const { format } = useTakaFormat();
   const queryClient = useQueryClient();
 
@@ -293,6 +304,10 @@ const Outpatient = () => {
     setManualServicePrice(''); // Clear manual service price
     setShowSuggestions(false); // Hide suggestions
     setHighlightedSuggestionIndex(-1); // Reset highlighted suggestion
+    setSelectedXRayForViews(null); // Clear X-Ray view selection
+    setXRayViews({ AP: false, LAT: false, OBLIQUE: false, BOTH: false }); // Reset X-Ray views
+    setIsOffChargePortable(false); // Reset Off-Charge/Portable
+    setShowXRayViewSelection(false); // Hide X-Ray view selection
   };
 
   // Handle dropdown selection
@@ -729,12 +744,11 @@ const Outpatient = () => {
         const suggestions = getXRaySuggestions();
         if (suggestions.length > 0) {
           const topMatch = suggestions[0];
-          // Check if item is already selected in search OR already in the bill
-          const alreadyInSearch = selectedXRayItems.find(item => item.id === topMatch.id);
+          // Check if item is already in the bill
           const alreadyInBill = billItems.find(billItem => billItem.id === topMatch.id);
           
-          if (!alreadyInSearch && !alreadyInBill) {
-            setSelectedXRayItems(prev => [...prev, topMatch]);
+          if (!alreadyInBill) {
+            handleXRayItemSelect(topMatch);
           }
           // If item is already selected or in bill, we ignore the selection
         }
@@ -760,42 +774,10 @@ const Outpatient = () => {
     }, 0);
   };
 
-  // Add all selected X-Ray items to bill
+  // This function is no longer used as X-Ray items go through view selection first
   const addSelectedXRayItemsToBill = () => {
-    const newItems: MedicalItem[] = [];
-    const duplicateItems: MedicalItem[] = [];
-    
-    selectedXRayItems.forEach(item => {
-      const existingItem = billItems.find(billItem => billItem.id === item.id);
-      if (existingItem) {
-        duplicateItems.push(item);
-      } else {
-        newItems.push(item);
-      }
-    });
-    
-    // Add new items immediately
-    if (newItems.length > 0) {
-      const billItemsToAdd = newItems.map(item => ({ 
-        ...item, 
-        billId: `${item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` 
-      }));
-      setBillItems(prevBillItems => [...prevBillItems, ...billItemsToAdd]);
-    }
-    
-    // Handle duplicates - for now, skip them and show a message
-    if (duplicateItems.length > 0) {
-      // Show duplicate dialog for the first duplicate item
-      setDuplicateDialog({ open: true, item: duplicateItems[0] });
-    }
-    
-    setSelectedXRayItems([]);
-    // Refocus search input after adding to bill
-    setTimeout(() => {
-      if (xRaySearchInputRef.current) {
-        xRaySearchInputRef.current.focus();
-      }
-    }, 0);
+    // X-Ray items now use the view selection system
+    // This function is kept for backward compatibility but not used
   };
 
   // Handle X-Ray dropdown selection
@@ -806,8 +788,8 @@ const Outpatient = () => {
     const alreadyInDropdown = xRayDropdownSelectedItems.find(item => item.id === selectedItem?.id);
     const alreadyInBill = billItems.find(billItem => billItem.id === selectedItem?.id);
     
-    if (selectedItem && !alreadyInDropdown && !alreadyInBill) {
-      setXRayDropdownSelectedItems(prev => [...prev, selectedItem]);
+    if (selectedItem && !alreadyInBill) {
+      handleXRayItemSelect(selectedItem);
       // Clear search selections when using dropdown
       setSelectedXRayItems([]);
       setCategorySearchQuery('');
@@ -1328,6 +1310,109 @@ const Outpatient = () => {
     }
   };
 
+  // X-Ray view selection handlers
+  const handleXRayItemSelect = (item: any) => {
+    // Prevent selection if another X-Ray is already selected and views are not complete
+    if (selectedXRayForViews && selectedXRayForViews.id !== item.id && !isViewSelectionComplete()) {
+      alert('Please complete film view selection for the previous X-Ray before selecting another.');
+      return;
+    }
+
+    setSelectedXRayForViews(item);
+    setShowXRayViewSelection(true);
+    // Reset views when selecting new X-Ray
+    setXRayViews({ AP: false, LAT: false, OBLIQUE: false, BOTH: false });
+    setIsOffChargePortable(false);
+  };
+
+  const handleXRayViewChange = (view: string) => {
+    if (view === 'BOTH') {
+      if (xRayViews.BOTH) {
+        // If BOTH is already selected, unselect it
+        setXRayViews(prev => ({ ...prev, BOTH: false }));
+      } else {
+        // If BOTH is being selected, clear AP, LAT, OBLIQUE and select BOTH
+        setXRayViews({ AP: false, LAT: false, OBLIQUE: false, BOTH: true });
+      }
+    } else {
+      // For AP, LAT, OBLIQUE
+      setXRayViews(prev => {
+        const newViews = { ...prev, [view]: !prev[view as keyof typeof prev] };
+        // If any of AP, LAT, OBLIQUE is selected, unselect BOTH
+        if (newViews.AP || newViews.LAT || newViews.OBLIQUE) {
+          newViews.BOTH = false;
+        }
+        return newViews;
+      });
+    }
+  };
+
+  const isViewSelectionComplete = () => {
+    return xRayViews.AP || xRayViews.LAT || xRayViews.OBLIQUE || xRayViews.BOTH;
+  };
+
+  const addXRayToBill = () => {
+    if (!selectedXRayForViews || !isViewSelectionComplete()) return;
+
+    const selectedViews = [];
+    if (xRayViews.AP) selectedViews.push('AP');
+    if (xRayViews.LAT) selectedViews.push('LAT');
+    if (xRayViews.OBLIQUE) selectedViews.push('OBLIQUE');
+    if (xRayViews.BOTH) selectedViews.push('BOTH');
+
+    const viewsText = selectedViews.join(' + ');
+    const basePrice = parseFloat(selectedXRayForViews.price);
+    
+    // Create main X-Ray item with views
+    const xRayItem = {
+      ...selectedXRayForViews,
+      name: `${selectedXRayForViews.name} (${viewsText})`,
+      billId: `xray-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    };
+
+    const itemsToAdd = [xRayItem];
+
+    // Add Off-Charge/Portable fee if selected
+    if (isOffChargePortable) {
+      const offChargeItem = {
+        id: Date.now() + 1,
+        category: 'X-Ray',
+        name: `${selectedXRayForViews.name} - Off-Charge/Portable Fee`,
+        price: Math.round(basePrice * 0.5).toString(), // 50% additional fee
+        currency: 'BDT',
+        description: `Off-Charge/Portable fee for ${selectedXRayForViews.name}`,
+        isOutpatient: true,
+        createdAt: new Date(),
+        billId: `xray-portable-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      };
+      itemsToAdd.push(offChargeItem);
+    }
+
+    // Add items to bill
+    setBillItems(prev => [...prev, ...itemsToAdd]);
+
+    // Reset X-Ray view selection
+    setSelectedXRayForViews(null);
+    setXRayViews({ AP: false, LAT: false, OBLIQUE: false, BOTH: false });
+    setIsOffChargePortable(false);
+    setShowXRayViewSelection(false);
+
+    // Clear search selections
+    setSelectedXRayItems([]);
+    setXRayDropdownSelectedItems([]);
+    setXRayDropdownValue('');
+    setXRayHighlightedDropdownIndex(-1);
+    setIsXRayDropdownOpen(false);
+    setXRayDropdownFilterQuery('');
+  };
+
+  const cancelXRayViewSelection = () => {
+    setSelectedXRayForViews(null);
+    setXRayViews({ AP: false, LAT: false, OBLIQUE: false, BOTH: false });
+    setIsOffChargePortable(false);
+    setShowXRayViewSelection(false);
+  };
+
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8 space-y-8">
@@ -1810,20 +1895,13 @@ const Outpatient = () => {
                                       : 'bg-muted/20 cursor-pointer hover:bg-muted/40'
                               }`}
                                    onClick={() => {
-                                     // Check if item is already selected in search OR already in the bill
-                                     const alreadyInSearch = selectedXRayItems.find(selected => selected.id === item.id);
+                                     // Check if item is already in the bill
                                      const alreadyInBill = billItems.find(billItem => billItem.id === item.id);
                                      
-                                     if (!alreadyInSearch && !alreadyInBill) {
-                                       setSelectedXRayItems(prev => [...prev, item]);
+                                     if (!alreadyInBill) {
+                                       handleXRayItemSelect(item);
                                      }
                                      setCategorySearchQuery('');
-                                     // Refocus search input after clicking suggestion
-                                     setTimeout(() => {
-                                       if (xRaySearchInputRef.current) {
-                                         xRaySearchInputRef.current.focus();
-                                       }
-                                     }, 0);
                                    }}>
                                 <span className="font-medium">{item.name}</span> - {format(item.price)}
                                 {alreadyInBill && (
@@ -1956,6 +2034,121 @@ const Outpatient = () => {
                         • Both methods access same database but work independently<br/>
                         • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
                       </div>
+
+                      {/* X-Ray Film View Selection Interface */}
+                      {showXRayViewSelection && selectedXRayForViews && (
+                        <div className="mt-6 p-4 border border-medical-primary/20 rounded-lg bg-medical-primary/5">
+                          <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-semibold text-medical-primary">
+                              Select Film Views for: {selectedXRayForViews.name}
+                            </h3>
+                            <Button
+                              onClick={cancelXRayViewSelection}
+                              variant="ghost"
+                              size="sm"
+                              className="text-muted-foreground hover:text-foreground"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+
+                          <div className="space-y-4">
+                            {/* Film View Checkboxes */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                              <div className="flex items-center space-x-2">
+                                <input
+                                  type="checkbox"
+                                  id="view-ap"
+                                  checked={xRayViews.AP}
+                                  onChange={() => handleXRayViewChange('AP')}
+                                  className="w-4 h-4 text-medical-primary"
+                                />
+                                <label htmlFor="view-ap" className="text-sm font-medium">
+                                  AP View
+                                </label>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2">
+                                <input
+                                  type="checkbox"
+                                  id="view-lat"
+                                  checked={xRayViews.LAT}
+                                  onChange={() => handleXRayViewChange('LAT')}
+                                  className="w-4 h-4 text-medical-primary"
+                                />
+                                <label htmlFor="view-lat" className="text-sm font-medium">
+                                  LAT View
+                                </label>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2">
+                                <input
+                                  type="checkbox"
+                                  id="view-oblique"
+                                  checked={xRayViews.OBLIQUE}
+                                  onChange={() => handleXRayViewChange('OBLIQUE')}
+                                  className="w-4 h-4 text-medical-primary"
+                                />
+                                <label htmlFor="view-oblique" className="text-sm font-medium">
+                                  OBLIQUE View
+                                </label>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2">
+                                <input
+                                  type="checkbox"
+                                  id="view-both"
+                                  checked={xRayViews.BOTH}
+                                  onChange={() => handleXRayViewChange('BOTH')}
+                                  className="w-4 h-4 text-medical-primary"
+                                />
+                                <label htmlFor="view-both" className="text-sm font-medium">
+                                  BOTH Views
+                                </label>
+                              </div>
+                            </div>
+
+                            {/* Off-Charge/Portable Button */}
+                            <div className="flex items-center justify-between pt-2 border-t border-medical-primary/10">
+                              <div>
+                                <Button
+                                  onClick={() => setIsOffChargePortable(!isOffChargePortable)}
+                                  variant={isOffChargePortable ? "medical" : "outline"}
+                                  size="sm"
+                                  className="flex items-center space-x-2"
+                                >
+                                  <FileX className="h-4 w-4" />
+                                  <span>Off-Charge/Portable</span>
+                                  {isOffChargePortable && <span className="text-xs">(+50% fee)</span>}
+                                </Button>
+                              </div>
+                              
+                              <div className="text-right">
+                                <div className="text-sm text-muted-foreground mb-1">
+                                  Total Price: {format(parseFloat(selectedXRayForViews.price) * (isOffChargePortable ? 1.5 : 1))}
+                                </div>
+                                <Button
+                                  onClick={addXRayToBill}
+                                  disabled={!isViewSelectionComplete()}
+                                  variant="medical"
+                                  className="flex items-center space-x-2"
+                                >
+                                  <Plus className="h-4 w-4" />
+                                  <span>Add X-Ray to Bill</span>
+                                </Button>
+                              </div>
+                            </div>
+
+                            <div className="text-xs text-muted-foreground">
+                              • Select at least one film view to proceed<br/>
+                              • AP, LAT, and OBLIQUE can be combined<br/>
+                              • BOTH selection will clear individual view selections<br/>
+                              • Off-Charge/Portable adds 50% additional fee<br/>
+                              • Complete selection before choosing another X-Ray
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ) : selectedCategory === 'Medicine' ? (
                     <div className="space-y-4">
