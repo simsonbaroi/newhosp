@@ -553,11 +553,46 @@ const Outpatient = () => {
                       
 
                       
+                      {/* Dropdown with same style as suggestions */}
+                      {!categorySearchQuery && (
+                        <div className="space-y-2">
+                          <Button 
+                            onClick={() => setIsDropdownOpen(!isDropdownOpen)} 
+                            variant="medical-outline" 
+                            className="w-full"
+                          >
+                            {isDropdownOpen ? 'Hide All Tests' : 'Show All Available Tests'}
+                          </Button>
+                          
+                          {isDropdownOpen && (
+                            <div className="space-y-1 max-h-60 overflow-y-auto border border-border rounded-md p-2 bg-muted/10" ref={dropdownRef}>
+                              <div className="text-sm font-medium text-muted-foreground mb-2">
+                                All laboratory tests (click to select):
+                              </div>
+                              {categoryItems.map((item: MedicalItem) => (
+                                <div key={item.id} className={`text-xs p-2 rounded cursor-pointer hover:bg-muted/40 ${
+                                  dropdownSelectedItems.find(selected => selected.id === item.id) ? 'bg-blue-500/10 text-blue-600' : 'bg-muted/20'
+                                }`}
+                                     onClick={() => handleDropdownSelect(item)}>
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-medium">{item.name}</span>
+                                    <span className="text-medical-primary font-semibold">
+                                      {format(item.price)}
+                                    </span>
+                                  </div>
+                                  {dropdownSelectedItems.find(selected => selected.id === item.id) && (
+                                    <span className="ml-2 text-blue-600 text-xs">✓ Selected</span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
 
-                      
                       <div className="text-sm text-muted-foreground">
                         • Type and press comma for quick tag selection<br/>
-                        • Use dropdown for multiple precise selections
+                        • Click items in search results or dropdown for multi-selection
                       </div>
                     </div>
                   ) : ['Medicine', 'X-Ray'].includes(selectedCategory) ? (
