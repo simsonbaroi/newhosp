@@ -27,6 +27,24 @@
   transform: translateY(-2px);
 }
 
+/* Responsive Navigation Styles */
+@media (max-width: 640px) {
+  .nav-button-enhanced {
+    font-size: 0.75rem;
+    padding: 0.625rem 0.75rem;
+  }
+  
+  .nav-button-enhanced:hover {
+    transform: translateY(-0.5px);
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.25);
+  }
+  
+  .nav-button-active {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+  }
+}
+
 @layer base {
   :root {
     /* Dark Green Medical Theme - Professional Hospital Colors */

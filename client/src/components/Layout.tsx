@@ -19,16 +19,16 @@ const Layout = ({ children }: LayoutProps) => {
   return (
     <div className="min-h-screen bg-background">
       <header className="header-enhanced text-white sticky top-0 z-50 border-b border-medical-primary/20 shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center h-20 relative">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+          <div className="flex items-center justify-center h-16 sm:h-20 relative">
             {/* Logo and Title - Centered */}
             <div className="flex items-center justify-center flex-1">
-              <Calculator className="h-10 w-10 text-white mr-4" />
+              <Calculator className="h-8 w-8 sm:h-10 sm:w-10 text-white mr-2 sm:mr-4" />
               <div className="text-center">
-                <h1 className="text-2xl font-bold text-white leading-tight">
+                <h1 className="text-lg sm:text-2xl font-bold text-white leading-tight">
                   Hospital Bill Calculator
                 </h1>
-                <p className="text-xs text-white/80 mt-1">
+                <p className="text-xs text-white/80 mt-1 hidden sm:block">
                   Professional Medical Billing System
                 </p>
               </div>
@@ -37,26 +37,28 @@ const Layout = ({ children }: LayoutProps) => {
           
           {/* Navigation Bar - Separate Row */}
           <div className="border-t border-white/10">
-            <nav className="flex justify-center space-x-2 py-3">
-              {navigation.map((item) => {
-                const isActive = location === item.href;
-                const Icon = item.icon;
-                
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={`nav-button-enhanced flex items-center px-6 py-2.5 rounded-lg text-sm font-medium min-w-[120px] justify-center ${
-                      isActive
-                        ? 'nav-button-active bg-white/25 text-white font-semibold border border-white/30'
-                        : 'text-white/90 hover:text-white hover:bg-white/15'
-                    }`}
-                  >
-                    <Icon className="h-5 w-5 mr-2" />
-                    {item.name}
-                  </Link>
-                );
-              })}
+            <nav className="flex justify-center py-3 px-2 overflow-x-auto">
+              <div className="flex space-x-1 sm:space-x-2 min-w-max">
+                {navigation.map((item) => {
+                  const isActive = location === item.href;
+                  const Icon = item.icon;
+                  
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className={`nav-button-enhanced flex items-center px-3 sm:px-6 py-2.5 rounded-lg text-xs sm:text-sm font-medium min-w-[80px] sm:min-w-[120px] justify-center flex-shrink-0 ${
+                        isActive
+                          ? 'nav-button-active bg-white/25 text-white font-semibold border border-white/30'
+                          : 'text-white/90 hover:text-white hover:bg-white/15'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+                      <span className="whitespace-nowrap">{item.name}</span>
+                    </Link>
+                  );
+                })}
+              </div>
             </nav>
           </div>
         </div>
