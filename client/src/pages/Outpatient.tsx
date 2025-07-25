@@ -11,7 +11,7 @@ import { useTakaFormat } from '../hooks/useCurrencyFormat';
 import type { MedicalItem } from '../../../shared/schema';
 
 interface BillItem extends MedicalItem {
-  quantity: number;
+  billId: string; // Unique identifier for each bill entry
 }
 
 const Outpatient = () => {
@@ -124,14 +124,14 @@ const Outpatient = () => {
     }
   }, [billItems]);
 
-  const addToBill = (item: MedicalItem, quantity: number = 1) => {
+  const addToBill = (item: MedicalItem) => {
     const existingItem = billItems.find(billItem => billItem.id === item.id);
     
     if (existingItem) {
       // Show duplicate confirmation dialog
       setDuplicateDialog({ open: true, item });
     } else {
-      setBillItems([...billItems, { ...item, quantity }]);
+      setBillItems([...billItems, { ...item, billId: `${item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` }]);
     }
   };
 
@@ -143,7 +143,7 @@ const Outpatient = () => {
     switch (action) {
       case 'add':
         // Add the item again (allow duplicate)
-        setBillItems([...billItems, { ...item, quantity: 1 }]);
+        setBillItems([...billItems, { ...item, billId: `${item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` }]);
         break;
       case 'skip':
         // Do nothing, just close dialog
@@ -159,14 +159,14 @@ const Outpatient = () => {
 
   // Removed updateQuantity function - no longer needed without quantity controls
 
-  const removeFromBill = (id: number) => {
-    setBillItems(billItems.filter(item => item.id !== id));
+  const removeFromBill = (billId: string) => {
+    setBillItems(billItems.filter(item => item.billId !== billId));
   };
 
   const calculateTotal = () => {
     return billItems.reduce((total, item) => {
       const price = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
-      return total + (price * item.quantity);
+      return total + price; // No quantity multiplier since we removed quantity controls
     }, 0);
   };
 
@@ -188,7 +188,7 @@ const Outpatient = () => {
   const calculateCategoryTotal = (items: BillItem[]) => {
     return items.reduce((total, item) => {
       const price = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
-      return total + (price * item.quantity);
+      return total + price; // No quantity multiplier since we removed quantity controls
     }, 0);
   };
 
@@ -374,9 +374,33 @@ const Outpatient = () => {
 
   // Add all selected lab items to bill
   const addSelectedLabItemsToBill = () => {
+    const newItems: MedicalItem[] = [];
+    const duplicateItems: MedicalItem[] = [];
+    
     selectedLabItems.forEach(item => {
-      addToBill(item);
+      const existingItem = billItems.find(billItem => billItem.id === item.id);
+      if (existingItem) {
+        duplicateItems.push(item);
+      } else {
+        newItems.push(item);
+      }
     });
+    
+    // Add new items immediately
+    if (newItems.length > 0) {
+      const billItemsToAdd = newItems.map(item => ({ 
+        ...item, 
+        billId: `${item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` 
+      }));
+      setBillItems(prevBillItems => [...prevBillItems, ...billItemsToAdd]);
+    }
+    
+    // Handle duplicates - for now, skip them and show a message
+    if (duplicateItems.length > 0) {
+      // Show duplicate dialog for the first duplicate item
+      setDuplicateDialog({ open: true, item: duplicateItems[0] });
+    }
+    
     setSelectedLabItems([]);
     // Refocus search input after adding to bill
     setTimeout(() => {
@@ -393,9 +417,33 @@ const Outpatient = () => {
 
   // Add all dropdown selected items to bill
   const addDropdownSelectedItemsToBill = () => {
+    const newItems: MedicalItem[] = [];
+    const duplicateItems: MedicalItem[] = [];
+    
     dropdownSelectedItems.forEach(item => {
-      addToBill(item);
+      const existingItem = billItems.find(billItem => billItem.id === item.id);
+      if (existingItem) {
+        duplicateItems.push(item);
+      } else {
+        newItems.push(item);
+      }
     });
+    
+    // Add new items immediately
+    if (newItems.length > 0) {
+      const billItemsToAdd = newItems.map(item => ({ 
+        ...item, 
+        billId: `${item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` 
+      }));
+      setBillItems(prevBillItems => [...prevBillItems, ...billItemsToAdd]);
+    }
+    
+    // Handle duplicates - for now, skip them and show a message
+    if (duplicateItems.length > 0) {
+      // Show duplicate dialog for the first duplicate item
+      setDuplicateDialog({ open: true, item: duplicateItems[0] });
+    }
+    
     setDropdownSelectedItems([]);
     // Close dropdown when adding to bill
     setIsDropdownOpen(false);
@@ -1007,7 +1055,7 @@ const Outpatient = () => {
                             {items.map((item) => {
                               const price = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
                               return (
-                                <div key={item.id} className="flex items-center justify-between p-2 bg-muted/20 rounded-md">
+                                <div key={item.billId} className="flex items-center justify-between p-2 bg-muted/20 rounded-md">
                                   <div className="flex-1">
                                     <div className="font-medium text-sm text-foreground">{item.name}</div>
                                   </div>
@@ -1018,7 +1066,7 @@ const Outpatient = () => {
                                     <Button
                                       size="sm"
                                       variant="medical-ghost"
-                                      onClick={() => removeFromBill(item.id)}
+                                      onClick={() => removeFromBill(item.billId)}
                                       className="h-6 w-6 p-0"
                                     >
                                       <X className="h-3 w-3" />
