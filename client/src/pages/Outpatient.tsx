@@ -2442,15 +2442,15 @@ const Outpatient = () => {
                               </div>
                             ))}
                           </div>
-                          <div className="mt-4 pt-3 border-t border-medical-primary/20">
+                          <div className="mt-4 pt-3 border-t border-medical-primary/20 flex justify-end">
                             <Button
                               onClick={addAllTempMedicinesToBill}
                               variant="medical"
                               size="sm"
-                              className="w-full text-sm font-medium shadow-md hover:shadow-lg transition-shadow"
+                              className="text-xs font-medium shadow-md hover:shadow-lg transition-shadow px-3 py-1"
                             >
-                              <Plus className="h-4 w-4 mr-2" />
-                              Add to Bill ({tempSelectedMedicines.length})
+                              <Plus className="h-3 w-3 mr-1" />
+                              Add to Bill
                             </Button>
                           </div>
                         </div>
