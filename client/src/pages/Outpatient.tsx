@@ -2935,11 +2935,36 @@ const Outpatient = () => {
                         (categoriesWithoutSearch.includes(selectedCategory) ? categoryItems : filteredCategoryItems).map((item: MedicalItem) => {
                           // Make Registration Fees, Dr. Fees, and Medic Fee more compact
                           const isCompactCategory = ['Registration Fees', 'Dr. Fees', 'Medic Fee'].includes(selectedCategory);
+                          const isInBill = billItems.some(billItem => billItem.id === item.id);
+                          
+                          const handleItemClick = () => {
+                            if (isInBill) {
+                              // Remove from bill
+                              const billItem = billItems.find(billItem => billItem.id === item.id);
+                              if (billItem) {
+                                removeFromBill(billItem.billId);
+                              }
+                            } else {
+                              // Add to bill
+                              addToBill(item);
+                            }
+                          };
                           
                           return (
-                            <div key={item.id} className={`flex items-center justify-between ${isCompactCategory ? 'p-2' : 'p-3'} bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors`}>
+                            <div 
+                              key={item.id} 
+                              onClick={handleItemClick}
+                              className={`flex items-center justify-between ${isCompactCategory ? 'p-2' : 'p-3'} ${
+                                isInBill 
+                                  ? 'bg-medical-primary/20 border border-medical-primary/30' 
+                                  : 'bg-muted/30'
+                              } rounded-lg hover:bg-muted/50 transition-colors cursor-pointer`}
+                            >
                               <div className="flex-1">
-                                <div className={`font-medium text-foreground ${isCompactCategory ? 'text-sm' : ''}`}>{item.name}</div>
+                                <div className={`font-medium ${isInBill ? 'text-medical-primary' : 'text-foreground'} ${isCompactCategory ? 'text-sm' : ''}`}>
+                                  {item.name}
+                                  {isInBill && <span className="ml-2 text-xs">✓ Added</span>}
+                                </div>
                                 {item.description && (
                                   <div className={`text-muted-foreground ${isCompactCategory ? 'text-xs' : 'text-sm'}`}>{item.description}</div>
                                 )}
@@ -2948,14 +2973,21 @@ const Outpatient = () => {
                                 <span className={`font-semibold text-medical-primary ${isCompactCategory ? 'text-sm' : ''}`}>
                                   {format(item.price)}
                                 </span>
-                                <Button 
-                                  size={isCompactCategory ? "sm" : "sm"} 
-                                  onClick={() => addToBill(item)} 
-                                  variant="medical"
-                                  className={isCompactCategory ? "h-7 w-7 p-0" : ""}
+                                <div 
+                                  className={`flex items-center justify-center ${
+                                    isCompactCategory ? "h-7 w-7" : "h-8 w-8"
+                                  } rounded ${
+                                    isInBill 
+                                      ? 'bg-red-500/20 text-red-600 hover:bg-red-500/30' 
+                                      : 'bg-medical-primary/20 text-medical-primary hover:bg-medical-primary/30'
+                                  } transition-colors`}
                                 >
-                                  <Plus className={isCompactCategory ? "h-3 w-3" : "h-4 w-4"} />
-                                </Button>
+                                  {isInBill ? (
+                                    <X className={isCompactCategory ? "h-3 w-3" : "h-4 w-4"} />
+                                  ) : (
+                                    <Plus className={isCompactCategory ? "h-3 w-3" : "h-4 w-4"} />
+                                  )}
+                                </div>
                               </div>
                             </div>
                           );
