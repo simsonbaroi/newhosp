@@ -1364,8 +1364,8 @@ const Outpatient = () => {
   };
 
   const isOffChargePortableAllowed = () => {
-    // Off-Charge/Portable button only available when exactly 1 film is selected
-    return getSelectedViewCount() === 1;
+    // Off-Charge/Portable button only available when at least 1 film is selected
+    return getSelectedViewCount() >= 1;
   };
 
   const addXRayToBill = () => {
@@ -2160,7 +2160,7 @@ const Outpatient = () => {
                                   </Button>
                                 ) : (
                                   <div className="text-xs text-muted-foreground">
-                                    Off-Charge/Portable only available with 1 film selected
+                                    Off-Charge/Portable only available with at least 1 film selected
                                   </div>
                                 )}
                               </div>
@@ -2187,7 +2187,7 @@ const Outpatient = () => {
                               • BOTH selection will clear individual view selections<br/>
                               • Same X-Ray with different films can be added separately<br/>
                               • Same X-Ray with same film combination cannot be added twice<br/>
-                              • Off-Charge/Portable only available when exactly 1 film is selected<br/>
+                              • Off-Charge/Portable only available when at least 1 film is selected<br/>
                               • Off-Charge/Portable adds 50% additional fee
                             </div>
                           </div>

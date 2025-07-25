@@ -107,7 +107,7 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: IMPLEMENTED: X-Ray category now has same advanced features: tag selection, keyboard navigation, price counter, duplicate prevention
 - **2025-01-25**: ENHANCED: X-Ray section includes search suggestions, dropdown filtering, and independent search/dropdown modes
 - **2025-01-25**: FIXED: X-Ray duplicate prevention - same X-ray with same film cannot be added, different films allowed
-- **2025-01-25**: ENHANCED: Off-Charge/Portable button only appears when exactly 1 film is selected
+- **2025-01-25**: ENHANCED: Off-Charge/Portable button only appears when at least 1 film is selected
 - **2025-01-25**: IMPROVED: X-Ray view selection automatically resets Off-Charge/Portable when film count changes
 - **2025-01-25**: UPDATED: X-Ray help text to reflect new duplicate prevention and Off-Charge/Portable rules
 
