@@ -646,8 +646,8 @@ const Outpatient = () => {
                             ))}
                           </div>
 
-                          {/* Right-aligned price counter */}
-                          <div className="flex justify-end">
+                          {/* Price counter on left, Add to Bill button on right */}
+                          <div className="flex justify-between items-center">
                             <div className="flex items-center gap-4 p-2 bg-medical-primary/5 rounded-md border border-medical-primary/20">
                               <span className="text-sm font-medium text-medical-primary">
                                 Total Price: {format(selectedLabItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
@@ -656,10 +656,6 @@ const Outpatient = () => {
                                 {selectedLabItems.length} item{selectedLabItems.length !== 1 ? 's' : ''}
                               </span>
                             </div>
-                          </div>
-                          
-                          {/* Add to Bill button - right aligned */}
-                          <div className="flex justify-end">
                             <Button onClick={addSelectedLabItemsToBill} variant="medical">
                               Add {selectedLabItems.length} Test{selectedLabItems.length !== 1 ? 's' : ''} to Bill
                             </Button>

@@ -81,6 +81,7 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: Clean layout: price counter directly above "Add to Bill" button for better visual flow
 - **2025-01-25**: Selected item tags moved above search input as requested for better visibility
 - **2025-01-25**: Complete layout: selected items → price counter → add button → search box → suggestions
+- **2025-01-25**: FINAL LAYOUT: Total price on left, "Add to Bill" button on right in single row for search
 
 ## Project Architecture
 - **Frontend**: React with TypeScript, using shadcn/ui components and wouter for routing
