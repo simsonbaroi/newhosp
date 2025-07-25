@@ -2932,24 +2932,34 @@ const Outpatient = () => {
                     /* Regular item list for other categories */
                     <div className="space-y-2 max-h-96 overflow-y-auto">
                       {(categoriesWithoutSearch.includes(selectedCategory) ? categoryItems : filteredCategoryItems).length > 0 ? (
-                        (categoriesWithoutSearch.includes(selectedCategory) ? categoryItems : filteredCategoryItems).map((item: MedicalItem) => (
-                          <div key={item.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
-                            <div className="flex-1">
-                              <div className="font-medium text-foreground">{item.name}</div>
-                              {item.description && (
-                                <div className="text-sm text-muted-foreground">{item.description}</div>
-                              )}
+                        (categoriesWithoutSearch.includes(selectedCategory) ? categoryItems : filteredCategoryItems).map((item: MedicalItem) => {
+                          // Make Registration Fees, Dr. Fees, and Medic Fee more compact
+                          const isCompactCategory = ['Registration Fees', 'Dr. Fees', 'Medic Fee'].includes(selectedCategory);
+                          
+                          return (
+                            <div key={item.id} className={`flex items-center justify-between ${isCompactCategory ? 'p-2' : 'p-3'} bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors`}>
+                              <div className="flex-1">
+                                <div className={`font-medium text-foreground ${isCompactCategory ? 'text-sm' : ''}`}>{item.name}</div>
+                                {item.description && (
+                                  <div className={`text-muted-foreground ${isCompactCategory ? 'text-xs' : 'text-sm'}`}>{item.description}</div>
+                                )}
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <span className={`font-semibold text-medical-primary ${isCompactCategory ? 'text-sm' : ''}`}>
+                                  {format(item.price)}
+                                </span>
+                                <Button 
+                                  size={isCompactCategory ? "sm" : "sm"} 
+                                  onClick={() => addToBill(item)} 
+                                  variant="medical"
+                                  className={isCompactCategory ? "h-7 w-7 p-0" : ""}
+                                >
+                                  <Plus className={isCompactCategory ? "h-3 w-3" : "h-4 w-4"} />
+                                </Button>
+                              </div>
                             </div>
-                            <div className="flex items-center space-x-2">
-                              <span className="font-semibold text-medical-primary">
-                                {format(item.price)}
-                              </span>
-                              <Button size="sm" onClick={() => addToBill(item)} variant="medical">
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))
+                          );
+                        })
                       ) : (
                         <div className="text-center text-muted-foreground py-8">
                           {!categoriesWithoutSearch.includes(selectedCategory) && categorySearchQuery ? 'No items found matching your search.' : 'No items in this category.'}

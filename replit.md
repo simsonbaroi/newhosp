@@ -152,6 +152,7 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: ENHANCED: Edit functionality pre-fills dosage calculator with existing values for seamless editing
 - **2025-01-25**: OPTIMIZED: Performance improvements with memoized calculations and reduced re-renders
 - **2025-01-25**: STANDARDIZED: Made Physical Therapy and Limb and Brace "Add to Bill" buttons smaller and right-aligned for design consistency
+- **2025-01-25**: COMPACTED: Made Registration Fees, Dr. Fees, and Medic Fee items smaller and more compact to reduce space usage
 - **2025-01-25**: ENHANCED: Updated Outpatient medicine selection interface with professional medical theme styling
 - **2025-01-25**: IMPROVED: Selected medicines display now uses glass morphism cards with medical gradient backgrounds
 - **2025-01-25**: STYLED: Medicine dosage calculator interface with consistent medical color palette and glass effects
