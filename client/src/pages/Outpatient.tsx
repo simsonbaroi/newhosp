@@ -2333,6 +2333,22 @@ const Outpatient = () => {
                     </div>
                   ) : selectedCategory === 'Medicine' ? (
                     <div className="space-y-4">
+                      {/* Medicine Dropdown */}
+                      <div className="space-y-2">
+                        <Select onValueChange={handleMedicineDropdownSelect}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a medicine for dosage calculation" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {categoryItems.map((item) => (
+                              <SelectItem key={item.id} value={`${item.id}`}>
+                                {item.name} - {format(parseFloat(item.price))}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
                       {/* Medicine Dosage Selection Interface */}
                       {showMedicineDosageSelection && selectedMedicineForDosage && (
                         <div className="mt-6 p-4 border border-medical-primary/20 rounded-lg bg-medical-primary/5">
@@ -2447,9 +2463,7 @@ const Outpatient = () => {
                           </div>
                         </div>
                       )}
-                    </div>
-                  ) : selectedCategory === 'Medicine' ? (
-                    <div className="space-y-4">
+
                       {/* Medicine tag-based search input */}
                       <div className="space-y-2">
                         <Input
