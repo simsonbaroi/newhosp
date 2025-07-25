@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Plus, Minus, Calculator, Grid3X3, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Search, Plus, Minus, Calculator, Grid3X3, ChevronLeft, ChevronRight, X, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
 import { useTakaFormat } from '../hooks/useCurrencyFormat';
@@ -26,6 +27,7 @@ const Outpatient = () => {
   const [highlightedDropdownIndex, setHighlightedDropdownIndex] = useState<number>(-1);
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
   const [dropdownFilterQuery, setDropdownFilterQuery] = useState<string>('');
+  const [duplicateDialog, setDuplicateDialog] = useState<{open: boolean, item: MedicalItem | null}>({open: false, item: null});
   const dropdownRef = useRef<HTMLDivElement>(null);
   const dropdownButtonRef = useRef<HTMLButtonElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -125,10 +127,34 @@ const Outpatient = () => {
   const addToBill = (item: MedicalItem, quantity: number = 1) => {
     const existingItem = billItems.find(billItem => billItem.id === item.id);
     
-    if (!existingItem) {
+    if (existingItem) {
+      // Show duplicate confirmation dialog
+      setDuplicateDialog({ open: true, item });
+    } else {
       setBillItems([...billItems, { ...item, quantity }]);
     }
-    // If item already exists, don't add duplicate
+  };
+
+  // Handle duplicate dialog actions
+  const handleDuplicateAction = (action: 'add' | 'skip' | 'remove') => {
+    const item = duplicateDialog.item;
+    if (!item) return;
+
+    switch (action) {
+      case 'add':
+        // Add the item again (allow duplicate)
+        setBillItems([...billItems, { ...item, quantity: 1 }]);
+        break;
+      case 'skip':
+        // Do nothing, just close dialog
+        break;
+      case 'remove':
+        // Remove existing item from bill
+        setBillItems(billItems.filter(billItem => billItem.id !== item.id));
+        break;
+    }
+    
+    setDuplicateDialog({ open: false, item: null });
   };
 
   // Removed updateQuantity function - no longer needed without quantity controls
@@ -349,10 +375,7 @@ const Outpatient = () => {
   // Add all selected lab items to bill
   const addSelectedLabItemsToBill = () => {
     selectedLabItems.forEach(item => {
-      const existingItem = billItems.find(billItem => billItem.id === item.id);
-      if (!existingItem) {
-        setBillItems(prev => [...prev, { ...item, quantity: 1 }]);
-      }
+      addToBill(item);
     });
     setSelectedLabItems([]);
     // Refocus search input after adding to bill
@@ -371,10 +394,7 @@ const Outpatient = () => {
   // Add all dropdown selected items to bill
   const addDropdownSelectedItemsToBill = () => {
     dropdownSelectedItems.forEach(item => {
-      const existingItem = billItems.find(billItem => billItem.id === item.id);
-      if (!existingItem) {
-        setBillItems(prev => [...prev, { ...item, quantity: 1 }]);
-      }
+      addToBill(item);
     });
     setDropdownSelectedItems([]);
     // Close dropdown when adding to bill
@@ -1031,6 +1051,53 @@ const Outpatient = () => {
           </div>
         </div>
       </div>
+
+      {/* Duplicate Item Confirmation Dialog */}
+      <Dialog open={duplicateDialog.open} onOpenChange={(open) => setDuplicateDialog({ open, item: duplicateDialog.item })}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center text-amber-600">
+              <AlertTriangle className="mr-2 h-5 w-5" />
+              Item Already in Bill
+            </DialogTitle>
+            <DialogDescription>
+              The item "{duplicateDialog.item?.name}" is already in your bill. What would you like to do?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <div className="p-3 bg-muted/30 rounded-lg">
+              <div className="font-medium text-sm">{duplicateDialog.item?.name}</div>
+              <div className="text-xs text-muted-foreground">{duplicateDialog.item?.category}</div>
+              <div className="text-sm font-semibold text-medical-primary">
+                {duplicateDialog.item && format(duplicateDialog.item.price)}
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
+            <Button 
+              variant="default" 
+              onClick={() => handleDuplicateAction('add')}
+              className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
+            >
+              Add Again
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => handleDuplicateAction('skip')}
+              className="w-full sm:w-auto"
+            >
+              Skip
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={() => handleDuplicateAction('remove')}
+              className="w-full sm:w-auto"
+            >
+              Remove Existing
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };
