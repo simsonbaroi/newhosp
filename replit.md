@@ -23,6 +23,9 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: Enhanced Outpatient categories with Registration Fees, Dr. Fees, and Medic Fee
 - **2025-01-25**: Removed search functionality for Registration Fees, Dr. Fees, and Medic Fee categories
 - **2025-01-25**: Added more detailed medical items for the three primary fee categories
+- **2025-01-25**: Implemented carousel navigation for Outpatient categories with left/right arrows
+- **2025-01-25**: Added focused view mode where selected category appears centered with navigation controls
+- **2025-01-25**: Added X button to exit carousel mode and return to grid view
 
 ## Project Architecture
 - **Frontend**: React with TypeScript, using shadcn/ui components and wouter for routing
