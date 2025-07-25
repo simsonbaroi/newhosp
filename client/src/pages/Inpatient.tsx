@@ -205,18 +205,22 @@ const Inpatient = () => {
                 <CardTitle>Select Category</CardTitle>
               </CardHeader>
               <CardContent>
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a category" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover border border-border">
-                    {categories.map(category => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-6 gap-2">
+                  {categories.map(category => (
+                    <Button
+                      key={category}
+                      variant={selectedCategory === category ? "default" : "outline"}
+                      onClick={() => setSelectedCategory(category)}
+                      className={`text-xs p-2 h-auto text-center transition-all duration-200 ${
+                        selectedCategory === category 
+                          ? 'bg-primary text-primary-foreground shadow-md' 
+                          : 'hover:bg-muted hover:shadow-sm'
+                      }`}
+                    >
+                      {category}
+                    </Button>
+                  ))}
+                </div>
               </CardContent>
             </Card>
 
