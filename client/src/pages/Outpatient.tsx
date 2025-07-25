@@ -49,6 +49,15 @@ const Outpatient = () => {
   const medicineDropdownRef = useRef<HTMLDivElement>(null);
   const medicineDropdownButtonRef = useRef<HTMLButtonElement>(null);
   const medicineSearchInputRef = useRef<HTMLInputElement>(null);
+
+  // Manual entry state for Physical Therapy and Limb and Brace
+  const [manualServiceName, setManualServiceName] = useState('');
+  const [manualServicePrice, setManualServicePrice] = useState('');
+  const [previousEntries, setPreviousEntries] = useState<{name: string, price: string}[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [highlightedSuggestionIndex, setHighlightedSuggestionIndex] = useState(-1);
+  const manualNameInputRef = useRef<HTMLInputElement>(null);
+  const manualPriceInputRef = useRef<HTMLInputElement>(null);
   const { format } = useTakaFormat();
   const queryClient = useQueryClient();
 
@@ -117,22 +126,29 @@ const Outpatient = () => {
     },
   });
 
-  // Load saved bill on mount
+  // Load saved bill and previous entries on mount
   useEffect(() => {
-    const loadSavedBill = async () => {
+    const loadSavedData = async () => {
       try {
-        const response = await fetch('/api/bills?sessionId=browser-session&type=outpatient');
-        if (response.ok) {
-          const bill = await response.json();
+        // Load saved bill
+        const billResponse = await fetch('/api/bills?sessionId=browser-session&type=outpatient');
+        if (billResponse.ok) {
+          const bill = await billResponse.json();
           if (bill && bill.billData) {
             setBillItems(JSON.parse(bill.billData));
           }
         }
+
+        // Load previous manual entries from localStorage
+        const savedEntries = localStorage.getItem('outpatient-manual-entries');
+        if (savedEntries) {
+          setPreviousEntries(JSON.parse(savedEntries));
+        }
       } catch (error) {
-        console.error('Failed to load saved bill:', error);
+        console.error('Failed to load saved data:', error);
       }
     };
-    loadSavedBill();
+    loadSavedData();
   }, []);
 
   // Auto-save bill when items change
@@ -273,6 +289,10 @@ const Outpatient = () => {
     setMedicineHighlightedDropdownIndex(-1); // Reset Medicine highlighted index
     setIsMedicineDropdownOpen(false); // Close Medicine dropdown
     setMedicineDropdownFilterQuery(''); // Reset Medicine filter query
+    setManualServiceName(''); // Clear manual service name
+    setManualServicePrice(''); // Clear manual service price
+    setShowSuggestions(false); // Hide suggestions
+    setHighlightedSuggestionIndex(-1); // Reset highlighted suggestion
   };
 
   // Handle dropdown selection
@@ -563,6 +583,13 @@ const Outpatient = () => {
   useEffect(() => {
     if (selectedCategory === 'Medicine' && isCarouselMode && medicineSearchInputRef.current) {
       medicineSearchInputRef.current.focus();
+    }
+  }, [selectedCategory, isCarouselMode]);
+
+  // Auto-focus manual entry input when Physical Therapy or Limb and Brace category is selected
+  useEffect(() => {
+    if (['Physical Therapy', 'Limb and Brace'].includes(selectedCategory) && isCarouselMode && manualNameInputRef.current) {
+      manualNameInputRef.current.focus();
     }
   }, [selectedCategory, isCarouselMode]);
 
@@ -1149,6 +1176,156 @@ const Outpatient = () => {
         
         return aName.localeCompare(bName);
       });
+  };
+
+  // Manual entry handlers for Physical Therapy and Limb and Brace
+  const getSuggestions = () => {
+    if (!manualServiceName.trim()) return [];
+    
+    const query = manualServiceName.toLowerCase();
+    return previousEntries
+      .filter(entry => entry.name.toLowerCase().includes(query))
+      .sort((a, b) => {
+        const aName = a.name.toLowerCase();
+        const bName = b.name.toLowerCase();
+        
+        // Exact match gets highest priority
+        if (aName === query) return -1;
+        if (bName === query) return 1;
+        
+        // Starts with gets second priority
+        if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
+        if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
+        
+        // Contains gets third priority
+        return aName.localeCompare(bName);
+      })
+      .slice(0, 5); // Limit to 5 suggestions
+  };
+
+  const handleManualServiceNameChange = (value: string) => {
+    setManualServiceName(value);
+    setShowSuggestions(value.trim().length > 0);
+    setHighlightedSuggestionIndex(-1);
+  };
+
+  const handleManualServiceNameKeyDown = (e: React.KeyboardEvent) => {
+    const suggestions = getSuggestions();
+    
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedSuggestionIndex(prev => 
+        prev < suggestions.length - 1 ? prev + 1 : 0
+      );
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedSuggestionIndex(prev => 
+        prev > 0 ? prev - 1 : suggestions.length - 1
+      );
+    } else if (e.key === 'Enter' && highlightedSuggestionIndex >= 0) {
+      e.preventDefault();
+      const selectedSuggestion = suggestions[highlightedSuggestionIndex];
+      setManualServiceName(selectedSuggestion.name);
+      setManualServicePrice(selectedSuggestion.price);
+      setShowSuggestions(false);
+      setHighlightedSuggestionIndex(-1);
+      // Focus price input for quick editing
+      setTimeout(() => {
+        if (manualPriceInputRef.current) {
+          manualPriceInputRef.current.focus();
+          manualPriceInputRef.current.select();
+        }
+      }, 0);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setShowSuggestions(false);
+      setHighlightedSuggestionIndex(-1);
+    } else if (e.key === 'Tab' && highlightedSuggestionIndex >= 0) {
+      e.preventDefault();
+      const selectedSuggestion = suggestions[highlightedSuggestionIndex];
+      setManualServiceName(selectedSuggestion.name);
+      setManualServicePrice(selectedSuggestion.price);
+      setShowSuggestions(false);
+      setHighlightedSuggestionIndex(-1);
+    }
+  };
+
+  const selectSuggestion = (suggestion: {name: string, price: string}) => {
+    setManualServiceName(suggestion.name);
+    setManualServicePrice(suggestion.price);
+    setShowSuggestions(false);
+    setHighlightedSuggestionIndex(-1);
+    // Focus price input for quick editing
+    setTimeout(() => {
+      if (manualPriceInputRef.current) {
+        manualPriceInputRef.current.focus();
+        manualPriceInputRef.current.select();
+      }
+    }, 0);
+  };
+
+  const addManualService = () => {
+    if (!manualServiceName.trim() || !manualServicePrice.trim()) return;
+    
+    const priceValue = parseFloat(manualServicePrice);
+    if (isNaN(priceValue) || priceValue <= 0) {
+      alert('Please enter a valid price');
+      return;
+    }
+
+    // Create a new manual service item
+    const manualItem = {
+      id: Date.now(), // Use timestamp as unique ID
+      category: selectedCategory,
+      name: manualServiceName.trim(),
+      price: manualServicePrice,
+      currency: 'BDT',
+      description: `Manual entry for ${selectedCategory}`,
+      isOutpatient: true,
+      createdAt: new Date(),
+      billId: `manual-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    };
+
+    // Add to bill
+    setBillItems(prev => [...prev, manualItem]);
+
+    // Save to previous entries (avoid duplicates)
+    const newEntry = { name: manualServiceName.trim(), price: manualServicePrice };
+    setPreviousEntries(prev => {
+      const exists = prev.some(entry => 
+        entry.name.toLowerCase() === newEntry.name.toLowerCase() && 
+        entry.price === newEntry.price
+      );
+      
+      if (exists) return prev;
+      
+      const updatedEntries = [newEntry, ...prev].slice(0, 50); // Keep only latest 50 entries
+      
+      // Save to localStorage
+      localStorage.setItem('outpatient-manual-entries', JSON.stringify(updatedEntries));
+      
+      return updatedEntries;
+    });
+
+    // Clear form
+    setManualServiceName('');
+    setManualServicePrice('');
+    setShowSuggestions(false);
+    setHighlightedSuggestionIndex(-1);
+
+    // Focus back to name input for next entry
+    setTimeout(() => {
+      if (manualNameInputRef.current) {
+        manualNameInputRef.current.focus();
+      }
+    }, 0);
+  };
+
+  const handleManualPriceKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addManualService();
+    }
   };
 
   return (
@@ -1943,6 +2120,80 @@ const Outpatient = () => {
                         • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
                       </div>
                     </div>
+                  ) : ['Physical Therapy', 'Limb and Brace'].includes(selectedCategory) ? (
+                    /* Manual entry interface for Physical Therapy and Limb and Brace */
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-foreground">Service Name</label>
+                        <div className="relative">
+                          <Input
+                            ref={manualNameInputRef}
+                            placeholder={`Enter ${selectedCategory} service name...`}
+                            value={manualServiceName}
+                            onChange={(e) => handleManualServiceNameChange(e.target.value)}
+                            onKeyDown={handleManualServiceNameKeyDown}
+                            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                            onFocus={() => setShowSuggestions(manualServiceName.trim().length > 0)}
+                            className="w-full"
+                          />
+                          
+                          {/* Suggestions dropdown */}
+                          {showSuggestions && getSuggestions().length > 0 && (
+                            <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-40 overflow-y-auto">
+                              {getSuggestions().map((suggestion, index) => (
+                                <div
+                                  key={index}
+                                  className={`px-3 py-2 cursor-pointer hover:bg-muted/40 ${
+                                    index === highlightedSuggestionIndex ? 'bg-medical-primary/10 border-l-2 border-medical-primary' : ''
+                                  }`}
+                                  onClick={() => selectSuggestion(suggestion)}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-sm font-medium">{suggestion.name}</span>
+                                    <span className="text-xs text-medical-primary font-semibold">
+                                      {format(parseFloat(suggestion.price))}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-foreground">Price (BDT)</label>
+                        <Input
+                          ref={manualPriceInputRef}
+                          type="number"
+                          placeholder="Enter price..."
+                          value={manualServicePrice}
+                          onChange={(e) => setManualServicePrice(e.target.value)}
+                          onKeyDown={handleManualPriceKeyDown}
+                          className="w-full"
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+
+                      <Button
+                        onClick={addManualService}
+                        disabled={!manualServiceName.trim() || !manualServicePrice.trim()}
+                        className="w-full"
+                        variant="medical"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add {selectedCategory} Service to Bill
+                      </Button>
+
+                      <div className="text-sm text-muted-foreground">
+                        • Type service name to see smart suggestions from previous entries<br/>
+                        • Use arrow keys to navigate suggestions, Enter/Tab to select<br/>
+                        • Enter price and press Enter to add to bill<br/>
+                        • All entries are remembered for future suggestions<br/>
+                        • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
+                      </div>
+                    </div>
                   ) : (
                     /* Regular search input for other categories */
                     !categoriesWithoutSearch.includes(selectedCategory) && (
@@ -1985,6 +2236,16 @@ const Outpatient = () => {
                       </div>
                       <div className="text-xs mt-2 opacity-75">
                         {selectedMedicineItems.length > 0 ? `${selectedMedicineItems.length} medicine${selectedMedicineItems.length !== 1 ? 's' : ''} selected` : 'No medicines selected yet'}
+                      </div>
+                    </div>
+                  ) : ['Physical Therapy', 'Limb and Brace'].includes(selectedCategory) ? (
+                    <div className="text-center text-muted-foreground py-4">
+                      <div className="text-lg font-medium mb-2">{selectedCategory} Manual Entry</div>
+                      <div className="text-sm">
+                        Enter service name and price manually with smart suggestions from previous entries
+                      </div>
+                      <div className="text-xs mt-2 opacity-75">
+                        {previousEntries.length > 0 ? `${previousEntries.length} previous entries available for suggestions` : 'Start typing to build your suggestion database'}
                       </div>
                     </div>
                   ) : (
