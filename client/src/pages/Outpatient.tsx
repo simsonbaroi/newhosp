@@ -2421,6 +2421,54 @@ const Outpatient = () => {
                     </div>
                   ) : selectedCategory === 'Medicine' ? (
                     <div className="space-y-4">
+                      {/* Compact Selected Medicines Display - positioned below Medicine label */}
+                      {tempSelectedMedicines.length > 0 && (
+                        <div className="p-3 border border-emerald-500/40 rounded-lg bg-emerald-50/80">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-semibold text-emerald-800">
+                              Selected: {tempSelectedMedicines.length} medicines
+                            </span>
+                            <span className="text-sm font-bold text-emerald-700">
+                              {format(tempSelectedMedicines.reduce((sum, medicine) => sum + parseFloat(medicine.price), 0))}
+                            </span>
+                          </div>
+                          <div className="space-y-1">
+                            {tempSelectedMedicines.map((medicine, index) => (
+                              <div key={medicine.tempId} className="flex items-center justify-between text-xs bg-white/60 p-2 rounded">
+                                <div className="flex items-center space-x-2 flex-1 min-w-0">
+                                  <span className="bg-emerald-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                                    {index + 1}
+                                  </span>
+                                  <span className="font-medium text-gray-900 truncate">
+                                    {medicine.name.length > 25 ? `${medicine.name.substring(0, 25)}...` : medicine.name}
+                                  </span>
+                                </div>
+                                <div className="flex items-center space-x-2 flex-shrink-0">
+                                  <span className="text-emerald-700 font-semibold">
+                                    {format(parseFloat(medicine.price))}
+                                  </span>
+                                  <button
+                                    onClick={() => removeTempMedicine(medicine.tempId)}
+                                    className="text-red-500 hover:text-red-700 p-0.5"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="mt-2 pt-2 border-t border-emerald-200">
+                            <Button
+                              onClick={addAllTempMedicinesToBill}
+                              size="sm"
+                              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs"
+                            >
+                              Add to Bill ({tempSelectedMedicines.length})
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Medicine Dosage Selection Interface */}
                       {showMedicineDosageSelection && selectedMedicineForDosage && (
                         <div className="mt-6 p-4 border border-medical-primary/20 rounded-lg bg-medical-primary/5">
@@ -2537,72 +2585,7 @@ const Outpatient = () => {
                         </div>
                       )}
 
-                      {/* Temporary Selected Medicines Display */}
-                      {tempSelectedMedicines.length > 0 && (
-                        <div className="mb-6 p-5 border-2 border-emerald-600/60 rounded-xl bg-white shadow-lg">
-                          <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-xl font-bold text-emerald-800 flex items-center space-x-2">
-                              <Calculator className="h-6 w-6" />
-                              <span>Selected Medicines ({tempSelectedMedicines.length})</span>
-                            </h3>
-                            <div className="text-sm text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full font-medium">
-                              Ready to add to bill
-                            </div>
-                          </div>
-                          
-                          <div className="space-y-3 mb-5">
-                            {tempSelectedMedicines.map((medicine, index) => (
-                              <div key={medicine.tempId} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                                <div className="flex items-center space-x-4">
-                                  <div className="w-8 h-8 bg-emerald-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
-                                    {index + 1}
-                                  </div>
-                                  <div className="flex-1">
-                                    <div className="text-sm font-semibold text-gray-900 mb-1">{medicine.name}</div>
-                                    <div className="text-xs flex items-center space-x-2">
-                                      <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs font-medium">
-                                        {medicine.dosageInfo?.dosePrescribed} {medicine.dosageInfo?.medType}
-                                      </span>
-                                      <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs font-medium">
-                                        {medicine.dosageInfo?.doseFrequency}
-                                      </span>
-                                      <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded text-xs font-medium">
-                                        {medicine.dosageInfo?.totalDays} days
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                  <span className="text-lg font-bold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-lg">
-                                    {format(parseFloat(medicine.price))}
-                                  </span>
-                                  <Button
-                                    onClick={() => removeTempMedicine(medicine.tempId)}
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full"
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
 
-                          <div className="flex items-center justify-between pt-4 border-t-2 border-emerald-200">
-                            <div className="text-xl font-bold text-emerald-800 bg-emerald-100 px-4 py-2 rounded-lg">
-                              Total: {format(tempSelectedMedicines.reduce((sum, medicine) => sum + parseFloat(medicine.price), 0))}
-                            </div>
-                            <Button
-                              onClick={addAllTempMedicinesToBill}
-                              className="flex items-center space-x-2 px-6 py-3 text-base font-semibold bg-emerald-600 hover:bg-emerald-700 text-white"
-                            >
-                              <Plus className="h-5 w-5" />
-                              <span>Add to Bill ({tempSelectedMedicines.length} medicines)</span>
-                            </Button>
-                          </div>
-                        </div>
-                      )}
 
                       {/* Medicine tag-based search input */}
                       <div className="space-y-2">

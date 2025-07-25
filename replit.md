@@ -132,6 +132,9 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: ENHANCED: Selected medicines display with numbered items, colorful dosage badges, and improved contrast
 - **2025-01-25**: REPOSITIONED: Selected medicines section now appears above dosage calculator for better workflow
 - **2025-01-25**: FIXED: Color contrast and readability issues with white background and dark emerald text for selected medicines
+- **2025-01-25**: COMPACTED: Selected medicines interface - moved to compact layout below Medicine label in carousel
+- **2025-01-25**: OPTIMIZED: Medicine selection display uses minimal space with truncated names and small components
+- **2025-01-25**: POSITIONED: Compact selected medicines now appears directly under Medicine category for space efficiency
 
 ## Project Architecture
 - **Frontend**: React with TypeScript, using shadcn/ui components and wouter for routing
