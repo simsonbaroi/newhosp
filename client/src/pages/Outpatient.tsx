@@ -4,67 +4,96 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
-import { 
-  getCategories, 
-  getItemsByCategory, 
-  searchItems, 
-  saveBill, 
-  loadBill,
-  DatabaseItem,
-  BillItem 
-} from '@/lib/database';
+import { useTakaFormat } from '../hooks/useCurrencyFormat';
+import type { MedicalItem } from '../../../shared/schema';
+
+interface BillItem extends MedicalItem {
+  quantity: number;
+}
 
 const Outpatient = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
   const [categorySearchQuery, setCategorySearchQuery] = useState('');
-  const [categoryItems, setCategoryItems] = useState<DatabaseItem[]>([]);
-  const [filteredCategoryItems, setFilteredCategoryItems] = useState<DatabaseItem[]>([]);
   const [billItems, setBillItems] = useState<BillItem[]>([]);
-  const [globalSearchResults, setGlobalSearchResults] = useState<DatabaseItem[]>([]);
-  
-  const categories = getCategories(true);
+  const { format } = useTakaFormat();
+  const queryClient = useQueryClient();
 
+  // Get outpatient medical items
+  const { data: medicalItems = [] } = useQuery<MedicalItem[]>({
+    queryKey: ['/api/medical-items', { isOutpatient: true }],
+  });
+
+  // Get unique categories
+  const categories = Array.from(new Set(medicalItems.map((item: MedicalItem) => item.category))).sort();
+
+  // Filter items by category
+  const categoryItems = selectedCategory 
+    ? medicalItems.filter((item: MedicalItem) => item.category === selectedCategory)
+    : [];
+
+  // Filter category items by search
+  const filteredCategoryItems = categorySearchQuery
+    ? categoryItems.filter((item: MedicalItem) => 
+        item.name.toLowerCase().includes(categorySearchQuery.toLowerCase())
+      )
+    : categoryItems;
+
+  // Global search results
+  const globalSearchResults = globalSearchQuery
+    ? medicalItems.filter((item: MedicalItem) =>
+        item.name.toLowerCase().includes(globalSearchQuery.toLowerCase()) ||
+        item.category.toLowerCase().includes(globalSearchQuery.toLowerCase())
+      )
+    : [];
+
+  // Save bill mutation
+  const saveBillMutation = useMutation({
+    mutationFn: async (billData: any) => {
+      const response = await fetch('/api/bills', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'outpatient',
+          sessionId: 'browser-session',
+          billData: JSON.stringify(billData),
+          total: calculateTotal().toString(),
+          currency: 'BDT',
+        }),
+      });
+      if (!response.ok) throw new Error('Failed to save bill');
+      return response.json();
+    },
+  });
+
+  // Load saved bill on mount
   useEffect(() => {
-    const savedBill = loadBill('outpatient');
-    setBillItems(savedBill);
+    const loadSavedBill = async () => {
+      try {
+        const response = await fetch('/api/bills/browser-session/outpatient');
+        if (response.ok) {
+          const bill = await response.json();
+          if (bill && bill.billData) {
+            setBillItems(JSON.parse(bill.billData));
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load saved bill:', error);
+      }
+    };
+    loadSavedBill();
   }, []);
 
+  // Auto-save bill when items change
   useEffect(() => {
-    if (selectedCategory) {
-      const items = getItemsByCategory(selectedCategory, true);
-      setCategoryItems(items);
-      setCategorySearchQuery(''); // Reset category search when changing category
+    if (billItems.length > 0) {
+      saveBillMutation.mutate(billItems);
     }
-  }, [selectedCategory]);
-
-  // Filter category items based on category search
-  useEffect(() => {
-    if (categorySearchQuery && categoryItems.length > 0) {
-      const filtered = categoryItems.filter(item =>
-        item.name.toLowerCase().includes(categorySearchQuery.toLowerCase())
-      );
-      setFilteredCategoryItems(filtered);
-    } else {
-      setFilteredCategoryItems(categoryItems);
-    }
-  }, [categorySearchQuery, categoryItems]);
-
-  useEffect(() => {
-    if (globalSearchQuery) {
-      const results = searchItems(globalSearchQuery, true);
-      setGlobalSearchResults(results);
-    } else {
-      setGlobalSearchResults([]);
-    }
-  }, [globalSearchQuery]);
-
-  useEffect(() => {
-    saveBill('outpatient', billItems);
   }, [billItems]);
 
-  const addToBill = (item: DatabaseItem, quantity: number = 1) => {
+  const addToBill = (item: MedicalItem, quantity: number = 1) => {
     const existingItem = billItems.find(billItem => billItem.id === item.id);
     
     if (existingItem) {
@@ -74,67 +103,64 @@ const Outpatient = () => {
           : billItem
       ));
     } else {
-      const newBillItem: BillItem = {
-        id: item.id,
-        name: item.name,
-        price: item.price,
-        quantity,
-        category: item.category
-      };
-      setBillItems([...billItems, newBillItem]);
+      setBillItems([...billItems, { ...item, quantity }]);
     }
   };
 
-  const updateQuantity = (id: string, newQuantity: number) => {
-    if (newQuantity <= 0) {
+  const updateQuantity = (id: number, quantity: number) => {
+    if (quantity <= 0) {
       setBillItems(billItems.filter(item => item.id !== id));
     } else {
       setBillItems(billItems.map(item =>
-        item.id === id ? { ...item, quantity: newQuantity } : item
+        item.id === id ? { ...item, quantity } : item
       ));
     }
   };
 
-  const total = billItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const removeFromBill = (id: number) => {
+    setBillItems(billItems.filter(item => item.id !== id));
+  };
 
-  const ItemCard = ({ item }: { item: DatabaseItem }) => (
-    <Card className="mb-2 hover:shadow-hover transition-shadow cursor-pointer">
-      <CardContent className="p-4">
-        <div className="flex justify-between items-center">
-          <div className="flex-1">
-            <h4 className="font-medium text-foreground">{item.name}</h4>
-            <p className="text-sm text-muted-foreground">{item.category}</p>
-            <p className="text-lg font-bold text-primary">₱{item.price.toLocaleString()}</p>
-          </div>
-          <Button 
-            onClick={() => addToBill(item)}
-            size="sm"
-            className="bg-primary hover:bg-primary-hover"
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
+  const calculateTotal = () => {
+    return billItems.reduce((total, item) => {
+      const price = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
+      return total + (price * item.quantity);
+    }, 0);
+  };
+
+  const clearBill = () => {
+    setBillItems([]);
+  };
+
+  // Category button order as specified
+  const categoryOrder = [
+    'Registration Fees', 'Dr. Fees', 'Medic Fee', 'Off-Charge', 
+    'Laboratory', 'X-Ray', 'Medicine', 'Procedure', 'O.R', 
+    'Physical Therapy', 'Others'
+  ];
+
+  const orderedCategories = categoryOrder.filter(cat => categories.includes(cat))
+    .concat(categories.filter(cat => !categoryOrder.includes(cat)));
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto p-6">
-        <div className="mb-6">
+      <div className="container mx-auto px-4 py-8 space-y-8">
+        {/* Header */}
+        <div className="text-center">
           <h1 className="text-3xl font-bold text-foreground mb-2">Outpatient Calculator</h1>
-          <p className="text-muted-foreground">Select items and calculate outpatient bills with search and dropdown functionality</p>
+          <p className="text-muted-foreground">Calculate bills for outpatient services and procedures</p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="grid lg:grid-cols-3 gap-8">
           {/* Left Column - Categories and Items */}
-          <div className="space-y-6">
-            {/* Search */}
-            <Card className="glass-card neo-shadow">
-              <CardHeader className="bg-emerald-900/20 rounded-t-lg border-b border-emerald-500/20 pb-3">
-                <div className="flex items-center">
-                  <Search className="h-5 w-5 text-emerald-400" />
-                </div>
+          <div className="lg:col-span-2 space-y-6">
+            {/* Global Search */}
+            <Card className="glass-card">
+              <CardHeader>
+                <CardTitle className="flex items-center text-medical-primary">
+                  <Search className="mr-2 h-5 w-5" />
+                  Search All Items
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <Input
@@ -144,106 +170,95 @@ const Outpatient = () => {
                   className="w-full"
                 />
                 {globalSearchResults.length > 0 && (
-                  <div className="mt-4 max-h-60 overflow-y-auto">
-                    {globalSearchResults.map(item => (
-                      <ItemCard key={item.id} item={item} />
+                  <div className="mt-4 space-y-2 max-h-60 overflow-y-auto">
+                    {globalSearchResults.map((item: MedicalItem) => (
+                      <div key={item.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                        <div>
+                          <div className="font-medium text-foreground">{item.name}</div>
+                          <div className="text-sm text-muted-foreground">{item.category}</div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className="font-semibold text-medical-primary">
+                            {format(item.price)}
+                          </span>
+                          <Button size="sm" onClick={() => addToBill(item)} variant="medical">
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}
               </CardContent>
             </Card>
 
-            {/* Category Selection */}
-            <Card className="glass-card neo-shadow">
-              <CardHeader className="bg-emerald-900/20 rounded-t-lg border-b border-emerald-500/20 pb-3">
-                <div className="flex items-center">
-                  <Grid3X3 className="h-5 w-5 text-emerald-400" />
-                </div>
+            {/* Category Buttons */}
+            <Card className="glass-card">
+              <CardHeader>
+                <CardTitle className="flex items-center text-medical-primary">
+                  <Grid3X3 className="mr-2 h-5 w-5" />
+                  Categories
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-6 gap-3">
-                  {categories.map(category => (
-                    <Button
-                      key={category}
-                      variant={selectedCategory === category ? "default" : "outline"}
-                      onClick={() => setSelectedCategory(category)}
-                      className={`text-xs px-4 py-3 h-auto text-left justify-start rounded-xl border-2 font-medium transition-all duration-300 transform ${
-                        selectedCategory === category 
-                          ? 'bg-gradient-to-r from-emerald-700 to-emerald-800 text-white shadow-xl border-emerald-600 scale-105 ring-2 ring-emerald-400/30' 
-                          : 'bg-white dark:bg-card hover:bg-gradient-to-r hover:from-emerald-50 hover:to-emerald-100 hover:text-emerald-800 hover:shadow-lg hover:border-emerald-400/60 hover:scale-102 border-emerald-200/40 shadow-sm active:scale-95'
-                      }`}
-                    >
-                      <span className="truncate">{category}</span>
-                    </Button>
-                  ))}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {orderedCategories.map((category) => {
+                    const itemCount = medicalItems.filter((item: MedicalItem) => item.category === category).length;
+                    return (
+                      <Button
+                        key={category}
+                        variant={selectedCategory === category ? "medical" : "medical-outline"}
+                        className="h-auto p-3 text-left justify-start"
+                        onClick={() => setSelectedCategory(category)}
+                      >
+                        <div>
+                          <div className="font-semibold text-sm truncate">{category}</div>
+                          <div className="text-xs opacity-75">{itemCount} items</div>
+                        </div>
+                      </Button>
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
 
             {/* Category Items */}
             {selectedCategory && (
-              <Card className="glass-card neo-shadow">
-                <CardHeader className="bg-emerald-900/20 rounded-t-lg border-b border-emerald-500/20">
-                  <CardTitle className="flex items-center justify-between text-emerald-100">
-                    <span>{selectedCategory} Items</span>
-                    <span className="text-sm font-normal text-emerald-300/80">
-                      {filteredCategoryItems.length} item{filteredCategoryItems.length !== 1 ? 's' : ''}
-                    </span>
-                  </CardTitle>
+              <Card className="glass-card">
+                <CardHeader>
+                  <CardTitle className="text-medical-primary">{selectedCategory}</CardTitle>
+                  <Input
+                    placeholder={`Search in ${selectedCategory}...`}
+                    value={categorySearchQuery}
+                    onChange={(e) => setCategorySearchQuery(e.target.value)}
+                    className="w-full"
+                  />
                 </CardHeader>
                 <CardContent>
-                  {/* Category Search and Dropdown */}
-                  <div className="space-y-4 mb-4">
-                    {/* Search within category */}
-                    <div>
-                      <Input
-                        placeholder={`Search in ${selectedCategory}...`}
-                        value={categorySearchQuery}
-                        onChange={(e) => setCategorySearchQuery(e.target.value)}
-                        className="w-full"
-                      />
-                    </div>
-                    
-                    {/* Dropdown for category items */}
-                    <div>
-                      <Select 
-                        value="" 
-                        onValueChange={(value) => {
-                          const item = categoryItems.find(i => i.id === value);
-                          if (item) addToBill(item);
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={`Select from ${selectedCategory} dropdown`} />
-                        </SelectTrigger>
-                        <SelectContent className="bg-popover border border-border max-h-60">
-                          {categoryItems.map(item => (
-                            <SelectItem key={item.id} value={item.id}>
-                              <div className="flex justify-between items-center w-full">
-                                <span>{item.name}</span>
-                                <span className="ml-4 font-bold text-primary">৳{item.price.toLocaleString()}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  {/* Items List */}
-                  <div className="max-h-96 overflow-y-auto border-t pt-4">
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
                     {filteredCategoryItems.length > 0 ? (
-                      filteredCategoryItems.map(item => (
-                        <ItemCard key={item.id} item={item} />
+                      filteredCategoryItems.map((item: MedicalItem) => (
+                        <div key={item.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
+                          <div className="flex-1">
+                            <div className="font-medium text-foreground">{item.name}</div>
+                            {item.description && (
+                              <div className="text-sm text-muted-foreground">{item.description}</div>
+                            )}
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span className="font-semibold text-medical-primary">
+                              {format(item.price)}
+                            </span>
+                            <Button size="sm" onClick={() => addToBill(item)} variant="medical">
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
                       ))
-                    ) : categorySearchQuery ? (
-                      <p className="text-muted-foreground text-center py-8">
-                        No items found matching "{categorySearchQuery}" in {selectedCategory}
-                      </p>
                     ) : (
-                      <p className="text-muted-foreground text-center py-8">
-                        No items found in this category
-                      </p>
+                      <div className="text-center text-muted-foreground py-8">
+                        {categorySearchQuery ? 'No items found matching your search.' : 'No items in this category.'}
+                      </div>
                     )}
                   </div>
                 </CardContent>
@@ -251,74 +266,85 @@ const Outpatient = () => {
             )}
           </div>
 
-          {/* Right Column - Live Bill */}
-          <div className="lg:sticky lg:top-6 lg:h-fit">
-            <Card className="glass-card neo-shadow">
-              <CardHeader className="glass-card border-b border-emerald-500/20" style={{background: 'linear-gradient(135deg, rgba(6, 95, 70, 0.6), rgba(4, 120, 87, 0.6))'}}>
-                <CardTitle className="flex items-center text-white">
-                  <Calculator className="h-5 w-5 mr-2 text-emerald-200" />
-                  Live Bill Calculation
+          {/* Right Column - Bill Summary */}
+          <div>
+            <Card className="glass-card sticky top-24">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between text-medical-primary">
+                  <span className="flex items-center">
+                    <Calculator className="mr-2 h-5 w-5" />
+                    Bill Summary
+                  </span>
+                  {billItems.length > 0 && (
+                    <Button size="sm" variant="medical-ghost" onClick={clearBill}>
+                      Clear All
+                    </Button>
+                  )}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent>
                 {billItems.length > 0 ? (
                   <div className="space-y-4">
-                    {billItems.map(item => (
-                      <div key={item.id} className="flex justify-between items-center p-4 glass-button rounded-xl neo-shadow-inset">
-                        <div className="flex-1">
-                          <h4 className="font-medium text-foreground">{item.name}</h4>
-                          <p className="text-sm text-muted-foreground">{item.category}</p>
-                          <p className="text-sm font-medium text-primary">৳{item.price.toLocaleString()} each</p>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          >
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          <span className="w-8 text-center font-medium">{item.quantity}</span>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                        </div>
-                        <div className="ml-4 text-right">
-                          <p className="font-bold text-lg">৳{(item.price * item.quantity).toLocaleString()}</p>
-                        </div>
-                      </div>
-                    ))}
+                    <div className="space-y-2 max-h-80 overflow-y-auto">
+                      {billItems.map((item) => {
+                        const price = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
+                        const subtotal = price * item.quantity;
+                        return (
+                          <div key={item.id} className="p-3 bg-muted/30 rounded-lg">
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex-1">
+                                <div className="font-medium text-sm text-foreground">{item.name}</div>
+                                <div className="text-xs text-muted-foreground">{item.category}</div>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="medical-ghost"
+                                onClick={() => removeFromBill(item.id)}
+                              >
+                                <Minus className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                <Button
+                                  size="sm"
+                                  variant="medical-outline"
+                                  onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                  disabled={item.quantity <= 1}
+                                >
+                                  <Minus className="h-3 w-3" />
+                                </Button>
+                                <span className="font-medium text-sm w-8 text-center">{item.quantity}</span>
+                                <Button
+                                  size="sm"
+                                  variant="medical-outline"
+                                  onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                >
+                                  <Plus className="h-3 w-3" />
+                                </Button>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-sm text-muted-foreground">{format(price)} each</div>
+                                <div className="font-semibold text-medical-primary">{format(subtotal)}</div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                     
-                    <div className="border-t pt-4">
-                      <div style={{background: 'linear-gradient(to right, #065f46, #14532d)', borderColor: '#047857'}} className="text-white p-6 rounded-xl shadow-2xl border-2">
-                        <div className="flex justify-between items-center">
-                          <div className="flex flex-col">
-                            <span style={{color: '#a7f3d0'}} className="text-sm font-medium mb-1">Grand Total</span>
-                            <span className="text-2xl font-bold">৳{total.toLocaleString()}</span>
-                          </div>
-                          <div style={{backgroundColor: 'rgba(5, 150, 105, 0.5)'}} className="p-3 rounded-full">
-                            <Calculator className="h-6 w-6" style={{color: '#a7f3d0'}} />
-                          </div>
-                        </div>
-                        <div className="mt-3 flex items-center text-sm" style={{color: '#a7f3d0'}}>
-                          <span style={{backgroundColor: 'rgba(5, 150, 105, 0.3)'}} className="px-2 py-1 rounded-full text-xs mr-2">
-                            {billItems.length} item{billItems.length !== 1 ? 's' : ''}
-                          </span>
-                          <span>Outpatient Services</span>
-                        </div>
+                    <div className="border-t border-medical-secondary/20 pt-4">
+                      <div className="flex items-center justify-between text-lg font-bold">
+                        <span className="text-foreground">Total:</span>
+                        <span className="text-medical-primary">{format(calculateTotal())}</span>
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center py-12">
-                    <Calculator className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">
-                      No items selected yet. Start adding items to calculate the bill.
-                    </p>
+                  <div className="text-center text-muted-foreground py-8">
+                    <Calculator className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No items added to bill yet.</p>
+                    <p className="text-sm">Search for items or select a category to get started.</p>
                   </div>
                 )}
               </CardContent>

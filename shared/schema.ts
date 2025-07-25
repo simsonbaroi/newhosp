@@ -22,6 +22,7 @@ export const medicalItems = pgTable("medical_items", {
   category: text("category").notNull(),
   name: text("name").notNull(),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  currency: text("currency").notNull().default("BDT"),
   description: text("description"),
   isOutpatient: boolean("is_outpatient").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -43,6 +44,7 @@ export const bills = pgTable("bills", {
   billData: text("bill_data").notNull(), // JSON string of bill items
   daysAdmitted: integer("days_admitted").default(1),
   total: decimal("total", { precision: 10, scale: 2 }).notNull(),
+  currency: text("currency").notNull().default("BDT"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

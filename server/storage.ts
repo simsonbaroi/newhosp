@@ -139,6 +139,7 @@ export class MemoryStorage implements IStorage {
         ...this.bills[existingIndex],
         billData: bill.billData,
         total: bill.total,
+        currency: bill.currency || 'BDT',
         daysAdmitted: bill.daysAdmitted || null,
         updatedAt: new Date(),
       };
@@ -151,6 +152,7 @@ export class MemoryStorage implements IStorage {
         billData: bill.billData,
         daysAdmitted: bill.daysAdmitted || 1,
         total: bill.total,
+        currency: bill.currency || 'BDT',
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -175,30 +177,30 @@ export class MemoryStorage implements IStorage {
     // Initialize with default data
     const defaultItems = [
       // Outpatient items
-      { category: 'Laboratory', name: 'Complete Blood Count', price: '250.00', isOutpatient: true },
-      { category: 'Laboratory', name: 'Urinalysis', price: '150.00', isOutpatient: true },
-      { category: 'Laboratory', name: 'Blood Chemistry', price: '400.00', isOutpatient: true },
-      { category: 'X-Ray', name: 'Chest X-Ray', price: '800.00', isOutpatient: true },
-      { category: 'X-Ray', name: 'Extremity X-Ray', price: '600.00', isOutpatient: true },
-      { category: 'Registration Fees', name: 'Outpatient Registration', price: '100.00', isOutpatient: true },
-      { category: 'Dr. Fees', name: 'General Consultation', price: '500.00', isOutpatient: true },
-      { category: 'Dr. Fees', name: 'Specialist Consultation', price: '800.00', isOutpatient: true },
-      { category: 'Medicine', name: 'Paracetamol 500mg', price: '15.00', isOutpatient: true },
-      { category: 'Physical Therapy', name: 'PT Session', price: '300.00', isOutpatient: true },
+      { category: 'Laboratory', name: 'Complete Blood Count', price: '250.00', currency: 'BDT', isOutpatient: true },
+      { category: 'Laboratory', name: 'Urinalysis', price: '150.00', currency: 'BDT', isOutpatient: true },
+      { category: 'Laboratory', name: 'Blood Chemistry', price: '400.00', currency: 'BDT', isOutpatient: true },
+      { category: 'X-Ray', name: 'Chest X-Ray', price: '800.00', currency: 'BDT', isOutpatient: true },
+      { category: 'X-Ray', name: 'Extremity X-Ray', price: '600.00', currency: 'BDT', isOutpatient: true },
+      { category: 'Registration Fees', name: 'Outpatient Registration', price: '100.00', currency: 'BDT', isOutpatient: true },
+      { category: 'Dr. Fees', name: 'General Consultation', price: '500.00', currency: 'BDT', isOutpatient: true },
+      { category: 'Dr. Fees', name: 'Specialist Consultation', price: '800.00', currency: 'BDT', isOutpatient: true },
+      { category: 'Medicine', name: 'Paracetamol 500mg', price: '15.00', currency: 'BDT', isOutpatient: true },
+      { category: 'Physical Therapy', name: 'PT Session', price: '300.00', currency: 'BDT', isOutpatient: true },
       
       // Inpatient items
-      { category: 'Blood', name: 'Blood Transfusion', price: '2500.00', isOutpatient: false },
-      { category: 'Laboratory', name: 'Complete Blood Count', price: '300.00', isOutpatient: false },
-      { category: 'Laboratory', name: 'Blood Chemistry Panel', price: '500.00', isOutpatient: false },
-      { category: 'Food', name: 'Regular Diet (per day)', price: '350.00', isOutpatient: false },
-      { category: 'Food', name: 'Special Diet (per day)', price: '450.00', isOutpatient: false },
-      { category: 'Registration Fees', name: 'Admission Fee', price: '500.00', isOutpatient: false },
-      { category: 'Medicine', name: 'IV Antibiotics', price: '800.00', isOutpatient: false },
-      { category: 'Medicine', name: 'Pain Medication', price: '200.00', isOutpatient: false },
-      { category: 'Halo, O2, NO2, etc.', name: 'Oxygen Therapy (per day)', price: '400.00', isOutpatient: false },
-      { category: 'Surgery, O.R. & Delivery', name: 'Minor Surgery', price: '15000.00', isOutpatient: false },
-      { category: 'Surgery, O.R. & Delivery', name: 'Major Surgery', price: '35000.00', isOutpatient: false },
-      { category: 'Seat & Ad. Fee', name: 'Admission Processing (per day)', price: '200.00', isOutpatient: false },
+      { category: 'Blood', name: 'Blood Transfusion', price: '2500.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Laboratory', name: 'Complete Blood Count', price: '300.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Laboratory', name: 'Blood Chemistry Panel', price: '500.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Food', name: 'Regular Diet (per day)', price: '350.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Food', name: 'Special Diet (per day)', price: '450.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Registration Fees', name: 'Admission Fee', price: '500.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Medicine', name: 'IV Antibiotics', price: '800.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Medicine', name: 'Pain Medication', price: '200.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Halo, O2, NO2, etc.', name: 'Oxygen Therapy (per day)', price: '400.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Surgery, O.R. & Delivery', name: 'Minor Surgery', price: '15000.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Surgery, O.R. & Delivery', name: 'Major Surgery', price: '35000.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Seat & Ad. Fee', name: 'Admission Processing (per day)', price: '200.00', currency: 'BDT', isOutpatient: false },
     ];
 
     for (const item of defaultItems) {
