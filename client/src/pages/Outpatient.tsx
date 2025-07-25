@@ -660,15 +660,25 @@ const Outpatient = () => {
                       </div>
                       
                       {selectedLabItems.length > 0 && (
-                        <Button onClick={addSelectedLabItemsToBill} variant="medical" className="w-full">
-                          Add {selectedLabItems.length} Lab Test{selectedLabItems.length !== 1 ? 's' : ''} to Bill (Tags)
-                        </Button>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center p-2 bg-medical-primary/5 rounded-md border border-medical-primary/20">
+                            <span className="text-sm font-medium text-medical-primary">
+                              Total Price: {format(selectedLabItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {selectedLabItems.length} item{selectedLabItems.length !== 1 ? 's' : ''}
+                            </span>
+                          </div>
+                          <Button onClick={addSelectedLabItemsToBill} variant="medical" className="w-full">
+                            Add {selectedLabItems.length} Lab Test{selectedLabItems.length !== 1 ? 's' : ''} to Bill (Tags)
+                          </Button>
+                        </div>
                       )}
                       
                       {/* Dropdown selected items as tags */}
                       {dropdownSelectedItems.length > 0 && (
-                        <div className="flex items-start gap-2 p-2 bg-muted/20 rounded-md">
-                          <div className="flex flex-wrap gap-1 flex-1">
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md">
                             {dropdownSelectedItems.map((item) => (
                               <div key={item.id} className="inline-flex items-center bg-blue-500/10 text-blue-600 px-2 py-1 rounded text-xs">
                                 <span className="mr-1">{item.name}</span>
@@ -681,13 +691,20 @@ const Outpatient = () => {
                               </div>
                             ))}
                           </div>
+                          <div className="flex justify-between items-center p-2 bg-blue-500/5 rounded-md border border-blue-500/20">
+                            <span className="text-sm font-medium text-blue-600">
+                              Total Price: {format(dropdownSelectedItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {dropdownSelectedItems.length} item{dropdownSelectedItems.length !== 1 ? 's' : ''}
+                            </span>
+                          </div>
                           <Button 
                             onClick={addDropdownSelectedItemsToBill} 
                             variant="medical" 
-                            size="sm"
-                            className="flex-shrink-0"
+                            className="w-full"
                           >
-                            Add to Bill
+                            Add {dropdownSelectedItems.length} Test{dropdownSelectedItems.length !== 1 ? 's' : ''} to Bill
                           </Button>
                         </div>
                       )}

@@ -70,6 +70,9 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: FIXED: Dropdown maintains focus after selections - no need to click again for continued filtering
 - **2025-01-25**: Seamless workflow: select item → filter automatically resets → immediately type next filter
 - **2025-01-25**: Added automatic refocus system to ensure uninterrupted keyboard input flow
+- **2025-01-25**: ADDED: Live total price counter for both search and dropdown selections
+- **2025-01-25**: Total price appears above "Add to Bill" button with item count
+- **2025-01-25**: Real-time price calculation updates as items are selected/removed
 
 ## Project Architecture
 - **Frontend**: React with TypeScript, using shadcn/ui components and wouter for routing
