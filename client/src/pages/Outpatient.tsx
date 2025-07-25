@@ -272,10 +272,12 @@ const Outpatient = () => {
 
   // Get dropdown options sorted by relevance
   const getDropdownOptions = () => {
-    if (!categorySearchQuery) return categoryItems;
+    const allItems = categoryItems;
+    
+    if (!categorySearchQuery) return allItems;
     
     const query = categorySearchQuery.toLowerCase();
-    const filtered = categoryItems.filter(item => 
+    const filtered = allItems.filter(item => 
       item.name.toLowerCase().includes(query)
     );
     
@@ -484,7 +486,13 @@ const Outpatient = () => {
                       <Input
                         placeholder="Type lab test name and press comma or enter to add..."
                         value={categorySearchQuery}
-                        onChange={(e) => setCategorySearchQuery(e.target.value)}
+                        onChange={(e) => {
+                          setCategorySearchQuery(e.target.value);
+                          // Auto-open dropdown when typing to show sorted results
+                          if (e.target.value.trim() && !isDropdownOpen) {
+                            setIsDropdownOpen(true);
+                          }
+                        }}
                         onKeyDown={handleLabSearchKeyDown}
                         onFocus={() => setIsDropdownOpen(true)}
                         className="w-full"
@@ -543,14 +551,24 @@ const Outpatient = () => {
                               </div>
                             )}
                           </div>
-                          <Button 
-                            onClick={() => setIsDropdownOpen(false)} 
-                            variant="medical-outline" 
-                            size="sm"
-                            className="mt-2"
-                          >
-                            Close Dropdown
-                          </Button>
+                          <div className="flex gap-2 mt-2">
+                            <Button 
+                              onClick={() => setIsDropdownOpen(false)} 
+                              variant="medical-outline" 
+                              size="sm"
+                            >
+                              Close Dropdown
+                            </Button>
+                            {dropdownSelectedItems.length > 0 && (
+                              <Button 
+                                onClick={addDropdownSelectedItemsToBill} 
+                                variant="medical" 
+                                size="sm"
+                              >
+                                Add {dropdownSelectedItems.length} to Bill
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       )}
                       
@@ -564,7 +582,7 @@ const Outpatient = () => {
                         </Button>
                       )}
                       
-                      {dropdownSelectedItems.length > 0 && (
+                      {!isDropdownOpen && dropdownSelectedItems.length > 0 && (
                         <Button onClick={addDropdownSelectedItemsToBill} variant="medical" className="w-full">
                           Add {dropdownSelectedItems.length} Selected Item{dropdownSelectedItems.length !== 1 ? 's' : ''} to Bill (Dropdown)
                         </Button>
