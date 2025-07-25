@@ -2351,99 +2351,100 @@ const Outpatient = () => {
                           </div>
 
                           <div className="space-y-4">
-                            {/* Dose Prescribed (Manual Entry) */}
-                            <div className="space-y-2">
-                              <label className="text-sm font-medium text-foreground">Dose Prescribed</label>
-                              <Input
-                                ref={doseInputRef}
-                                placeholder="Enter dose amount (e.g., 500, 1, 2.5)"
-                                value={dosePrescribed}
-                                onChange={(e) => setDosePrescribed(e.target.value)}
-                                className="w-full"
-                              />
+                            {/* First Line: Dose Prescribed, Med Type, Dose Frequency */}
+                            <div className="grid grid-cols-3 gap-4">
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium text-foreground">Dose Prescribed</label>
+                                <Input
+                                  ref={doseInputRef}
+                                  placeholder="e.g., 500, 1, 2.5"
+                                  value={dosePrescribed}
+                                  onChange={(e) => setDosePrescribed(e.target.value)}
+                                  className="w-full"
+                                />
+                              </div>
+                              
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium text-foreground">Med Type</label>
+                                <Select value={medType} onValueChange={setMedType}>
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select type" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {medTypeOptions.map((type) => (
+                                      <SelectItem key={type} value={type}>
+                                        {type}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium text-foreground">Dose Frequency</label>
+                                <Select value={doseFrequency} onValueChange={setDoseFrequency}>
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select frequency" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {doseFrequencyOptions.map((freq) => (
+                                      <SelectItem key={freq.value} value={freq.value}>
+                                        {freq.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
                             </div>
 
-                            {/* Med Type Dropdown */}
-                            <div className="space-y-2">
-                              <label className="text-sm font-medium text-foreground">Med Type</label>
-                              <Select value={medType} onValueChange={setMedType}>
-                                <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Select medication type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {medTypeOptions.map((type) => (
-                                    <SelectItem key={type} value={type}>
-                                      {type}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                            {/* Second Line: Duration, Total Price, Add to Bill */}
+                            <div className="grid grid-cols-3 gap-4 items-end">
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium text-foreground">Duration (Days)</label>
+                                <Input
+                                  type="number"
+                                  placeholder="e.g., 7, 10"
+                                  value={totalDays}
+                                  onChange={(e) => setTotalDays(e.target.value)}
+                                  className="w-full"
+                                  min="1"
+                                />
+                              </div>
+
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium text-foreground">Total Price</label>
+                                <div className="h-10 p-2 bg-medical-primary/10 rounded-md border border-medical-primary/20 flex items-center justify-center">
+                                  <span className="text-lg font-semibold text-medical-primary">
+                                    {isDosageSelectionComplete() ? format(calculateOutpatientMedicineDosage().totalPrice) : '---'}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium text-foreground invisible">Add to Bill</label>
+                                <Button
+                                  onClick={addMedicineToBill}
+                                  disabled={!isDosageSelectionComplete()}
+                                  variant="medical"
+                                  className="w-full flex items-center justify-center space-x-2"
+                                >
+                                  <Plus className="h-4 w-4" />
+                                  <span>Add to Bill</span>
+                                </Button>
+                              </div>
                             </div>
 
-                            {/* Dose Frequency Dropdown */}
-                            <div className="space-y-2">
-                              <label className="text-sm font-medium text-foreground">Dose Frequency</label>
-                              <Select value={doseFrequency} onValueChange={setDoseFrequency}>
-                                <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Select dosing frequency" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {doseFrequencyOptions.map((freq) => (
-                                    <SelectItem key={freq.value} value={freq.value}>
-                                      {freq.label}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            {/* Total Days */}
-                            <div className="space-y-2">
-                              <label className="text-sm font-medium text-foreground">Total Days</label>
-                              <Input
-                                type="number"
-                                placeholder="Enter number of days"
-                                value={totalDays}
-                                onChange={(e) => setTotalDays(e.target.value)}
-                                className="w-full"
-                                min="1"
-                              />
-                            </div>
-
-                            {/* Calculation Preview */}
+                            {/* Calculation Details (Optional) */}
                             {isDosageSelectionComplete() && (
-                              <div className="p-3 bg-muted/30 rounded-lg">
-                                <div className="text-sm font-medium text-foreground mb-2">Outpatient Calculation:</div>
-                                <div className="text-xs text-muted-foreground space-y-1">
-                                  <div>• Base price per unit: {format(selectedMedicineForDosage.price)}</div>
+                              <div className="text-xs text-muted-foreground bg-muted/20 p-2 rounded-md">
+                                <div className="grid grid-cols-2 gap-x-4">
+                                  <div>• Base price: {format(selectedMedicineForDosage.price)}</div>
                                   <div>• Frequency: {doseFrequencyOptions.find(f => f.value === doseFrequency)?.label}</div>
                                   <div>• Duration: {totalDays} days</div>
                                   <div>• Calculation: {calculateOutpatientMedicineDosage().calculationDetails}</div>
-                                  <div className="font-semibold text-medical-primary">
-                                    • Total cost: {format(calculateOutpatientMedicineDosage().totalPrice)}
-                                  </div>
                                 </div>
                               </div>
                             )}
-
-                            {/* Add to Bill Button */}
-                            <div className="flex justify-end pt-2 border-t border-medical-primary/10">
-                              <Button
-                                onClick={addMedicineToBill}
-                                disabled={!isDosageSelectionComplete()}
-                                variant="medical"
-                                className="flex items-center space-x-2"
-                              >
-                                <Plus className="h-4 w-4" />
-                                <span>Add to Bill</span>
-                              </Button>
-                            </div>
-
-                            <div className="text-xs text-muted-foreground">
-                              • Fill all fields to calculate dosage<br/>
-                              • Price is calculated as: Base price × Total quantity needed<br/>
-                              • Quantity is calculated based on frequency and duration
-                            </div>
                           </div>
                         </div>
                       )}
