@@ -87,7 +87,7 @@ export class MemoryStorage implements IStorage {
       category: item.category,
       name: item.name,
       price: item.price,
-      currency: item.currency || 'BDT',
+      currency: 'BDT',
       description: item.description || null,
       isOutpatient: item.isOutpatient,
       createdAt: new Date(),
@@ -140,7 +140,7 @@ export class MemoryStorage implements IStorage {
         ...this.bills[existingIndex],
         billData: bill.billData,
         total: bill.total,
-        currency: bill.currency || 'BDT',
+        currency: 'BDT',
         daysAdmitted: bill.daysAdmitted || null,
         updatedAt: new Date(),
       };
@@ -153,7 +153,7 @@ export class MemoryStorage implements IStorage {
         billData: bill.billData,
         daysAdmitted: bill.daysAdmitted || 1,
         total: bill.total,
-        currency: bill.currency || 'BDT',
+        currency: 'BDT',
         createdAt: new Date(),
         updatedAt: new Date(),
       };

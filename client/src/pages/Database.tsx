@@ -471,7 +471,7 @@ const Database = () => {
                     
                     <div className="flex items-center space-x-4">
                       <div className="text-right">
-                        <p className="text-xl font-bold text-primary">₱{item.price.toLocaleString()}</p>
+                        <p className="text-xl font-bold text-primary">৳{item.price.toFixed(2)}</p>
                       </div>
                       
                       <div className="flex space-x-2">

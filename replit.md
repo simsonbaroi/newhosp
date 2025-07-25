@@ -34,6 +34,8 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: Added same preview buttons, arrow navigation, and X button functionality to Inpatient
 - **2025-01-25**: Implemented carousel navigation system for Database page category browsing
 - **2025-01-25**: Added focused category view with preview buttons and navigation controls for Database management
+- **2025-01-25**: ENFORCED: Complete Taka-only currency system - removed all non-Taka references
+- **2025-01-25**: Standardized all price displays to use ৳ symbol with consistent formatting
 
 ## Project Architecture
 - **Frontend**: React with TypeScript, using shadcn/ui components and wouter for routing
