@@ -28,6 +28,7 @@ const Outpatient = () => {
   const [dropdownFilterQuery, setDropdownFilterQuery] = useState<string>('');
   const dropdownRef = useRef<HTMLDivElement>(null);
   const dropdownButtonRef = useRef<HTMLButtonElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const { format } = useTakaFormat();
   const queryClient = useQueryClient();
 
@@ -315,6 +316,12 @@ const Outpatient = () => {
           }
         }
         setCategorySearchQuery('');
+        // Refocus search input for continuous typing
+        setTimeout(() => {
+          if (searchInputRef.current) {
+            searchInputRef.current.focus();
+          }
+        }, 0);
       }
     }
   };
@@ -322,6 +329,12 @@ const Outpatient = () => {
   // Remove lab item from selection
   const removeLabItem = (itemId: number) => {
     setSelectedLabItems(prev => prev.filter(item => item.id !== itemId));
+    // Refocus search input after removing item
+    setTimeout(() => {
+      if (searchInputRef.current) {
+        searchInputRef.current.focus();
+      }
+    }, 0);
   };
 
   // Add all selected lab items to bill
@@ -330,6 +343,12 @@ const Outpatient = () => {
       addToBill(item);
     });
     setSelectedLabItems([]);
+    // Refocus search input after adding to bill
+    setTimeout(() => {
+      if (searchInputRef.current) {
+        searchInputRef.current.focus();
+      }
+    }, 0);
   };
 
   // Remove item from dropdown selection
@@ -374,6 +393,13 @@ const Outpatient = () => {
       dropdownButtonRef.current.focus();
     }
   }, [dropdownFilterQuery, dropdownSelectedItems.length]);
+
+  // Auto-focus search input when Laboratory category is selected
+  useEffect(() => {
+    if (selectedCategory === 'Laboratory' && isCarouselMode && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [selectedCategory, isCarouselMode]);
 
   // Get dropdown items sorted by relevance when user is typing in search
   const getOrderedDropdownItems = () => {
@@ -602,24 +628,9 @@ const Outpatient = () => {
                   {/* Show search + dropdown for Medicine, Laboratory, X-Ray categories */}
                   {selectedCategory === 'Laboratory' ? (
                     <div className="space-y-4">
-                      {/* Selected lab items as tags */}
-                      {selectedLabItems.length > 0 && (
-                        <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md">
-                          {selectedLabItems.map((item) => (
-                            <div key={item.id} className="inline-flex items-center bg-medical-primary/10 text-medical-primary px-2 py-1 rounded text-xs">
-                              <span className="mr-1">{item.name}</span>
-                              <button
-                                onClick={() => removeLabItem(item.id)}
-                                className="hover:bg-medical-primary/20 rounded-full p-0.5"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
                       <div className="space-y-2">
                         <Input
+                          ref={searchInputRef}
                           placeholder="Type lab test name and press comma or enter to add..."
                           value={categorySearchQuery}
                           onChange={(e) => {
@@ -648,6 +659,12 @@ const Outpatient = () => {
                                        setSelectedLabItems(prev => [...prev, item]);
                                      }
                                      setCategorySearchQuery('');
+                                     // Refocus search input after clicking suggestion
+                                     setTimeout(() => {
+                                       if (searchInputRef.current) {
+                                         searchInputRef.current.focus();
+                                       }
+                                     }, 0);
                                    }}>
                                 <span className="font-medium">{item.name}</span> - {format(item.price)}
                                 {index === 0 && (
@@ -658,9 +675,11 @@ const Outpatient = () => {
                           </div>
                         )}
                       </div>
-                      
+
+                      {/* Selected lab items layout with price counter on top and button on right */}
                       {selectedLabItems.length > 0 && (
                         <div className="space-y-2">
+                          {/* Price counter on top */}
                           <div className="flex justify-between items-center p-2 bg-medical-primary/5 rounded-md border border-medical-primary/20">
                             <span className="text-sm font-medium text-medical-primary">
                               Total Price: {format(selectedLabItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
@@ -669,9 +688,26 @@ const Outpatient = () => {
                               {selectedLabItems.length} item{selectedLabItems.length !== 1 ? 's' : ''}
                             </span>
                           </div>
-                          <Button onClick={addSelectedLabItemsToBill} variant="medical" className="w-full">
-                            Add {selectedLabItems.length} Lab Test{selectedLabItems.length !== 1 ? 's' : ''} to Bill (Tags)
-                          </Button>
+                          
+                          {/* Selected items with button on right */}
+                          <div className="flex items-start gap-2">
+                            <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md flex-1">
+                              {selectedLabItems.map((item) => (
+                                <div key={item.id} className="inline-flex items-center bg-medical-primary/10 text-medical-primary px-2 py-1 rounded text-xs">
+                                  <span className="mr-1">{item.name}</span>
+                                  <button
+                                    onClick={() => removeLabItem(item.id)}
+                                    className="hover:bg-medical-primary/20 rounded-full p-0.5"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                            <Button onClick={addSelectedLabItemsToBill} variant="medical" className="flex-shrink-0">
+                              Add to Bill
+                            </Button>
+                          </div>
                         </div>
                       )}
                       

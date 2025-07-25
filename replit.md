@@ -73,6 +73,10 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: ADDED: Live total price counter for both search and dropdown selections
 - **2025-01-25**: Total price appears above "Add to Bill" button with item count
 - **2025-01-25**: Real-time price calculation updates as items are selected/removed
+- **2025-01-25**: IMPROVED: Search input maintains focus automatically - no need to click between selections
+- **2025-01-25**: Reorganized search layout: price counter on top, "Add to Bill" button on right side of tags
+- **2025-01-25**: Auto-focus search input when Laboratory category opens for immediate typing
+- **2025-01-25**: Seamless search workflow: type → select → automatically refocused for next search
 
 ## Project Architecture
 - **Frontend**: React with TypeScript, using shadcn/ui components and wouter for routing
