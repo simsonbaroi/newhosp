@@ -297,7 +297,7 @@ const Outpatient = () => {
                     {/* Current selected category */}
                     <Button
                       variant="medical"
-                      className="h-auto p-4 text-center flex-1 max-w-xs"
+                      className="h-auto p-4 text-center flex-1 max-w-[200px]"
                       onClick={() => handleCategoryClick(selectedCategory)}
                     >
                       <div>
