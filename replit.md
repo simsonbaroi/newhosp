@@ -6,6 +6,7 @@ A professional medical billing calculator application for hospitals and clinics.
 ## Recent Changes
 - **2025-01-25**: Successfully migrated from Lovable to Replit environment
 - **2025-01-25**: Implemented grid button layout for categories (6 buttons per row)
+- **2025-01-25**: Enhanced button styling with left-aligned text and improved visual design
 
 ## Project Architecture
 - **Frontend**: React with TypeScript, using shadcn/ui components
@@ -26,6 +27,7 @@ A professional medical billing calculator application for hospitals and clinics.
 - Technical Level: Non-technical user interface
 - Focus: Professional medical billing accuracy
 - UI Layout: Grid button layout for categories (6 buttons per row preferred)
+- Button Style: Left-aligned text, rounded corners, enhanced shadows and hover effects
 
 ## Migration Tasks - COMPLETED
 - [x] Install missing dependencies (react-router-dom, sonner)

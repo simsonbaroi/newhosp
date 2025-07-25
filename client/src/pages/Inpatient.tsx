@@ -205,16 +205,16 @@ const Inpatient = () => {
                 <CardTitle>Select Category</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-6 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-6 gap-3">
                   {categories.map(category => (
                     <Button
                       key={category}
                       variant={selectedCategory === category ? "default" : "outline"}
                       onClick={() => setSelectedCategory(category)}
-                      className={`text-xs p-2 h-auto text-center transition-all duration-200 ${
+                      className={`text-xs p-3 h-auto text-left justify-start rounded-lg border-2 transition-all duration-200 ${
                         selectedCategory === category 
-                          ? 'bg-primary text-primary-foreground shadow-md' 
-                          : 'hover:bg-muted hover:shadow-sm'
+                          ? 'bg-primary text-primary-foreground shadow-lg border-primary scale-105' 
+                          : 'hover:bg-muted hover:shadow-md hover:border-primary/20 border-border'
                       }`}
                     >
                       {category}
