@@ -348,42 +348,94 @@ const Outpatient = () => {
               <Card className="glass-card">
                 <CardHeader>
                   <CardTitle className="text-medical-primary">{selectedCategory}</CardTitle>
-                  {!categoriesWithoutSearch.includes(selectedCategory) && (
-                    <Input
-                      placeholder={`Search in ${selectedCategory}...`}
-                      value={categorySearchQuery}
-                      onChange={(e) => setCategorySearchQuery(e.target.value)}
-                      className="w-full"
-                    />
+                  {/* Show dropdown for Medicine, Laboratory, X-Ray categories */}
+                  {['Medicine', 'Laboratory', 'X-Ray'].includes(selectedCategory) ? (
+                    <div className="space-y-4">
+                      <Select onValueChange={(value) => {
+                        const selectedItem = categoryItems.find(item => item.id.toString() === value);
+                        if (selectedItem) addToBill(selectedItem);
+                      }}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder={`Select ${selectedCategory} item...`} />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover border border-border max-h-60">
+                          {categoryItems.map((item: MedicalItem) => (
+                            <SelectItem key={item.id} value={item.id.toString()}>
+                              <div className="flex items-center justify-between w-full">
+                                <span>{item.name}</span>
+                                <span className="ml-4 text-medical-primary font-semibold">
+                                  {format(item.price)}
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <div className="text-sm text-muted-foreground">
+                        Select an item from the dropdown to add it to your bill
+                      </div>
+                    </div>
+                  ) : (
+                    /* Regular search input for other categories */
+                    !categoriesWithoutSearch.includes(selectedCategory) && (
+                      <Input
+                        placeholder={`Search in ${selectedCategory}...`}
+                        value={categorySearchQuery}
+                        onChange={(e) => setCategorySearchQuery(e.target.value)}
+                        className="w-full"
+                      />
+                    )
                   )}
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {(categoriesWithoutSearch.includes(selectedCategory) ? categoryItems : filteredCategoryItems).length > 0 ? (
-                      (categoriesWithoutSearch.includes(selectedCategory) ? categoryItems : filteredCategoryItems).map((item: MedicalItem) => (
-                        <div key={item.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
-                          <div className="flex-1">
-                            <div className="font-medium text-foreground">{item.name}</div>
-                            {item.description && (
-                              <div className="text-sm text-muted-foreground">{item.description}</div>
-                            )}
+                  {/* Show dropdown interface for Medicine, Laboratory, X-Ray */}
+                  {['Medicine', 'Laboratory', 'X-Ray'].includes(selectedCategory) ? (
+                    <div className="space-y-2">
+                      {categoryItems.length > 0 ? (
+                        <div className="text-center text-muted-foreground py-4">
+                          <div className="text-lg font-medium mb-2">Available {selectedCategory} Items</div>
+                          <div className="text-sm">
+                            {categoryItems.length} item{categoryItems.length !== 1 ? 's' : ''} available in database
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <span className="font-semibold text-medical-primary">
-                              {format(item.price)}
-                            </span>
-                            <Button size="sm" onClick={() => addToBill(item)} variant="medical">
-                              <Plus className="h-4 w-4" />
-                            </Button>
+                          <div className="text-xs mt-2 opacity-75">
+                            Use the dropdown above to select and add items to your bill
                           </div>
                         </div>
-                      ))
-                    ) : (
-                      <div className="text-center text-muted-foreground py-8">
-                        {!categoriesWithoutSearch.includes(selectedCategory) && categorySearchQuery ? 'No items found matching your search.' : 'No items in this category.'}
-                      </div>
-                    )}
-                  </div>
+                      ) : (
+                        <div className="text-center text-muted-foreground py-8">
+                          No items available in this category.
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    /* Regular item list for other categories */
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {(categoriesWithoutSearch.includes(selectedCategory) ? categoryItems : filteredCategoryItems).length > 0 ? (
+                        (categoriesWithoutSearch.includes(selectedCategory) ? categoryItems : filteredCategoryItems).map((item: MedicalItem) => (
+                          <div key={item.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
+                            <div className="flex-1">
+                              <div className="font-medium text-foreground">{item.name}</div>
+                              {item.description && (
+                                <div className="text-sm text-muted-foreground">{item.description}</div>
+                              )}
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <span className="font-semibold text-medical-primary">
+                                {format(item.price)}
+                              </span>
+                              <Button size="sm" onClick={() => addToBill(item)} variant="medical">
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center text-muted-foreground py-8">
+                          {!categoriesWithoutSearch.includes(selectedCategory) && categorySearchQuery ? 'No items found matching your search.' : 'No items in this category.'}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
