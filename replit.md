@@ -32,6 +32,7 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: OPTIMIZED: Navigation buttons made smaller for Android devices with reduced padding and tighter spacing
 - **2025-01-25**: COMPRESSED: Header height reduced on mobile to provide more content space
 - **2025-01-25**: ENHANCED: Mobile-first navigation design with proper button sizing and layout optimization
+- **2025-01-25**: ADJUSTED: Navigation button sizes increased slightly for better Android usability while maintaining compact design
 - **2025-01-25**: Applied consistent responsive design across Database, Outpatient, and Inpatient sections
 - **2025-01-25**: Converted from PostgreSQL to in-memory storage for Replit compatibility
 - **2025-01-25**: Fixed all TypeScript and LSP errors in storage system
