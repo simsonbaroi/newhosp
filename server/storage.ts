@@ -193,6 +193,14 @@ export class MemoryStorage implements IStorage {
       { category: 'Medic Fee', name: 'Emergency Medical Service', price: '700.00', currency: 'BDT', isOutpatient: true },
       { category: 'Medicine', name: 'Paracetamol 500mg', price: '15.00', currency: 'BDT', isOutpatient: true },
       { category: 'Physical Therapy', name: 'PT Session', price: '300.00', currency: 'BDT', isOutpatient: true },
+      { category: 'Limb and Brace', name: 'Ankle Brace', price: '1200.00', currency: 'BDT', isOutpatient: true },
+      { category: 'Limb and Brace', name: 'Knee Brace', price: '1800.00', currency: 'BDT', isOutpatient: true },
+      { category: 'Limb and Brace', name: 'Wrist Splint', price: '800.00', currency: 'BDT', isOutpatient: true },
+      { category: 'Limb and Brace', name: 'Elbow Support', price: '900.00', currency: 'BDT', isOutpatient: true },
+      { category: 'Limb and Brace', name: 'Back Brace', price: '2500.00', currency: 'BDT', isOutpatient: true },
+      { category: 'Limb and Brace', name: 'Arm Sling', price: '400.00', currency: 'BDT', isOutpatient: true },
+      { category: 'Limb and Brace', name: 'Cervical Collar', price: '1500.00', currency: 'BDT', isOutpatient: true },
+      { category: 'Limb and Brace', name: 'Walking Crutches (pair)', price: '1600.00', currency: 'BDT', isOutpatient: true },
       
       // Inpatient items
       { category: 'Blood', name: 'Blood Transfusion', price: '2500.00', currency: 'BDT', isOutpatient: false },

@@ -260,12 +260,12 @@ const Outpatient = () => {
                         <Button
                           key={category}
                           variant="medical-outline"
-                          className="h-auto p-3 text-left justify-start"
+                          className="h-auto p-2 sm:p-3 text-left justify-start min-h-[60px]"
                           onClick={() => handleCategoryClick(category)}
                         >
-                          <div>
-                            <div className="font-semibold text-sm truncate">{category}</div>
-                            <div className="text-xs opacity-75">{itemCount} items</div>
+                          <div className="w-full">
+                            <div className="font-semibold text-xs sm:text-sm truncate leading-tight">{category}</div>
+                            <div className="text-xs opacity-75 mt-1">{itemCount} items</div>
                           </div>
                         </Button>
                       );
@@ -277,11 +277,11 @@ const Outpatient = () => {
                     {/* Previous preview button */}
                     <Button
                       variant="medical-ghost"
-                      className="h-auto p-2 text-left flex-shrink-0 opacity-60 hover:opacity-80 max-w-[80px] justify-start"
+                      className="h-auto p-1.5 sm:p-2 text-left flex-shrink-0 opacity-60 hover:opacity-80 max-w-[60px] sm:max-w-[80px] justify-start"
                       onClick={() => navigateCarousel('prev')}
                     >
                       <div className="w-full">
-                        <div className="text-xs truncate text-left">
+                        <div className="text-xs sm:text-xs truncate text-left leading-tight">
                           {orderedCategories[(currentCategoryIndex - 1 + orderedCategories.length) % orderedCategories.length]}
                         </div>
                       </div>
@@ -300,12 +300,12 @@ const Outpatient = () => {
                     {/* Current selected category */}
                     <Button
                       variant="medical"
-                      className="h-auto p-4 text-center flex-1 max-w-[200px]"
+                      className="h-auto p-2 sm:p-4 text-center flex-1 max-w-[140px] sm:max-w-[200px]"
                       onClick={() => handleCategoryClick(selectedCategory)}
                     >
-                      <div>
-                        <div className="font-semibold text-sm">{selectedCategory}</div>
-                        <div className="text-xs opacity-75">
+                      <div className="w-full">
+                        <div className="font-semibold text-xs sm:text-sm truncate leading-tight">{selectedCategory}</div>
+                        <div className="text-xs opacity-75 mt-1">
                           {medicalItems.filter((item: MedicalItem) => item.category === selectedCategory).length} items
                         </div>
                       </div>
@@ -324,11 +324,11 @@ const Outpatient = () => {
                     {/* Next preview button */}
                     <Button
                       variant="medical-ghost"
-                      className="h-auto p-2 text-right flex-shrink-0 opacity-60 hover:opacity-80 max-w-[80px] justify-end"
+                      className="h-auto p-1.5 sm:p-2 text-right flex-shrink-0 opacity-60 hover:opacity-80 max-w-[60px] sm:max-w-[80px] justify-end"
                       onClick={() => navigateCarousel('next')}
                     >
                       <div className="w-full">
-                        <div className="text-xs truncate text-right">
+                        <div className="text-xs sm:text-xs truncate text-right leading-tight">
                           {orderedCategories[(currentCategoryIndex + 1) % orderedCategories.length]}
                         </div>
                       </div>

@@ -42,6 +42,9 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: Pre-populates category field when adding items from carousel view for better workflow
 - **2025-01-25**: CLEANED: Removed duplicate "Add Item" button from carousel - using existing button before search
 - **2025-01-25**: CORRECTED: Removed "Add Item" from grid view, kept it in carousel view for category-specific item creation
+- **2025-01-25**: RESPONSIVE: Enhanced button text sizing to prevent overflow on mobile devices
+- **2025-01-25**: Applied consistent responsive design across Database, Outpatient, and Inpatient sections
+- **2025-01-25**: ADDED: "Limb and Brace" category to Outpatient section with 8 medical items (braces, supports, aids)
 
 ## Project Architecture
 - **Frontend**: React with TypeScript, using shadcn/ui components and wouter for routing

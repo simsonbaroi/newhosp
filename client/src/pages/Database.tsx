@@ -359,12 +359,12 @@ const Database = () => {
                     <Button
                       key={category}
                       variant="medical-outline"
-                      className="h-auto p-3 text-left justify-start"
+                      className="h-auto p-2 sm:p-3 text-left justify-start min-h-[60px]"
                       onClick={() => handleCategoryClick(category)}
                     >
-                      <div>
-                        <div className="font-semibold text-sm truncate">{category}</div>
-                        <div className="text-xs opacity-75">{itemCount} items</div>
+                      <div className="w-full">
+                        <div className="font-semibold text-xs sm:text-sm truncate leading-tight">{category}</div>
+                        <div className="text-xs opacity-75 mt-1">{itemCount} items</div>
                       </div>
                     </Button>
                   );
@@ -378,11 +378,11 @@ const Database = () => {
                   {/* Previous preview button */}
                   <Button
                     variant="medical-ghost"
-                    className="h-auto p-2 text-left flex-shrink-0 opacity-60 hover:opacity-80 max-w-[80px] justify-start"
+                    className="h-auto p-1.5 sm:p-2 text-left flex-shrink-0 opacity-60 hover:opacity-80 max-w-[60px] sm:max-w-[80px] justify-start"
                     onClick={() => navigateCarousel('prev')}
                   >
                     <div className="w-full">
-                      <div className="text-xs truncate text-left">
+                      <div className="text-xs sm:text-xs truncate text-left leading-tight">
                         {allCategories[(currentCategoryIndex - 1 + allCategories.length) % allCategories.length]}
                       </div>
                     </div>
@@ -401,12 +401,12 @@ const Database = () => {
                   {/* Current selected category */}
                   <Button
                     variant="medical"
-                    className="h-auto p-4 text-center flex-1 max-w-[200px]"
+                    className="h-auto p-2 sm:p-4 text-center flex-1 max-w-[140px] sm:max-w-[200px]"
                     onClick={() => handleCategoryClick(filterCategory)}
                   >
-                    <div>
-                      <div className="font-semibold text-sm">{filterCategory}</div>
-                      <div className="text-xs opacity-75">
+                    <div className="w-full">
+                      <div className="font-semibold text-xs sm:text-sm truncate leading-tight">{filterCategory}</div>
+                      <div className="text-xs opacity-75 mt-1">
                         {items.filter(item => item.category === filterCategory).length} items
                       </div>
                     </div>
@@ -425,11 +425,11 @@ const Database = () => {
                   {/* Next preview button */}
                   <Button
                     variant="medical-ghost"
-                    className="h-auto p-2 text-right flex-shrink-0 opacity-60 hover:opacity-80 max-w-[80px] justify-end"
+                    className="h-auto p-1.5 sm:p-2 text-right flex-shrink-0 opacity-60 hover:opacity-80 max-w-[60px] sm:max-w-[80px] justify-end"
                     onClick={() => navigateCarousel('next')}
                   >
                     <div className="w-full">
-                      <div className="text-xs truncate text-right">
+                      <div className="text-xs sm:text-xs truncate text-right leading-tight">
                         {allCategories[(currentCategoryIndex + 1) % allCategories.length]}
                       </div>
                     </div>
