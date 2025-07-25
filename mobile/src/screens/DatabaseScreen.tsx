@@ -1,5 +1,5 @@
 import React, {useState, useEffect} from 'react';
-import {View, StyleSheet, ScrollView, Alert} from 'react-native';
+import {View, StyleSheet, ScrollView, Alert, SafeAreaView, Platform, StatusBar} from 'react-native';
 import {Button, Card, Title, Text, List, Searchbar, Chip} from 'react-native-paper';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../App';
@@ -100,19 +100,22 @@ const DatabaseScreen: React.FC<Props> = ({navigation}) => {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <Card style={styles.card}>
-          <Card.Content>
-            <Title style={styles.loadingText}>Loading...</Title>
-          </Card.Content>
-        </Card>
-      </View>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
+          <Card style={styles.card}>
+            <Card.Content>
+              <Title style={styles.loadingText}>Loading...</Title>
+            </Card.Content>
+          </Card>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.content}>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView style={styles.container}>
+        <View style={styles.content}>
         {/* Search */}
         <Card style={styles.card}>
           <Card.Content>
@@ -223,10 +226,16 @@ const DatabaseScreen: React.FC<Props> = ({navigation}) => {
         </Card>
       </View>
     </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#0f172a',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+  },
   container: {
     flex: 1,
     backgroundColor: '#0f172a',

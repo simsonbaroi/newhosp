@@ -1,7 +1,7 @@
 import React from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import {StatusBar} from 'react-native';
+import {StatusBar, Platform} from 'react-native';
 import {Provider as PaperProvider, MD3DarkTheme} from 'react-native-paper';
 
 // Import screens
@@ -38,18 +38,36 @@ const medicalTheme = {
 const App: React.FC = () => {
   return (
     <PaperProvider theme={medicalTheme}>
-      <StatusBar barStyle="light-content" backgroundColor="#0f172a" />
+      <StatusBar 
+        barStyle="light-content" 
+        backgroundColor="#0f172a" 
+        translucent={false}
+        networkActivityIndicatorVisible={false}
+      />
       <NavigationContainer>
         <Stack.Navigator
           initialRouteName="Home"
           screenOptions={{
             headerStyle: {
               backgroundColor: '#0f172a',
+              elevation: 8,
+              shadowColor: '#10b981',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.25,
+              shadowRadius: 3.84,
+              borderBottomWidth: 1,
+              borderBottomColor: '#1e293b',
             },
             headerTintColor: '#f1f5f9',
             headerTitleStyle: {
               fontWeight: 'bold',
+              fontSize: 18,
+              color: '#f1f5f9',
             },
+            headerTitleAlign: 'center',
+            headerStatusBarHeight: Platform.OS === 'android' ? StatusBar.currentHeight : undefined,
+            headerBackTitleVisible: false,
+            headerPressColorAndroid: '#10b981',
           }}>
           <Stack.Screen 
             name="Home" 

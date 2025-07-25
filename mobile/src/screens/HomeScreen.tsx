@@ -1,5 +1,5 @@
 import React from 'react';
-import {View, StyleSheet, ScrollView} from 'react-native';
+import {View, StyleSheet, ScrollView, SafeAreaView, Platform, StatusBar} from 'react-native';
 import {Button, Card, Title, Paragraph} from 'react-native-paper';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../App';
@@ -15,8 +15,9 @@ type Props = {
 
 const HomeScreen: React.FC<Props> = ({navigation}) => {
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.content}>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView style={styles.container}>
+        <View style={styles.content}>
         <Card style={styles.card}>
           <Card.Content>
             <Title style={styles.title}>Hospital Bill Calculator</Title>
@@ -64,10 +65,16 @@ const HomeScreen: React.FC<Props> = ({navigation}) => {
         </Card>
       </View>
     </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#0f172a',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+  },
   container: {
     flex: 1,
     backgroundColor: '#0f172a',
