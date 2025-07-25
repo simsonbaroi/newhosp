@@ -78,6 +78,7 @@ const Outpatient = () => {
   const [medType, setMedType] = useState('');
   const [doseFrequency, setDoseFrequency] = useState('');
   const [totalDays, setTotalDays] = useState('');
+  const [tempSelectedMedicines, setTempSelectedMedicines] = useState<any[]>([]);
   const doseInputRef = useRef<HTMLInputElement>(null);
   const { format } = useTakaFormat();
   const queryClient = useQueryClient();
@@ -1548,6 +1549,67 @@ const Outpatient = () => {
     }
   };
 
+  const addMedicineToTempList = () => {
+    if (!selectedMedicineForDosage || !isDosageSelectionComplete()) return;
+
+    const calculationResult = calculateOutpatientMedicineDosage();
+    
+    if (calculationResult.totalQuantity === 0) {
+      console.error('Failed to calculate medicine dosage');
+      return;
+    }
+
+    // Use the shared formatting function
+    const formattedName = formatDosageForBill(
+      selectedMedicineForDosage.name,
+      dosePrescribed,
+      medType,
+      doseFrequency,
+      parseInt(totalDays),
+      {
+        totalQuantity: calculationResult.totalQuantity,
+        totalPrice: calculationResult.totalPrice,
+        quantityUnit: calculationResult.quantityUnit || medType,
+        calculationDetails: calculationResult.calculationDetails
+      }
+    );
+
+    const medicineItem = {
+      ...selectedMedicineForDosage,
+      name: formattedName,
+      price: calculationResult.totalPrice.toString(),
+      tempId: `temp-medicine-${selectedMedicineForDosage.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      dosageInfo: {
+        dosePrescribed,
+        medType,
+        doseFrequency,
+        totalDays,
+        calculationResult
+      }
+    };
+
+    setTempSelectedMedicines(prev => [...prev, medicineItem]);
+    
+    // Reset dosage selection to allow adding another medicine
+    cancelMedicineDosageSelection();
+  };
+
+  const addAllTempMedicinesToBill = () => {
+    if (tempSelectedMedicines.length === 0) return;
+
+    const billItemsToAdd = tempSelectedMedicines.map(medicine => ({
+      ...medicine,
+      billId: `medicine-${medicine.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    }));
+
+    setBillItems(prevBillItems => [...prevBillItems, ...billItemsToAdd]);
+    setTempSelectedMedicines([]);
+  };
+
+  const removeTempMedicine = (tempId: string) => {
+    setTempSelectedMedicines(prev => prev.filter(medicine => medicine.tempId !== tempId));
+  };
+
   const addMedicineToBill = () => {
     if (!selectedMedicineForDosage || !isDosageSelectionComplete()) return;
 
@@ -2447,15 +2509,15 @@ const Outpatient = () => {
                               </div>
 
                               <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground invisible">Add to Bill</label>
+                                <label className="text-sm font-medium text-foreground invisible">Add Medicine</label>
                                 <Button
-                                  onClick={addMedicineToBill}
+                                  onClick={addMedicineToTempList}
                                   disabled={!isDosageSelectionComplete()}
                                   variant="medical"
                                   className="w-full flex items-center justify-center space-x-2"
                                 >
                                   <Plus className="h-4 w-4" />
-                                  <span>Add to Bill</span>
+                                  <span>Add</span>
                                 </Button>
                               </div>
                             </div>
@@ -2471,6 +2533,59 @@ const Outpatient = () => {
                                 </div>
                               </div>
                             )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Temporary Selected Medicines Display */}
+                      {tempSelectedMedicines.length > 0 && (
+                        <div className="mb-6 p-4 border border-medical-primary/30 rounded-lg bg-medical-primary/5">
+                          <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-lg font-semibold text-medical-primary">
+                              Selected Medicines ({tempSelectedMedicines.length})
+                            </h3>
+                          </div>
+                          
+                          <div className="space-y-2 mb-4">
+                            {tempSelectedMedicines.map((medicine) => (
+                              <div key={medicine.tempId} className="flex items-center justify-between p-3 bg-white rounded-md border border-medical-primary/10">
+                                <div className="flex-1">
+                                  <div className="text-sm font-medium text-foreground">{medicine.name}</div>
+                                  <div className="text-xs text-muted-foreground mt-1">
+                                    {medicine.dosageInfo?.dosePrescribed} {medicine.dosageInfo?.medType} • 
+                                    {medicine.dosageInfo?.doseFrequency} • 
+                                    {medicine.dosageInfo?.totalDays} days
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <span className="text-lg font-semibold text-medical-primary">
+                                    {format(parseFloat(medicine.price))}
+                                  </span>
+                                  <Button
+                                    onClick={() => removeTempMedicine(medicine.tempId)}
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="flex items-center justify-between pt-3 border-t border-medical-primary/20">
+                            <div className="text-lg font-semibold text-medical-primary">
+                              Total: {format(tempSelectedMedicines.reduce((sum, medicine) => sum + parseFloat(medicine.price), 0))}
+                            </div>
+                            <Button
+                              onClick={addAllTempMedicinesToBill}
+                              variant="medical"
+                              className="flex items-center space-x-2"
+                            >
+                              <Plus className="h-4 w-4" />
+                              <span>Add to Bill ({tempSelectedMedicines.length} medicines)</span>
+                            </Button>
                           </div>
                         </div>
                       )}
