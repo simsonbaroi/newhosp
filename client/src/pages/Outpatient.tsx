@@ -281,9 +281,12 @@ const Outpatient = () => {
 
   // Add all dropdown selected items to bill
   const addDropdownSelectedItemsToBill = () => {
-    dropdownSelectedItems.forEach(item => {
+    console.log('Adding dropdown items to bill:', dropdownSelectedItems);
+    dropdownSelectedItems.forEach((item, index) => {
+      console.log(`Adding item ${index + 1}:`, item.name, item.id);
       addToBill(item);
     });
+    console.log('Bill items after adding:', billItems);
     setDropdownSelectedItems([]);
     setIsDropdownOpen(false);
   };
