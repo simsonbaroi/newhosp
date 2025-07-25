@@ -211,13 +211,13 @@ const Inpatient = () => {
                       key={category}
                       variant={selectedCategory === category ? "default" : "outline"}
                       onClick={() => setSelectedCategory(category)}
-                      className={`text-xs p-3 h-auto text-left justify-start rounded-lg border-2 transition-all duration-200 ${
+                      className={`text-xs px-4 py-3 h-auto text-left justify-start rounded-xl border-2 font-medium transition-all duration-300 transform ${
                         selectedCategory === category 
-                          ? 'bg-primary text-primary-foreground shadow-lg border-primary scale-105' 
-                          : 'hover:bg-muted hover:shadow-md hover:border-primary/20 border-border'
+                          ? 'bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-xl border-primary scale-105 ring-2 ring-primary/20' 
+                          : 'bg-white dark:bg-card hover:bg-gradient-to-r hover:from-primary/5 hover:to-primary/10 hover:shadow-lg hover:border-primary/40 hover:scale-102 border-border shadow-sm active:scale-95'
                       }`}
                     >
-                      {category}
+                      <span className="truncate">{category}</span>
                     </Button>
                   ))}
                 </div>
