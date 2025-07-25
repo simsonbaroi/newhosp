@@ -4,6 +4,29 @@
 
 /* Medical Hospital Calculator Design System */
 
+/* Enhanced Header Styling */
+.header-enhanced {
+  background: linear-gradient(135deg, hsl(var(--medical-gradient-start)), hsl(var(--medical-gradient-end)));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.nav-button-enhanced {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.nav-button-enhanced:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.25);
+}
+
+.nav-button-active {
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+  transform: translateY(-2px);
+}
+
 @layer base {
   :root {
     /* Dark Green Medical Theme - Professional Hospital Colors */

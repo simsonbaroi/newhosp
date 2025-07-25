@@ -18,17 +18,26 @@ const Layout = ({ children }: LayoutProps) => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-medical-gradient text-white sticky top-0 z-50 border-b border-medical-primary/20 backdrop-blur-sm">
+      <header className="header-enhanced text-white sticky top-0 z-50 border-b border-medical-primary/20 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <Calculator className="h-8 w-8 text-white mr-3" />
-              <h1 className="text-xl font-bold text-white">
-                Hospital Bill Calculator
-              </h1>
+          <div className="flex items-center justify-center h-20 relative">
+            {/* Logo and Title - Centered */}
+            <div className="flex items-center justify-center flex-1">
+              <Calculator className="h-10 w-10 text-white mr-4" />
+              <div className="text-center">
+                <h1 className="text-2xl font-bold text-white leading-tight">
+                  Hospital Bill Calculator
+                </h1>
+                <p className="text-xs text-white/80 mt-1">
+                  Professional Medical Billing System
+                </p>
+              </div>
             </div>
-            
-            <nav className="flex space-x-1">
+          </div>
+          
+          {/* Navigation Bar - Separate Row */}
+          <div className="border-t border-white/10">
+            <nav className="flex justify-center space-x-2 py-3">
               {navigation.map((item) => {
                 const isActive = location === item.href;
                 const Icon = item.icon;
@@ -37,13 +46,13 @@ const Layout = ({ children }: LayoutProps) => {
                   <Link
                     key={item.name}
                     href={item.href}
-                    className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                    className={`nav-button-enhanced flex items-center px-6 py-2.5 rounded-lg text-sm font-medium min-w-[120px] justify-center ${
                       isActive
-                        ? 'bg-white/20 text-white font-medium shadow-lg backdrop-blur-sm border border-white/20'
-                        : 'text-white/90 hover:text-white hover:bg-white/10 hover:backdrop-blur-sm'
+                        ? 'nav-button-active bg-white/25 text-white font-semibold border border-white/30'
+                        : 'text-white/90 hover:text-white hover:bg-white/15'
                     }`}
                   >
-                    <Icon className="h-4 w-4 mr-2" />
+                    <Icon className="h-5 w-5 mr-2" />
                     {item.name}
                   </Link>
                 );
