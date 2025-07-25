@@ -220,7 +220,8 @@ const Outpatient = () => {
     }
     setDropdownValue(''); // Reset dropdown after selection
     setHighlightedDropdownIndex(-1); // Reset highlighted index
-    setIsDropdownOpen(false); // Close dropdown
+    setDropdownFilterQuery(''); // Reset filter text for fresh start
+    // Keep dropdown open for multiple selections
   };
 
   // Handle keyboard navigation for dropdown
@@ -334,6 +335,10 @@ const Outpatient = () => {
       addToBill(item);
     });
     setDropdownSelectedItems([]);
+    // Close dropdown when adding to bill
+    setIsDropdownOpen(false);
+    setHighlightedDropdownIndex(-1);
+    setDropdownFilterQuery('');
   };
 
   // Handle click outside dropdown to close it
@@ -342,6 +347,7 @@ const Outpatient = () => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
         setHighlightedDropdownIndex(-1);
+        setDropdownFilterQuery(''); // Reset filter when clicking outside
       }
     };
 
@@ -739,8 +745,9 @@ const Outpatient = () => {
 
                       <div className="text-sm text-muted-foreground">
                         • Type to search and press comma/enter to add as tags<br/>
-                        • Dropdown: Click or press any key to focus, then type letters to filter instantly<br/>
-                        • Arrow keys to navigate, Enter to select, Escape to close, Backspace to delete filter<br/>
+                        • Dropdown: Type letters to filter instantly, stays open for multiple selections<br/>
+                        • Arrow keys to navigate, Enter to select (filter resets after each selection)<br/>
+                        • Click "Add to Bill" or outside dropdown to close • Escape to close without adding<br/>
                         • Both methods access same database but work independently
                       </div>
                     </div>

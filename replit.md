@@ -64,6 +64,9 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: Smart filtering system - exact matches appear first, then starts-with, then contains
 - **2025-01-25**: Real-time filter display shows current filter and match count in dropdown button
 - **2025-01-25**: Added Backspace support to remove filter characters one by one
+- **2025-01-25**: IMPROVED: Dropdown stays open for multiple selections, only closes on "Add to Bill" or click outside
+- **2025-01-25**: Filter text resets after each selection for fresh keyword entry
+- **2025-01-25**: Enhanced workflow: select multiple items → "Add to Bill" → dropdown closes automatically
 
 ## Project Architecture
 - **Frontend**: React with TypeScript, using shadcn/ui components and wouter for routing
