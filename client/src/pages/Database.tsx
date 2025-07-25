@@ -353,6 +353,22 @@ const Database = () => {
             {!isCarouselMode ? (
               // Normal grid mode
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {/* Add Items Button - Always visible */}
+                <Button
+                  variant="medical"
+                  className="h-auto p-3 text-left justify-start border-2 border-dashed border-medical-primary/50"
+                  onClick={() => setIsAdding(true)}
+                  disabled={isAdding}
+                >
+                  <div>
+                    <div className="font-semibold text-sm flex items-center">
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add Items
+                    </div>
+                    <div className="text-xs opacity-75">Create new medical item</div>
+                  </div>
+                </Button>
+                
                 {allCategories.map((category) => {
                   const itemCount = items.filter(item => item.category === category).length;
                   return (
@@ -372,66 +388,87 @@ const Database = () => {
               </div>
             ) : (
               // Carousel mode with preview buttons
-              <div className="flex items-center justify-center space-x-2">
-                {/* Previous preview button */}
-                <Button
-                  variant="medical-ghost"
-                  className="h-auto p-2 text-left flex-shrink-0 opacity-60 hover:opacity-80 max-w-[80px] justify-start"
-                  onClick={() => navigateCarousel('prev')}
-                >
-                  <div className="w-full">
-                    <div className="text-xs truncate text-left">
-                      {allCategories[(currentCategoryIndex - 1 + allCategories.length) % allCategories.length]}
+              <div className="space-y-4">
+                {/* Add Items Button - Always active in carousel */}
+                <div className="flex justify-center">
+                  <Button
+                    variant="medical"
+                    className="h-auto p-3 border-2 border-dashed border-medical-primary/50"
+                    onClick={() => setIsAdding(true)}
+                    disabled={isAdding}
+                  >
+                    <div className="flex items-center">
+                      <Plus className="h-4 w-4 mr-2" />
+                      <div>
+                        <div className="font-semibold text-sm">Add Items</div>
+                        <div className="text-xs opacity-75">Create new medical item</div>
+                      </div>
                     </div>
-                  </div>
-                </Button>
+                  </Button>
+                </div>
 
-                {/* Previous arrow */}
-                <Button
-                  variant="medical-outline"
-                  size="sm"
-                  onClick={() => navigateCarousel('prev')}
-                  className="h-10 w-10 p-0 flex-shrink-0"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                
-                {/* Current selected category */}
-                <Button
-                  variant="medical"
-                  className="h-auto p-4 text-center flex-1 max-w-[200px]"
-                  onClick={() => handleCategoryClick(filterCategory)}
-                >
-                  <div>
-                    <div className="font-semibold text-sm">{filterCategory}</div>
-                    <div className="text-xs opacity-75">
-                      {items.filter(item => item.category === filterCategory).length} items
+                {/* Category Navigation */}
+                <div className="flex items-center justify-center space-x-2">
+                  {/* Previous preview button */}
+                  <Button
+                    variant="medical-ghost"
+                    className="h-auto p-2 text-left flex-shrink-0 opacity-60 hover:opacity-80 max-w-[80px] justify-start"
+                    onClick={() => navigateCarousel('prev')}
+                  >
+                    <div className="w-full">
+                      <div className="text-xs truncate text-left">
+                        {allCategories[(currentCategoryIndex - 1 + allCategories.length) % allCategories.length]}
+                      </div>
                     </div>
-                  </div>
-                </Button>
-                
-                {/* Next arrow */}
-                <Button
-                  variant="medical-outline"
-                  size="sm"
-                  onClick={() => navigateCarousel('next')}
-                  className="h-10 w-10 p-0 flex-shrink-0"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
+                  </Button>
 
-                {/* Next preview button */}
-                <Button
-                  variant="medical-ghost"
-                  className="h-auto p-2 text-right flex-shrink-0 opacity-60 hover:opacity-80 max-w-[80px] justify-end"
-                  onClick={() => navigateCarousel('next')}
-                >
-                  <div className="w-full">
-                    <div className="text-xs truncate text-right">
-                      {allCategories[(currentCategoryIndex + 1) % allCategories.length]}
+                  {/* Previous arrow */}
+                  <Button
+                    variant="medical-outline"
+                    size="sm"
+                    onClick={() => navigateCarousel('prev')}
+                    className="h-10 w-10 p-0 flex-shrink-0"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  
+                  {/* Current selected category */}
+                  <Button
+                    variant="medical"
+                    className="h-auto p-4 text-center flex-1 max-w-[200px]"
+                    onClick={() => handleCategoryClick(filterCategory)}
+                  >
+                    <div>
+                      <div className="font-semibold text-sm">{filterCategory}</div>
+                      <div className="text-xs opacity-75">
+                        {items.filter(item => item.category === filterCategory).length} items
+                      </div>
                     </div>
-                  </div>
-                </Button>
+                  </Button>
+                  
+                  {/* Next arrow */}
+                  <Button
+                    variant="medical-outline"
+                    size="sm"
+                    onClick={() => navigateCarousel('next')}
+                    className="h-10 w-10 p-0 flex-shrink-0"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+
+                  {/* Next preview button */}
+                  <Button
+                    variant="medical-ghost"
+                    className="h-auto p-2 text-right flex-shrink-0 opacity-60 hover:opacity-80 max-w-[80px] justify-end"
+                    onClick={() => navigateCarousel('next')}
+                  >
+                    <div className="w-full">
+                      <div className="text-xs truncate text-right">
+                        {allCategories[(currentCategoryIndex + 1) % allCategories.length]}
+                      </div>
+                    </div>
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>
