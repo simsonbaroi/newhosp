@@ -2332,11 +2332,11 @@ const Outpatient = () => {
                       )}
 
                       {/* Medicine Dosage Selection Interface */}
-                      {showMedicineDosageSelection && selectedMedicineForDosage ? (
-                        <div className="mt-6 p-4 border-2 border-medical-primary rounded-lg bg-medical-primary/10 shadow-lg">
+                      {showMedicineDosageSelection && selectedMedicineForDosage && (
+                        <div className="mt-6 p-4 border border-medical-primary/20 rounded-lg bg-medical-primary/5">
                           <div className="flex items-center justify-between mb-4">
                             <h3 className="text-lg font-semibold text-medical-primary">
-                              🏥 Set Dosage for: {selectedMedicineForDosage.name}
+                              Set Dosage for: {selectedMedicineForDosage.name}
                             </h3>
                             <Button
                               onClick={cancelMedicineDosageSelection}
