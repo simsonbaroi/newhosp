@@ -100,26 +100,13 @@ const Inpatient = () => {
   const addToBill = (item: MedicalItem, quantity: number = 1) => {
     const existingItem = billItems.find(billItem => billItem.id === item.id);
     
-    if (existingItem) {
-      setBillItems(billItems.map(billItem =>
-        billItem.id === item.id
-          ? { ...billItem, quantity: billItem.quantity + quantity }
-          : billItem
-      ));
-    } else {
+    if (!existingItem) {
       setBillItems([...billItems, { ...item, quantity }]);
     }
+    // If item already exists, don't add duplicate
   };
 
-  const updateQuantity = (id: number, quantity: number) => {
-    if (quantity <= 0) {
-      setBillItems(billItems.filter(item => item.id !== id));
-    } else {
-      setBillItems(billItems.map(item =>
-        item.id === id ? { ...item, quantity } : item
-      ));
-    }
-  };
+  // Removed updateQuantity function - no longer needed without quantity controls
 
   const removeFromBill = (id: number) => {
     setBillItems(billItems.filter(item => item.id !== id));
@@ -138,6 +125,34 @@ const Inpatient = () => {
     }, 0);
     
     return itemsTotal;
+  };
+
+  // Group bill items by category for categorized display
+  const getBillItemsByCategory = () => {
+    const grouped = billItems.reduce((acc, item) => {
+      const category = item.category;
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(item);
+      return acc;
+    }, {} as Record<string, BillItem[]>);
+
+    return grouped;
+  };
+
+  // Calculate category total
+  const calculateCategoryTotal = (items: BillItem[]) => {
+    return items.reduce((total, item) => {
+      const price = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
+      const itemTotal = price * item.quantity;
+      // Apply daily rate for items that need it (like room charges, food, etc.)
+      const isDailyItem = item.category.includes('Food') || 
+                         item.category.includes('Seat') || 
+                         item.category.includes('O2') ||
+                         item.name.toLowerCase().includes('per day');
+      return total + (isDailyItem ? itemTotal * daysAdmitted : itemTotal);
+    }, 0);
   };
 
   const clearBill = () => {
@@ -482,68 +497,55 @@ const Inpatient = () => {
 
                 {billItems.length > 0 ? (
                   <div className="space-y-4">
-                    <div className="space-y-2 max-h-80 overflow-y-auto">
-                      {billItems.map((item) => {
-                        const price = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
-                        const isDailyItem = item.category.includes('Food') || 
-                                           item.category.includes('Seat') || 
-                                           item.category.includes('O2') ||
-                                           item.name.toLowerCase().includes('per day');
-                        const subtotal = isDailyItem ? price * item.quantity * daysAdmitted : price * item.quantity;
-                        
-                        return (
-                          <div key={item.id} className="p-3 bg-muted/30 rounded-lg">
-                            <div className="flex items-start justify-between mb-2">
-                              <div className="flex-1">
-                                <div className="font-medium text-sm text-foreground">{item.name}</div>
-                                <div className="text-xs text-muted-foreground">{item.category}</div>
-                                {isDailyItem && (
-                                  <div className="text-xs text-medical-accent">Daily rate</div>
-                                )}
-                              </div>
-                              <Button
-                                size="sm"
-                                variant="medical-ghost"
-                                onClick={() => removeFromBill(item.id)}
-                              >
-                                <Minus className="h-3 w-3" />
-                              </Button>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-2">
-                                <Button
-                                  size="sm"
-                                  variant="medical-outline"
-                                  onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                  disabled={item.quantity <= 1}
-                                >
-                                  <Minus className="h-3 w-3" />
-                                </Button>
-                                <span className="font-medium text-sm w-8 text-center">{item.quantity}</span>
-                                <Button
-                                  size="sm"
-                                  variant="medical-outline"
-                                  onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                >
-                                  <Plus className="h-3 w-3" />
-                                </Button>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-sm text-muted-foreground">
-                                  {format(price)} each
-                                  {isDailyItem && ` × ${daysAdmitted} days`}
-                                </div>
-                                <div className="font-semibold text-medical-primary">{format(subtotal)}</div>
-                              </div>
-                            </div>
+                    <div className="space-y-4 max-h-80 overflow-y-auto">
+                      {Object.entries(getBillItemsByCategory()).map(([category, items]) => (
+                        <div key={category} className="border-l-4 border-medical-primary/30 pl-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="font-semibold text-medical-primary text-sm">{category}</h4>
+                            <span className="text-sm font-medium text-medical-primary">
+                              {format(calculateCategoryTotal(items))}
+                            </span>
                           </div>
-                        );
-                      })}
+                          <div className="space-y-2">
+                            {items.map((item) => {
+                              const price = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
+                              const isDailyItem = item.category.includes('Food') || 
+                                                 item.category.includes('Seat') || 
+                                                 item.category.includes('O2') ||
+                                                 item.name.toLowerCase().includes('per day');
+                              const subtotal = isDailyItem ? price * item.quantity * daysAdmitted : price * item.quantity;
+                              return (
+                                <div key={item.id} className="flex items-center justify-between p-2 bg-muted/20 rounded-md">
+                                  <div className="flex-1">
+                                    <div className="font-medium text-sm text-foreground">{item.name}</div>
+                                    {isDailyItem && (
+                                      <div className="text-xs text-medical-accent">Daily rate × {daysAdmitted} days</div>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <span className="text-sm text-medical-primary font-medium">
+                                      {format(subtotal)}
+                                    </span>
+                                    <Button
+                                      size="sm"
+                                      variant="medical-ghost"
+                                      onClick={() => removeFromBill(item.id)}
+                                      className="h-6 w-6 p-0"
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                     
                     <div className="border-t border-medical-secondary/20 pt-4">
                       <div className="flex items-center justify-between text-lg font-bold">
-                        <span className="text-foreground">Total Bill:</span>
+                        <span className="text-foreground">Grand Total:</span>
                         <span className="text-medical-primary">{format(calculateTotal())}</span>
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">

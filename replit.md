@@ -89,6 +89,11 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: CRITICAL FIX: Resolved JSON parsing error by correcting API endpoint URLs
 - **2025-01-25**: Fixed /api/bills/browser-session/outpatient to /api/bills?sessionId=browser-session&type=outpatient
 - **2025-01-25**: Updated both Outpatient and Inpatient pages to use correct API query parameters
+- **2025-01-25**: MAJOR FIXES: Fixed multiple items not being added to bill properly - now prevents duplicates
+- **2025-01-25**: IMPLEMENTED: Categorized bill display with category totals and grand total
+- **2025-01-25**: REMOVED: Quantity +/- buttons from bill display as requested by user
+- **2025-01-25**: ENHANCED: Bill now shows items grouped by medical category with individual category totals
+- **2025-01-25**: APPLIED: Same fixes to both Outpatient and Inpatient pages for consistency
 
 ## Project Architecture
 - **Frontend**: React with TypeScript, using shadcn/ui components and wouter for routing
