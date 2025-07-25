@@ -26,6 +26,8 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: Implemented carousel navigation for Outpatient categories with left/right arrows
 - **2025-01-25**: Added focused view mode where selected category appears centered with navigation controls
 - **2025-01-25**: Added X button to exit carousel mode and return to grid view
+- **2025-01-25**: Enhanced carousel with preview buttons showing previous/next category names
+- **2025-01-25**: Added intuitive navigation with clickable preview buttons for better user experience
 
 ## Project Architecture
 - **Frontend**: React with TypeScript, using shadcn/ui components and wouter for routing

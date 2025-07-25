@@ -269,8 +269,22 @@ const Outpatient = () => {
                     })}
                   </div>
                 ) : (
-                  // Carousel mode
-                  <div className="flex items-center justify-center space-x-4">
+                  // Carousel mode with preview buttons
+                  <div className="flex items-center justify-center space-x-2">
+                    {/* Previous preview button */}
+                    <Button
+                      variant="medical-ghost"
+                      className="h-auto p-2 text-center flex-shrink-0 opacity-60 hover:opacity-80 max-w-[80px]"
+                      onClick={() => navigateCarousel('prev')}
+                    >
+                      <div>
+                        <div className="text-xs truncate">
+                          {orderedCategories[(currentCategoryIndex - 1 + orderedCategories.length) % orderedCategories.length]}
+                        </div>
+                      </div>
+                    </Button>
+
+                    {/* Previous arrow */}
                     <Button
                       variant="medical-outline"
                       size="sm"
@@ -280,6 +294,7 @@ const Outpatient = () => {
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
                     
+                    {/* Current selected category */}
                     <Button
                       variant="medical"
                       className="h-auto p-4 text-center flex-1 max-w-xs"
@@ -293,6 +308,7 @@ const Outpatient = () => {
                       </div>
                     </Button>
                     
+                    {/* Next arrow */}
                     <Button
                       variant="medical-outline"
                       size="sm"
@@ -300,6 +316,19 @@ const Outpatient = () => {
                       className="h-10 w-10 p-0 flex-shrink-0"
                     >
                       <ChevronRight className="h-4 w-4" />
+                    </Button>
+
+                    {/* Next preview button */}
+                    <Button
+                      variant="medical-ghost"
+                      className="h-auto p-2 text-center flex-shrink-0 opacity-60 hover:opacity-80 max-w-[80px]"
+                      onClick={() => navigateCarousel('next')}
+                    >
+                      <div>
+                        <div className="text-xs truncate">
+                          {orderedCategories[(currentCategoryIndex + 1) % orderedCategories.length]}
+                        </div>
+                      </div>
                     </Button>
                   </div>
                 )}
