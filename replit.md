@@ -14,6 +14,9 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: FIXED: Android header layout with proper SafeAreaView and StatusBar handling
 - **2025-01-25**: ENHANCED: Mobile app with Android-specific styling and proper platform detection
 - **2025-01-25**: ADDED: Professional header design with elevation, shadows, and medical theme integration
+- **2025-01-25**: FIXED: Android header cutoff issues by removing duplicate padding and improving navigation
+- **2025-01-25**: ENHANCED: Back button visibility and proper header showing across all screens
+- **2025-01-25**: ADDED: Android styles.xml and MainActivity configuration for proper header handling
 - **2025-01-25**: Converted from PostgreSQL to in-memory storage for Replit compatibility
 - **2025-01-25**: Fixed all TypeScript and LSP errors in storage system
 - **2025-01-25**: Implemented complete API routes for medical items and bills management

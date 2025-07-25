@@ -43,6 +43,8 @@ const App: React.FC = () => {
         backgroundColor="#0f172a" 
         translucent={false}
         networkActivityIndicatorVisible={false}
+        hidden={false}
+        animated={true}
       />
       <NavigationContainer>
         <Stack.Navigator
@@ -65,29 +67,46 @@ const App: React.FC = () => {
               color: '#f1f5f9',
             },
             headerTitleAlign: 'center',
-            headerStatusBarHeight: Platform.OS === 'android' ? StatusBar.currentHeight : undefined,
+            headerStatusBarHeight: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : undefined,
             headerBackTitleVisible: false,
             headerPressColorAndroid: '#10b981',
+            headerBackButtonMenuEnabled: true,
+            headerShown: true,
           }}>
           <Stack.Screen 
             name="Home" 
             component={HomeScreen}
-            options={{ title: 'Hospital Bill Calculator' }}
+            options={{ 
+              title: 'Hospital Bill Calculator',
+              headerShown: true
+            }}
           />
           <Stack.Screen 
             name="Outpatient" 
             component={OutpatientScreen}
-            options={{ title: 'Outpatient Calculator' }}
+            options={{ 
+              title: 'Outpatient Calculator',
+              headerShown: true,
+              headerBackVisible: true
+            }}
           />
           <Stack.Screen 
             name="Inpatient" 
             component={InpatientScreen}
-            options={{ title: 'Inpatient Calculator' }}
+            options={{ 
+              title: 'Inpatient Calculator',
+              headerShown: true,
+              headerBackVisible: true
+            }}
           />
           <Stack.Screen 
             name="Database" 
             component={DatabaseScreen}
-            options={{ title: 'Medical Items Database' }}
+            options={{ 
+              title: 'Medical Items Database',
+              headerShown: true,
+              headerBackVisible: true
+            }}
           />
         </Stack.Navigator>
       </NavigationContainer>
