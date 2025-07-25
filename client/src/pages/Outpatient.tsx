@@ -581,8 +581,8 @@ const Outpatient = () => {
                     
                     {/* Current selected category */}
                     <Button
-                      variant="medical"
-                      className="h-auto p-2 sm:p-4 text-center flex-1 max-w-[140px] sm:max-w-[200px]"
+                      variant="outline"
+                      className="h-auto p-2 sm:p-4 text-center flex-1 max-w-[140px] sm:max-w-[200px] border-medical-primary/20 text-medical-primary hover:bg-medical-primary/10"
                       onClick={() => handleCategoryClick(selectedCategory)}
                     >
                       <div className="w-full">

@@ -85,6 +85,7 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: MATCHED DROPDOWN: Applied same layout to dropdown selection - price left, button right
 - **2025-01-25**: COLOR MATCHED: Dropdown "Add to Bill" button now uses blue theme matching dropdown tag items
 - **2025-01-25**: STYLED SEARCH: Applied same outline button style to search "Add to Bill" button with green medical theme
+- **2025-01-25**: CONSISTENT CAROUSEL: Applied outline button style to carousel selected category button for design consistency
 
 ## Project Architecture
 - **Frontend**: React with TypeScript, using shadcn/ui components and wouter for routing
