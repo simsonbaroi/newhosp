@@ -503,19 +503,47 @@ const Outpatient = () => {
                           ))}
                         </div>
                       )}
-                      <Input
-                        placeholder="Type lab test name and press comma or enter to add..."
-                        value={categorySearchQuery}
-                        onChange={(e) => {
-                          setCategorySearchQuery(e.target.value);
-                          // Clear dropdown selections when switching to search
-                          if (e.target.value.trim()) {
-                            setDropdownSelectedItems([]);
-                          }
-                        }}
-                        onKeyDown={handleLabSearchKeyDown}
-                        className="w-full"
-                      />
+                      <div className="space-y-2">
+                        <Input
+                          placeholder="Type lab test name and press comma or enter to add..."
+                          value={categorySearchQuery}
+                          onChange={(e) => {
+                            setCategorySearchQuery(e.target.value);
+                            // Clear dropdown selections when switching to search
+                            if (e.target.value.trim()) {
+                              setDropdownSelectedItems([]);
+                            }
+                          }}
+                          onKeyDown={handleLabSearchKeyDown}
+                          className="w-full"
+                        />
+                        
+                        {/* Search suggestions appear right below search input */}
+                        {categorySearchQuery && getLabSuggestions().length > 0 && (
+                          <div className="space-y-1 max-h-40 overflow-y-auto border border-border rounded-md p-2 bg-muted/10">
+                            <div className="text-sm font-medium text-muted-foreground mb-2">
+                              Matching tests (press comma to add):
+                            </div>
+                            {getLabSuggestions().slice(0, 5).map((item: MedicalItem, index) => (
+                              <div key={item.id} className={`text-xs p-2 rounded cursor-pointer hover:bg-muted/40 ${
+                                index === 0 ? 'bg-medical-primary/10 border border-medical-primary/20' : 'bg-muted/20'
+                              }`}
+                                   onClick={() => {
+                                     if (!selectedLabItems.find(selected => selected.id === item.id)) {
+                                       setSelectedLabItems(prev => [...prev, item]);
+                                     }
+                                     setCategorySearchQuery('');
+                                   }}>
+                                <span className="font-medium">{item.name}</span> - {format(item.price)}
+                                {index === 0 && (
+                                  <span className="ml-2 text-medical-primary text-xs">← Will be added</span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      
                       {selectedLabItems.length > 0 && (
                         <Button onClick={addSelectedLabItemsToBill} variant="medical" className="w-full">
                           Add {selectedLabItems.length} Lab Test{selectedLabItems.length !== 1 ? 's' : ''} to Bill (Tags)
@@ -628,40 +656,14 @@ const Outpatient = () => {
                 <CardContent>
                   {/* Show interface for Medicine, Laboratory, X-Ray */}
                   {selectedCategory === 'Laboratory' ? (
-                    <div className="space-y-2">
-                      {categorySearchQuery && getLabSuggestions().length > 0 ? (
-                        <div className="space-y-1 max-h-40 overflow-y-auto">
-                          <div className="text-sm font-medium text-muted-foreground mb-2">
-                            Matching tests (press comma to add):
-                          </div>
-                          {getLabSuggestions().slice(0, 5).map((item: MedicalItem, index) => (
-                            <div key={item.id} className={`text-xs p-2 rounded cursor-pointer hover:bg-muted/40 ${
-                              index === 0 ? 'bg-medical-primary/10 border border-medical-primary/20' : 'bg-muted/20'
-                            }`}
-                                 onClick={() => {
-                                   if (!selectedLabItems.find(selected => selected.id === item.id)) {
-                                     setSelectedLabItems(prev => [...prev, item]);
-                                   }
-                                   setCategorySearchQuery('');
-                                 }}>
-                              <span className="font-medium">{item.name}</span> - {format(item.price)}
-                              {index === 0 && (
-                                <span className="ml-2 text-medical-primary text-xs">← Will be added</span>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center text-muted-foreground py-4">
-                          <div className="text-lg font-medium mb-2">Laboratory Quick Selection</div>
-                          <div className="text-sm">
-                            Type test names and press comma to add as tags
-                          </div>
-                          <div className="text-xs mt-2 opacity-75">
-                            {selectedLabItems.length > 0 ? `${selectedLabItems.length} test${selectedLabItems.length !== 1 ? 's' : ''} selected` : 'No tests selected yet'}
-                          </div>
-                        </div>
-                      )}
+                    <div className="text-center text-muted-foreground py-4">
+                      <div className="text-lg font-medium mb-2">Laboratory Quick Selection</div>
+                      <div className="text-sm">
+                        Type test names and press comma to add as tags, or use dropdown below
+                      </div>
+                      <div className="text-xs mt-2 opacity-75">
+                        {selectedLabItems.length > 0 ? `${selectedLabItems.length} test${selectedLabItems.length !== 1 ? 's' : ''} selected` : 'No tests selected yet'}
+                      </div>
                     </div>
                   ) : ['Medicine', 'X-Ray'].includes(selectedCategory) ? (
                     <div className="space-y-2">

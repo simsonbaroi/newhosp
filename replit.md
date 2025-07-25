@@ -55,6 +55,7 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: PERFECTED: Complete reset when switching between search and dropdown modes - no partial selections remain
 - **2025-01-25**: SIMPLIFIED: Responsive dropdown that auto-reorders based on search input - closest matches appear first
 - **2025-01-25**: Clean dropdown design without complex filters - just automatic relevance-based reordering
+- **2025-01-25**: REPOSITIONED: Search suggestions now appear directly below search input for better UX
 
 ## Project Architecture
 - **Frontend**: React with TypeScript, using shadcn/ui components and wouter for routing
