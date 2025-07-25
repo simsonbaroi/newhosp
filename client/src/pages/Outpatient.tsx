@@ -1524,7 +1524,7 @@ const Outpatient = () => {
   };
 
   const calculateOutpatientMedicineDosage = () => {
-    if (!selectedMedicineForDosage || !isDosageSelectionComplete()) return { totalQuantity: 0, totalPrice: 0, calculationDetails: '' };
+    if (!selectedMedicineForDosage || !isDosageSelectionComplete()) return { totalQuantity: 0, totalPrice: 0, calculationDetails: '', quantityUnit: '', pricePerUnit: 0, isPartialAllowed: false };
 
     try {
       const result = calculateMedicineDosage({
@@ -1537,15 +1537,10 @@ const Outpatient = () => {
         isDischargeMedicine: false
       });
 
-      return {
-        totalQuantity: result.totalQuantity,
-        totalPrice: result.totalPrice,
-        calculationDetails: result.calculationDetails,
-        quantityUnit: result.quantityUnit
-      };
+      return result; // Return the complete result object
     } catch (error) {
       console.error('Medicine calculation error:', error);
-      return { totalQuantity: 0, totalPrice: 0, calculationDetails: 'Calculation error', quantityUnit: '' };
+      return { totalQuantity: 0, totalPrice: 0, calculationDetails: 'Calculation error', quantityUnit: '', pricePerUnit: 0, isPartialAllowed: false };
     }
   };
 
@@ -1566,12 +1561,7 @@ const Outpatient = () => {
       medType,
       doseFrequency,
       parseInt(totalDays),
-      {
-        totalQuantity: calculationResult.totalQuantity,
-        totalPrice: calculationResult.totalPrice,
-        quantityUnit: calculationResult.quantityUnit || medType,
-        calculationDetails: calculationResult.calculationDetails
-      }
+      calculationResult
     );
 
     const medicineItem = {
@@ -1627,14 +1617,7 @@ const Outpatient = () => {
       medType,
       doseFrequency,
       parseInt(totalDays),
-      {
-        totalQuantity: calculationResult.totalQuantity,
-        totalPrice: calculationResult.totalPrice,
-        quantityUnit: calculationResult.quantityUnit || medType,
-        pricePerUnit: parseFloat(selectedMedicineForDosage.price),
-        isPartialAllowed: false,
-        calculationDetails: calculationResult.calculationDetails
-      }
+      calculationResult
     );
     
     // Create medicine item with dosage information
@@ -2423,46 +2406,50 @@ const Outpatient = () => {
                     <div className="space-y-4">
                       {/* Compact Selected Medicines Display - positioned below Medicine label */}
                       {tempSelectedMedicines.length > 0 && (
-                        <div className="p-3 border border-emerald-500/40 rounded-lg bg-emerald-50/80">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-semibold text-emerald-800">
+                        <div className="glass-card p-4 border border-medical-primary/30 bg-gradient-to-br from-medical-primary/5 to-medical-primary/10 backdrop-blur-sm">
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-sm font-semibold text-medical-primary flex items-center">
+                              <Calculator className="h-4 w-4 mr-2" />
                               Selected: {tempSelectedMedicines.length} medicines
                             </span>
-                            <span className="text-sm font-bold text-emerald-700">
+                            <span className="text-sm font-bold text-medical-primary bg-medical-primary/10 px-2 py-1 rounded-md">
                               {format(tempSelectedMedicines.reduce((sum, medicine) => sum + parseFloat(medicine.price), 0))}
                             </span>
                           </div>
-                          <div className="space-y-1">
+                          <div className="space-y-2">
                             {tempSelectedMedicines.map((medicine, index) => (
-                              <div key={medicine.tempId} className="flex items-center justify-between text-xs bg-white/60 p-2 rounded">
-                                <div className="flex items-center space-x-2 flex-1 min-w-0">
-                                  <span className="bg-emerald-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                              <div key={medicine.tempId} className="flex items-center justify-between text-sm bg-white/80 dark:bg-gray-800/80 p-3 rounded-lg border border-medical-primary/10 hover:border-medical-primary/20 transition-colors">
+                                <div className="flex items-center space-x-3 flex-1 min-w-0">
+                                  <span className="bg-gradient-to-r from-medical-primary to-medical-secondary text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0 shadow-md">
                                     {index + 1}
                                   </span>
-                                  <span className="font-medium text-gray-900 truncate">
+                                  <span className="font-medium text-foreground truncate">
                                     {medicine.name.length > 25 ? `${medicine.name.substring(0, 25)}...` : medicine.name}
                                   </span>
                                 </div>
-                                <div className="flex items-center space-x-2 flex-shrink-0">
-                                  <span className="text-emerald-700 font-semibold">
+                                <div className="flex items-center space-x-3 flex-shrink-0">
+                                  <span className="text-medical-primary font-semibold bg-medical-primary/10 px-2 py-1 rounded">
                                     {format(parseFloat(medicine.price))}
                                   </span>
                                   <button
                                     onClick={() => removeTempMedicine(medicine.tempId)}
-                                    className="text-red-500 hover:text-red-700 p-0.5"
+                                    className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 p-1 rounded transition-colors"
+                                    title="Remove medicine"
                                   >
-                                    <X className="h-3 w-3" />
+                                    <X className="h-4 w-4" />
                                   </button>
                                 </div>
                               </div>
                             ))}
                           </div>
-                          <div className="mt-2 pt-2 border-t border-emerald-200">
+                          <div className="mt-4 pt-3 border-t border-medical-primary/20">
                             <Button
                               onClick={addAllTempMedicinesToBill}
+                              variant="medical"
                               size="sm"
-                              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs"
+                              className="w-full text-sm font-medium shadow-md hover:shadow-lg transition-shadow"
                             >
+                              <Plus className="h-4 w-4 mr-2" />
                               Add to Bill ({tempSelectedMedicines.length})
                             </Button>
                           </div>
@@ -2471,16 +2458,17 @@ const Outpatient = () => {
 
                       {/* Medicine Dosage Selection Interface */}
                       {showMedicineDosageSelection && selectedMedicineForDosage && (
-                        <div className="mt-6 p-4 border border-medical-primary/20 rounded-lg bg-medical-primary/5">
-                          <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold text-medical-primary">
+                        <div className="glass-card mt-6 p-6 border border-medical-primary/30 bg-gradient-to-br from-medical-primary/5 to-medical-primary/10 backdrop-blur-sm shadow-lg">
+                          <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-lg font-semibold text-medical-primary flex items-center">
+                              <Calculator className="h-5 w-5 mr-2" />
                               Set Dosage for: {selectedMedicineForDosage.name}
                             </h3>
                             <Button
                               onClick={cancelMedicineDosageSelection}
-                              variant="ghost"
+                              variant="medical-ghost"
                               size="sm"
-                              className="text-muted-foreground hover:text-foreground"
+                              className="text-muted-foreground hover:text-medical-primary"
                             >
                               <X className="h-4 w-4" />
                             </Button>
@@ -2572,12 +2560,33 @@ const Outpatient = () => {
 
                             {/* Calculation Details (Optional) */}
                             {isDosageSelectionComplete() && (
-                              <div className="text-xs text-muted-foreground bg-muted/20 p-2 rounded-md">
-                                <div className="grid grid-cols-2 gap-x-4">
-                                  <div>• Base price: {format(selectedMedicineForDosage.price)}</div>
-                                  <div>• Frequency: {doseFrequencyOptions.find(f => f.value === doseFrequency)?.label}</div>
-                                  <div>• Duration: {totalDays} days</div>
-                                  <div>• Calculation: {calculateOutpatientMedicineDosage().calculationDetails}</div>
+                              <div className="glass-card p-4 bg-gradient-to-r from-medical-primary/5 to-medical-secondary/5 border border-medical-primary/20 rounded-lg">
+                                <div className="text-sm font-medium text-medical-primary mb-3 flex items-center">
+                                  <Calculator className="h-4 w-4 mr-2" />
+                                  Calculation Preview
+                                </div>
+                                <div className="grid grid-cols-2 gap-4 text-xs text-muted-foreground">
+                                  <div className="flex justify-between">
+                                    <span>Base price:</span>
+                                    <span className="font-medium text-medical-primary">{format(selectedMedicineForDosage.price)}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span>Frequency:</span>
+                                    <span className="font-medium">{doseFrequencyOptions.find(f => f.value === doseFrequency)?.label}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span>Duration:</span>
+                                    <span className="font-medium">{totalDays} days</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span>Total quantity:</span>
+                                    <span className="font-medium">{calculateOutpatientMedicineDosage().totalQuantity} {calculateOutpatientMedicineDosage().quantityUnit}</span>
+                                  </div>
+                                </div>
+                                <div className="mt-3 pt-3 border-t border-medical-primary/10">
+                                  <div className="text-xs text-muted-foreground">
+                                    <strong>Calculation:</strong> {calculateOutpatientMedicineDosage().calculationDetails}
+                                  </div>
                                 </div>
                               </div>
                             )}
