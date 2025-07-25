@@ -388,7 +388,7 @@ const Database = () => {
               </div>
             ) : (
               // Carousel mode with preview buttons
-              <div className="space-y-4">
+              <div>
                 {/* Category Navigation */}
                 <div className="flex items-center justify-center space-x-2">
                   {/* Previous preview button */}
@@ -449,25 +449,6 @@ const Database = () => {
                         {allCategories[(currentCategoryIndex + 1) % allCategories.length]}
                       </div>
                     </div>
-                  </Button>
-                </div>
-
-                {/* Add Items Button for Current Category */}
-                <div className="flex justify-center">
-                  <Button
-                    variant="medical"
-                    className="h-auto p-3 border-2 border-dashed border-medical-primary/50"
-                    onClick={() => {
-                      setFormData({
-                        ...formData,
-                        category: filterCategory
-                      });
-                      setIsAdding(true);
-                    }}
-                    disabled={isAdding}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    <span className="font-semibold">Add Item</span>
                   </Button>
                 </div>
               </div>
