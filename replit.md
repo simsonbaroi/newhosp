@@ -4,22 +4,25 @@
 A professional medical billing calculator application for hospitals and clinics. The app allows users to calculate bills for both outpatient and inpatient services, with comprehensive database management for medical items and procedures.
 
 ## Recent Changes
-- **2025-01-25**: Successfully migrated from Lovable to Replit environment
-- **2025-01-25**: Implemented grid button layout for categories (6 buttons per row)
-- **2025-01-25**: Enhanced button styling with left-aligned text and improved visual design
-- **2025-01-25**: Applied comprehensive dark green theme across entire system
-- **2025-01-25**: Updated navigation header with emerald gradient and enhanced styling
-- **2025-01-25**: Modified category buttons to use emerald color scheme
-- **2025-01-25**: Changed currency from Philippine Peso (₱) to Bangladeshi Taka (৳)
-- **2025-01-25**: Fixed Outpatient button order: Registration, Dr. Fee, Medic Fee, Off-Charge, Laboratory, X-Ray, Medicine, Procedure, O.R, Physical therapy, Others
-- **2025-01-25**: Implemented professional-level dark theme with glass morphism effects, backdrop blur, and neo-morphic shadows
+- **2025-01-25**: Successfully migrated from Replit Agent to standard Replit environment
+- **2025-01-25**: Converted from PostgreSQL to in-memory storage for Replit compatibility
+- **2025-01-25**: Fixed all TypeScript and LSP errors in storage system
+- **2025-01-25**: Implemented complete API routes for medical items and bills management
+- **2025-01-25**: Set up TanStack Query client for frontend API calls
+- **2025-01-25**: FIXED: Comprehensive color system with consistent dark green medical theme
+- **2025-01-25**: FIXED: Button contrast issues - white buttons with white labels resolved
+- **2025-01-25**: Added medical-themed button variants (medical, medical-outline, medical-ghost)
+- **2025-01-25**: Updated all components to use consistent medical color palette
+- **2025-01-25**: Enhanced navigation header with proper medical gradient and contrast
+- **2025-01-25**: Implemented glass morphism effects for cards with hover animations
 
 ## Project Architecture
-- **Frontend**: React with TypeScript, using shadcn/ui components
-- **Backend**: Express.js server with in-memory storage
-- **Routing**: Currently using react-router-dom (needs migration to wouter)
-- **Styling**: Tailwind CSS with custom medical theme
-- **Data**: Local storage for bills, in-memory database for items
+- **Frontend**: React with TypeScript, using shadcn/ui components and wouter for routing
+- **Backend**: Express.js server with in-memory storage (MemoryStorage class)
+- **API**: Complete REST API with medical items and bills endpoints
+- **Styling**: Tailwind CSS with professional dark green medical theme
+- **Data Management**: TanStack Query for server state, in-memory storage for persistence
+- **Theme**: Glass morphism effects, consistent medical color palette, proper contrast ratios
 
 ## Key Features
 - Outpatient bill calculation with 10+ categories

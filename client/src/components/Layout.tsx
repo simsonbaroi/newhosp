@@ -18,11 +18,11 @@ const Layout = ({ children }: LayoutProps) => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="glass-card text-white sticky top-0 z-50 border-b border-emerald-500/20" style={{background: 'linear-gradient(135deg, rgba(6, 95, 70, 0.9), rgba(4, 120, 87, 0.9))'}}>
+      <header className="bg-medical-gradient text-white sticky top-0 z-50 border-b border-medical-primary/20 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
-              <Calculator className="h-8 w-8 text-emerald-200 mr-3" />
+              <Calculator className="h-8 w-8 text-white mr-3" />
               <h1 className="text-xl font-bold text-white">
                 Hospital Bill Calculator
               </h1>
@@ -39,8 +39,8 @@ const Layout = ({ children }: LayoutProps) => {
                     href={item.href}
                     className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
                       isActive
-                        ? 'glass-button bg-emerald-600/40 text-white font-medium shadow-lg ring-1 ring-emerald-400/40 neo-shadow'
-                        : 'text-emerald-100/90 hover:text-white hover:bg-emerald-700/30 hover:backdrop-blur-sm hover:shadow-md'
+                        ? 'bg-white/20 text-white font-medium shadow-lg backdrop-blur-sm border border-white/20'
+                        : 'text-white/90 hover:text-white hover:bg-white/10 hover:backdrop-blur-sm'
                     }`}
                   >
                     <Icon className="h-4 w-4 mr-2" />

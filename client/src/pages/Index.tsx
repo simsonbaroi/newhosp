@@ -17,21 +17,21 @@ const Index = () => {
       description: 'Calculate bills for outpatient services including laboratory, X-ray, consultations, and procedures.',
       icon: Users,
       href: '/outpatient',
-      color: 'bg-primary hover:bg-primary-hover'
+      variant: 'medical' as const
     },
     {
       title: 'Inpatient Calculator', 
       description: 'Manage inpatient billing with daily rates, room charges, medicines, and extended stay calculations.',
       icon: Stethoscope,
       href: '/inpatient',
-      color: 'bg-accent hover:bg-accent-hover'
+      variant: 'default' as const
     },
     {
       title: 'Database Management',
       description: 'Add, edit, and manage medical items, procedures, and their pricing across all categories.',
       icon: Database,
       href: '/database',
-      color: 'bg-secondary hover:bg-secondary/80 text-secondary-foreground'
+      variant: 'medical-outline' as const
     }
   ];
 
@@ -55,7 +55,7 @@ const Index = () => {
             </p>
             <div className="flex justify-center space-x-4">
               <Link href="/outpatient">
-                <Button size="lg" className="bg-white text-primary hover:bg-white/90 font-semibold">
+                <Button size="lg" variant="medical-outline" className="bg-white border-2 border-white text-medical-primary hover:bg-medical-primary hover:text-white font-semibold shadow-lg transition-all duration-300">
                   Start Calculating
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
@@ -80,10 +80,10 @@ const Index = () => {
               {features.map((feature, index) => {
                 const Icon = feature.icon;
                 return (
-                  <Card key={index} className="shadow-card hover:shadow-hover transition-all duration-300 group">
+                  <Card key={index} className="glass-card hover:shadow-lg transition-all duration-300 group border-medical-secondary/20">
                     <CardHeader className="text-center">
-                      <div className="mx-auto mb-4 p-3 bg-muted rounded-full w-fit group-hover:scale-110 transition-transform">
-                        <Icon className="h-8 w-8 text-primary" />
+                      <div className="mx-auto mb-4 p-3 bg-medical-secondary rounded-full w-fit group-hover:scale-110 transition-transform">
+                        <Icon className="h-8 w-8 text-medical-primary" />
                       </div>
                       <CardTitle className="text-xl font-bold text-foreground">
                         {feature.title}
@@ -95,7 +95,8 @@ const Index = () => {
                       </p>
                       <Link href={feature.href}>
                         <Button 
-                          className={`w-full ${feature.color} font-semibold`}
+                          variant={feature.variant}
+                          className="w-full font-semibold"
                         >
                           Open Calculator
                           <ArrowRight className="ml-2 h-4 w-4" />
@@ -114,15 +115,15 @@ const Index = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid md:grid-cols-3 gap-8 text-center">
               <div>
-                <div className="text-4xl font-bold text-primary mb-2">10+</div>
+                <div className="text-4xl font-bold text-medical-primary mb-2">10+</div>
                 <div className="text-muted-foreground">Outpatient Categories</div>
               </div>
               <div>
-                <div className="text-4xl font-bold text-accent mb-2">19+</div>
+                <div className="text-4xl font-bold text-medical-accent mb-2">19+</div>
                 <div className="text-muted-foreground">Inpatient Categories</div>
               </div>
               <div>
-                <div className="text-4xl font-bold text-primary mb-2">∞</div>
+                <div className="text-4xl font-bold text-medical-primary mb-2">∞</div>
                 <div className="text-muted-foreground">Customizable Items</div>
               </div>
             </div>
