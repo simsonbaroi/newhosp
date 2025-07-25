@@ -523,18 +523,28 @@ const Outpatient = () => {
                       
                       {/* Dropdown selected items as tags */}
                       {dropdownSelectedItems.length > 0 && (
-                        <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md">
-                          {dropdownSelectedItems.map((item) => (
-                            <div key={item.id} className="inline-flex items-center bg-blue-500/10 text-blue-600 px-2 py-1 rounded text-xs">
-                              <span className="mr-1">{item.name}</span>
-                              <button
-                                onClick={() => removeDropdownItem(item.id)}
-                                className="hover:bg-blue-500/20 rounded-full p-0.5"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </div>
-                          ))}
+                        <div className="flex items-start gap-2 p-2 bg-muted/20 rounded-md">
+                          <div className="flex flex-wrap gap-1 flex-1">
+                            {dropdownSelectedItems.map((item) => (
+                              <div key={item.id} className="inline-flex items-center bg-blue-500/10 text-blue-600 px-2 py-1 rounded text-xs">
+                                <span className="mr-1">{item.name}</span>
+                                <button
+                                  onClick={() => removeDropdownItem(item.id)}
+                                  className="hover:bg-blue-500/20 rounded-full p-0.5"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          <Button 
+                            onClick={addDropdownSelectedItemsToBill} 
+                            variant="medical" 
+                            size="sm"
+                            className="flex-shrink-0"
+                          >
+                            Add to Bill
+                          </Button>
                         </div>
                       )}
                       
@@ -569,7 +579,7 @@ const Outpatient = () => {
                               </div>
                             )}
                           </div>
-                          <div className="flex gap-2 mt-2">
+                          <div className="flex justify-center mt-2">
                             <Button 
                               onClick={() => setIsDropdownOpen(false)} 
                               variant="medical-outline" 
@@ -577,15 +587,6 @@ const Outpatient = () => {
                             >
                               Close Dropdown
                             </Button>
-                            {dropdownSelectedItems.length > 0 && (
-                              <Button 
-                                onClick={addDropdownSelectedItemsToBill} 
-                                variant="medical" 
-                                size="sm"
-                              >
-                                Add {dropdownSelectedItems.length} to Bill
-                              </Button>
-                            )}
                           </div>
                         </div>
                       )}
@@ -600,11 +601,7 @@ const Outpatient = () => {
                         </Button>
                       )}
                       
-                      {!isDropdownOpen && dropdownSelectedItems.length > 0 && (
-                        <Button onClick={addDropdownSelectedItemsToBill} variant="medical" className="w-full">
-                          Add {dropdownSelectedItems.length} Selected Item{dropdownSelectedItems.length !== 1 ? 's' : ''} to Bill (Dropdown)
-                        </Button>
-                      )}
+
                       
                       <div className="text-sm text-muted-foreground">
                         • Type and press comma for quick tag selection<br/>
