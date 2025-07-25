@@ -38,7 +38,7 @@ const Layout = ({ children }: LayoutProps) => {
           {/* Navigation Bar - Separate Row */}
           <div className="border-t border-white/10">
             <nav className="flex justify-center py-3 px-2 overflow-x-auto">
-              <div className="flex space-x-1 sm:space-x-2 min-w-max">
+              <div className="flex space-x-0.5 sm:space-x-1 min-w-max">
                 {navigation.map((item) => {
                   const isActive = location === item.href;
                   const Icon = item.icon;
@@ -47,7 +47,7 @@ const Layout = ({ children }: LayoutProps) => {
                     <Link
                       key={item.name}
                       href={item.href}
-                      className={`nav-button-enhanced flex items-center px-3 sm:px-6 py-2.5 rounded-lg text-xs sm:text-sm font-medium min-w-[80px] sm:min-w-[120px] justify-center flex-shrink-0 ${
+                      className={`nav-button-enhanced flex items-center px-2.5 sm:px-5 py-2.5 rounded-lg text-xs sm:text-sm font-medium min-w-[75px] sm:min-w-[110px] justify-center flex-shrink-0 ${
                         isActive
                           ? 'nav-button-active bg-white/25 text-white font-semibold border border-white/30'
                           : 'text-white/90 hover:text-white hover:bg-white/15'
