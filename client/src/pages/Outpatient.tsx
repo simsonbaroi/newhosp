@@ -544,6 +544,44 @@ const Outpatient = () => {
     }
   }, [selectedCategory, isCarouselMode]);
 
+  // Add global keyboard navigation for carousel mode
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only handle arrow keys when in carousel mode and not focused on input fields
+      if (!isCarouselMode) return;
+      
+      const activeElement = document.activeElement;
+      const isInputFocused = activeElement?.tagName === 'INPUT' || 
+                           activeElement?.tagName === 'TEXTAREA' || 
+                           activeElement?.role === 'combobox' ||
+                           activeElement?.getAttribute('contenteditable') === 'true';
+      
+      // Don't interfere if user is typing in an input field
+      if (isInputFocused) return;
+      
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        navigateCarousel('prev');
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        navigateCarousel('next');
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        exitCarousel();
+      }
+    };
+
+    // Add event listener when carousel mode is active
+    if (isCarouselMode) {
+      document.addEventListener('keydown', handleKeyDown);
+    }
+
+    // Cleanup event listener
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isCarouselMode, currentCategoryIndex, orderedCategories.length]);
+
   // Get dropdown items sorted by relevance when user is typing in search
   const getOrderedDropdownItems = () => {
     if (!categorySearchQuery.trim()) return categoryItems;
@@ -943,14 +981,20 @@ const Outpatient = () => {
                     Categories
                   </span>
                   {isCarouselMode && (
-                    <Button 
-                      size="sm" 
-                      variant="medical-ghost" 
-                      onClick={exitCarousel}
-                      className="h-8 w-8 p-0"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center space-x-2">
+                      <div className="text-xs text-muted-foreground hidden sm:block">
+                        Use ← → keys to navigate
+                      </div>
+                      <Button 
+                        size="sm" 
+                        variant="medical-ghost" 
+                        onClick={exitCarousel}
+                        className="h-8 w-8 p-0"
+                        title="Exit carousel (Esc key)"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
                   )}
                 </CardTitle>
               </CardHeader>
@@ -997,6 +1041,7 @@ const Outpatient = () => {
                       size="sm"
                       onClick={() => navigateCarousel('prev')}
                       className="h-10 w-10 p-0 flex-shrink-0"
+                      title="Previous category (← key)"
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
@@ -1021,6 +1066,7 @@ const Outpatient = () => {
                       size="sm"
                       onClick={() => navigateCarousel('next')}
                       className="h-10 w-10 p-0 flex-shrink-0"
+                      title="Next category (→ key)"
                     >
                       <ChevronRight className="h-4 w-4" />
                     </Button>
@@ -1274,7 +1320,8 @@ const Outpatient = () => {
                         • Dropdown: Type letters to filter instantly, stays open for multiple selections<br/>
                         • Arrow keys to navigate, Enter to select (filter resets after each selection)<br/>
                         • Click "Add to Bill" or outside dropdown to close • Escape to close without adding<br/>
-                        • Both methods access same database but work independently
+                        • Both methods access same database but work independently<br/>
+                        • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
                       </div>
                     </div>
                   ) : selectedCategory === 'X-Ray' ? (
@@ -1498,7 +1545,8 @@ const Outpatient = () => {
                         • Dropdown: Type letters to filter instantly, stays open for multiple selections<br/>
                         • Arrow keys to navigate, Enter to select (filter resets after each selection)<br/>
                         • Click "Add to Bill" or outside dropdown to close • Escape to close without adding<br/>
-                        • Both methods access same database but work independently
+                        • Both methods access same database but work independently<br/>
+                        • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
                       </div>
                     </div>
                   ) : selectedCategory === 'Medicine' ? (
