@@ -30,6 +30,8 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: Added intuitive navigation with clickable preview buttons for better user experience
 - **2025-01-25**: Improved carousel alignment with left/right aligned preview buttons
 - **2025-01-25**: Hidden global search bar in carousel mode for cleaner focused interface
+- **2025-01-25**: Implemented identical carousel navigation system for Inpatient categories
+- **2025-01-25**: Added same preview buttons, arrow navigation, and X button functionality to Inpatient
 
 ## Project Architecture
 - **Frontend**: React with TypeScript, using shadcn/ui components and wouter for routing

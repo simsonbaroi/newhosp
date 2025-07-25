@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, Minus, Calculator, Grid3X3, Calendar } from 'lucide-react';
+import { Search, Plus, Minus, Calculator, Grid3X3, Calendar, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,8 @@ const Inpatient = () => {
   const [categorySearchQuery, setCategorySearchQuery] = useState('');
   const [billItems, setBillItems] = useState<BillItem[]>([]);
   const [daysAdmitted, setDaysAdmitted] = useState<number>(1);
+  const [isCarouselMode, setIsCarouselMode] = useState<boolean>(false);
+  const [currentCategoryIndex, setCurrentCategoryIndex] = useState<number>(0);
   const { format } = useTakaFormat();
 
   // Get inpatient medical items
@@ -153,6 +155,37 @@ const Inpatient = () => {
   const orderedCategories = categoryOrder.filter(cat => categories.includes(cat))
     .concat(categories.filter(cat => !categoryOrder.includes(cat)));
 
+  // Carousel navigation functions
+  const handleCategoryClick = (category: string) => {
+    if (isCarouselMode && category === selectedCategory) {
+      // If already in carousel mode and same category clicked, exit carousel
+      setIsCarouselMode(false);
+      setSelectedCategory('');
+    } else {
+      setSelectedCategory(category);
+      setIsCarouselMode(true);
+      setCurrentCategoryIndex(orderedCategories.indexOf(category));
+      setCategorySearchQuery(''); // Reset search when switching categories
+    }
+  };
+
+  const navigateCarousel = (direction: 'prev' | 'next') => {
+    const newIndex = direction === 'prev' 
+      ? (currentCategoryIndex - 1 + orderedCategories.length) % orderedCategories.length
+      : (currentCategoryIndex + 1) % orderedCategories.length;
+    
+    setCurrentCategoryIndex(newIndex);
+    setSelectedCategory(orderedCategories[newIndex]);
+    setCategorySearchQuery(''); // Reset search when switching categories
+  };
+
+  const exitCarousel = () => {
+    setIsCarouselMode(false);
+    setSelectedCategory('');
+    setCategorySearchQuery('');
+    setGlobalSearchQuery(''); // Clear global search when exiting carousel
+  };
+
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8 space-y-8">
@@ -211,18 +244,19 @@ const Inpatient = () => {
               </CardContent>
             </Card>
 
-            {/* Global Search */}
-            <Card className="glass-card">
-              <CardHeader>
-                <CardTitle className="flex items-center text-medical-primary">
-                  <Search className="mr-2 h-5 w-5" />
-                  Search All Items
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Input
-                  placeholder="Search for medical items..."
-                  value={globalSearchQuery}
+            {/* Global Search - Hidden in carousel mode */}
+            {!isCarouselMode && (
+              <Card className="glass-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-medical-primary">
+                    <Search className="mr-2 h-5 w-5" />
+                    Search All Items
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Input
+                    placeholder="Search for medical items..."
+                    value={globalSearchQuery}
                   onChange={(e) => setGlobalSearchQuery(e.target.value)}
                   className="w-full"
                 />
@@ -247,40 +281,119 @@ const Inpatient = () => {
                   </div>
                 )}
               </CardContent>
-            </Card>
+              </Card>
+            )}
 
             {/* Category Buttons */}
             <Card className="glass-card">
               <CardHeader>
-                <CardTitle className="flex items-center text-medical-primary">
-                  <Grid3X3 className="mr-2 h-5 w-5" />
-                  Inpatient Categories
+                <CardTitle className="flex items-center justify-between text-medical-primary">
+                  <span className="flex items-center">
+                    <Grid3X3 className="mr-2 h-5 w-5" />
+                    Inpatient Categories
+                  </span>
+                  {isCarouselMode && (
+                    <Button 
+                      size="sm" 
+                      variant="medical-ghost" 
+                      onClick={exitCarousel}
+                      className="h-8 w-8 p-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {orderedCategories.map((category) => {
-                    const itemCount = medicalItems.filter((item: MedicalItem) => item.category === category).length;
-                    return (
-                      <Button
-                        key={category}
-                        variant={selectedCategory === category ? "medical" : "medical-outline"}
-                        className="h-auto p-3 text-left justify-start"
-                        onClick={() => setSelectedCategory(category)}
-                      >
-                        <div>
-                          <div className="font-semibold text-sm truncate">{category}</div>
-                          <div className="text-xs opacity-75">{itemCount} items</div>
+                {!isCarouselMode ? (
+                  // Normal grid mode
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {orderedCategories.map((category) => {
+                      const itemCount = medicalItems.filter((item: MedicalItem) => item.category === category).length;
+                      return (
+                        <Button
+                          key={category}
+                          variant="medical-outline"
+                          className="h-auto p-3 text-left justify-start"
+                          onClick={() => handleCategoryClick(category)}
+                        >
+                          <div>
+                            <div className="font-semibold text-sm truncate">{category}</div>
+                            <div className="text-xs opacity-75">{itemCount} items</div>
+                          </div>
+                        </Button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  // Carousel mode with preview buttons
+                  <div className="flex items-center justify-center space-x-2">
+                    {/* Previous preview button */}
+                    <Button
+                      variant="medical-ghost"
+                      className="h-auto p-2 text-left flex-shrink-0 opacity-60 hover:opacity-80 max-w-[80px] justify-start"
+                      onClick={() => navigateCarousel('prev')}
+                    >
+                      <div className="w-full">
+                        <div className="text-xs truncate text-left">
+                          {orderedCategories[(currentCategoryIndex - 1 + orderedCategories.length) % orderedCategories.length]}
                         </div>
-                      </Button>
-                    );
-                  })}
-                </div>
+                      </div>
+                    </Button>
+
+                    {/* Previous arrow */}
+                    <Button
+                      variant="medical-outline"
+                      size="sm"
+                      onClick={() => navigateCarousel('prev')}
+                      className="h-10 w-10 p-0 flex-shrink-0"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    
+                    {/* Current selected category */}
+                    <Button
+                      variant="medical"
+                      className="h-auto p-4 text-center flex-1 max-w-[200px]"
+                      onClick={() => handleCategoryClick(selectedCategory)}
+                    >
+                      <div>
+                        <div className="font-semibold text-sm">{selectedCategory}</div>
+                        <div className="text-xs opacity-75">
+                          {medicalItems.filter((item: MedicalItem) => item.category === selectedCategory).length} items
+                        </div>
+                      </div>
+                    </Button>
+                    
+                    {/* Next arrow */}
+                    <Button
+                      variant="medical-outline"
+                      size="sm"
+                      onClick={() => navigateCarousel('next')}
+                      className="h-10 w-10 p-0 flex-shrink-0"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+
+                    {/* Next preview button */}
+                    <Button
+                      variant="medical-ghost"
+                      className="h-auto p-2 text-right flex-shrink-0 opacity-60 hover:opacity-80 max-w-[80px] justify-end"
+                      onClick={() => navigateCarousel('next')}
+                    >
+                      <div className="w-full">
+                        <div className="text-xs truncate text-right">
+                          {orderedCategories[(currentCategoryIndex + 1) % orderedCategories.length]}
+                        </div>
+                      </div>
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
             {/* Category Items */}
-            {selectedCategory && (
+            {selectedCategory && isCarouselMode && (
               <Card className="glass-card">
                 <CardHeader>
                   <CardTitle className="text-medical-primary">{selectedCategory}</CardTitle>
