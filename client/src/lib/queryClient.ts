@@ -14,7 +14,16 @@ export const apiRequest = async (url: string, options?: RequestInit) => {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
 
-  return response.json();
+  // Check if response is actually JSON
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    return response.json();
+  } else {
+    // If we get HTML instead of JSON, it means API route wasn't matched
+    const text = await response.text();
+    console.error('Expected JSON but got:', text.substring(0, 100));
+    throw new Error('API endpoint returned HTML instead of JSON - check server routing');
+  }
 };
 
 export const queryClient = new QueryClient({
