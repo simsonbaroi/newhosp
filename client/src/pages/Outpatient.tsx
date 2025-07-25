@@ -207,6 +207,9 @@ const Outpatient = () => {
     const selectedItem = categoryItems.find(item => item.id.toString() === value);
     if (selectedItem && !dropdownSelectedItems.find(item => item.id === selectedItem.id)) {
       setDropdownSelectedItems(prev => [...prev, selectedItem]);
+      // Clear search selections when using dropdown
+      setSelectedLabItems([]);
+      setCategorySearchQuery('');
     }
     setDropdownValue(''); // Reset dropdown after selection
   };
