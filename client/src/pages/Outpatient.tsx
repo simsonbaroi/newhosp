@@ -590,12 +590,38 @@ const Outpatient = () => {
     };
   }, [isXRayDropdownOpen]);
 
+  // Handle click outside for Medicine dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (medicineDropdownRef.current && !medicineDropdownRef.current.contains(event.target as Node)) {
+        setIsMedicineDropdownOpen(false);
+        setMedicineHighlightedDropdownIndex(-1);
+        setMedicineDropdownFilterQuery(''); // Reset filter when clicking outside
+      }
+    };
+
+    if (isMedicineDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMedicineDropdownOpen]);
+
   // Ensure X-Ray dropdown button stays focused for continuous keyboard input
   useEffect(() => {
     if (isXRayDropdownOpen && xRayDropdownButtonRef.current) {
       xRayDropdownButtonRef.current.focus();
     }
   }, [xRayDropdownFilterQuery, xRayDropdownSelectedItems.length]);
+
+  // Ensure Medicine dropdown button stays focused for continuous keyboard input
+  useEffect(() => {
+    if (isMedicineDropdownOpen && medicineDropdownButtonRef.current) {
+      medicineDropdownButtonRef.current.focus();
+    }
+  }, [medicineDropdownFilterQuery, medicineDropdownSelectedItems.length]);
 
   // Auto-focus search input when X-Ray category is selected
   useEffect(() => {
