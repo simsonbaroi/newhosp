@@ -134,11 +134,10 @@ const Outpatient = () => {
     setBillItems([]);
   };
 
-  // Category button order as specified - only categories that actually exist
+  // Category button order as specified by user
   const categoryOrder = [
-    'Registration Fees', 'Dr. Fees', 'Medic Fee', 
-    'Laboratory', 'X-Ray', 'Medicine', 
-    'Physical Therapy', 'Limb and Brace'
+    'Laboratory', 'X-Ray', 'Registration Fees', 'Dr. Fees', 
+    'Medic Fee', 'Medicine', 'Physical Therapy', 'Limb and Brace'
   ];
 
   // Categories that should not have search functionality
