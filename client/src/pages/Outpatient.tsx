@@ -221,6 +221,13 @@ const Outpatient = () => {
     setDropdownValue(''); // Reset dropdown after selection
     setHighlightedDropdownIndex(-1); // Reset highlighted index
     setDropdownFilterQuery(''); // Reset filter text for fresh start
+    
+    // Refocus the dropdown button to continue keyboard input
+    setTimeout(() => {
+      if (dropdownButtonRef.current) {
+        dropdownButtonRef.current.focus();
+      }
+    }, 0);
     // Keep dropdown open for multiple selections
   };
 
@@ -245,6 +252,7 @@ const Outpatient = () => {
       const selectedItem = orderedItems[highlightedDropdownIndex];
       if (selectedItem) {
         handleDropdownSelect(selectedItem.id.toString());
+        // Dropdown stays open and focused for more selections
       }
     } else if (e.key === 'Escape') {
       e.preventDefault();
@@ -359,6 +367,13 @@ const Outpatient = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isDropdownOpen]);
+
+  // Ensure dropdown button stays focused for continuous keyboard input
+  useEffect(() => {
+    if (isDropdownOpen && dropdownButtonRef.current) {
+      dropdownButtonRef.current.focus();
+    }
+  }, [dropdownFilterQuery, dropdownSelectedItems.length]);
 
   // Get dropdown items sorted by relevance when user is typing in search
   const getOrderedDropdownItems = () => {
@@ -708,7 +723,10 @@ const Outpatient = () => {
                               {getFilteredDropdownItems().map((item: MedicalItem, index) => (
                                 <div
                                   key={item.id}
-                                  onClick={() => handleDropdownSelect(item.id.toString())}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    handleDropdownSelect(item.id.toString());
+                                  }}
                                   className={`px-3 py-2 cursor-pointer text-sm flex items-center justify-between hover:bg-muted/50 ${
                                     index === highlightedDropdownIndex 
                                       ? 'bg-medical-primary/10 border-l-4 border-medical-primary' 
