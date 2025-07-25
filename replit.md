@@ -53,6 +53,8 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: Added proper mode switching between search and dropdown with automatic clearing of opposite mode selections
 - **2025-01-25**: Enhanced user experience with clear help text explaining independent search/dropdown functionality
 - **2025-01-25**: PERFECTED: Complete reset when switching between search and dropdown modes - no partial selections remain
+- **2025-01-25**: ENHANCED: Added responsive dropdown with built-in search filter - closest matches appear first
+- **2025-01-25**: Real-time dropdown filtering with relevance sorting (exact > starts-with > contains)
 
 ## Project Architecture
 - **Frontend**: React with TypeScript, using shadcn/ui components and wouter for routing

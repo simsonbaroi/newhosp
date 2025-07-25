@@ -23,6 +23,7 @@ const Outpatient = () => {
   const [selectedLabItems, setSelectedLabItems] = useState<MedicalItem[]>([]);
   const [dropdownSelectedItems, setDropdownSelectedItems] = useState<MedicalItem[]>([]);
   const [dropdownValue, setDropdownValue] = useState<string>('');
+  const [dropdownSearchQuery, setDropdownSearchQuery] = useState<string>('');
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { format } = useTakaFormat();
   const queryClient = useQueryClient();
@@ -200,6 +201,7 @@ const Outpatient = () => {
     setSelectedLabItems([]); // Clear lab selections when exiting
     setDropdownSelectedItems([]); // Clear dropdown selections when exiting
     setDropdownValue(''); // Reset dropdown value
+    setDropdownSearchQuery(''); // Reset dropdown search
   };
 
   // Handle dropdown selection
@@ -284,6 +286,33 @@ const Outpatient = () => {
       addToBill(item);
     });
     setDropdownSelectedItems([]);
+  };
+
+  // Get filtered and sorted dropdown items based on search
+  const getFilteredDropdownItems = () => {
+    if (!dropdownSearchQuery) return categoryItems;
+    
+    const query = dropdownSearchQuery.toLowerCase();
+    const filtered = categoryItems.filter(item => 
+      item.name.toLowerCase().includes(query)
+    );
+    
+    // Sort by relevance: exact matches first, then starts with, then contains
+    return filtered.sort((a, b) => {
+      const aName = a.name.toLowerCase();
+      const bName = b.name.toLowerCase();
+      
+      // Exact match gets highest priority
+      if (aName === query) return -1;
+      if (bName === query) return 1;
+      
+      // Starts with query gets second priority
+      if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
+      if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
+      
+      // Both start with or both contain - sort alphabetically
+      return aName.localeCompare(bName);
+    });
   };
 
   return (
@@ -523,29 +552,49 @@ const Outpatient = () => {
                         <div className="text-sm font-medium text-muted-foreground">
                           Alternative: Select from dropdown
                         </div>
-                        <Select value={dropdownValue} onValueChange={handleDropdownSelect}>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select lab test from dropdown..." />
-                          </SelectTrigger>
-                          <SelectContent className="bg-popover border border-border max-h-60">
-                            {categoryItems.map((item: MedicalItem) => (
-                              <SelectItem key={item.id} value={item.id.toString()}>
-                                <div className="flex items-center justify-between w-full">
-                                  <span>{item.name}</span>
-                                  <span className="ml-4 text-medical-primary font-semibold">
-                                    {format(item.price)}
-                                  </span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="space-y-2">
+                          <Input
+                            placeholder="Type to filter dropdown options..."
+                            value={dropdownSearchQuery}
+                            onChange={(e) => {
+                              setDropdownSearchQuery(e.target.value);
+                              // Clear search selections when using dropdown search
+                              if (e.target.value.trim()) {
+                                setSelectedLabItems([]);
+                                setCategorySearchQuery('');
+                              }
+                            }}
+                            className="w-full"
+                          />
+                          <Select value={dropdownValue} onValueChange={handleDropdownSelect}>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder={dropdownSearchQuery ? `Select from filtered results (${getFilteredDropdownItems().length} items)` : "Select lab test from dropdown..."} />
+                            </SelectTrigger>
+                            <SelectContent className="bg-popover border border-border max-h-60">
+                              {getFilteredDropdownItems().map((item: MedicalItem) => (
+                                <SelectItem key={item.id} value={item.id.toString()}>
+                                  <div className="flex items-center justify-between w-full">
+                                    <span>{item.name}</span>
+                                    <span className="ml-4 text-medical-primary font-semibold">
+                                      {format(item.price)}
+                                    </span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                              {getFilteredDropdownItems().length === 0 && (
+                                <SelectItem value="no-results" disabled>
+                                  No tests found matching "{dropdownSearchQuery}"
+                                </SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
 
                       <div className="text-sm text-muted-foreground">
                         • Type to search and press comma/enter to add as tags<br/>
-                        • Use dropdown button below for different selection method<br/>
-                        • Both search and dropdown access the same test database independently
+                        • Use dropdown below: type to filter, then select from dropdown<br/>
+                        • Both methods access same database but work independently
                       </div>
                     </div>
                   ) : ['Medicine', 'X-Ray'].includes(selectedCategory) ? (
