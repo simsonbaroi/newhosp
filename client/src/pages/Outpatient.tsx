@@ -185,18 +185,43 @@ const Outpatient = () => {
     setSelectedLabItems([]); // Clear lab selections when exiting
   };
 
+  // Get sorted lab suggestions with closest match first
+  const getLabSuggestions = () => {
+    if (!categorySearchQuery) return [];
+    
+    const query = categorySearchQuery.toLowerCase();
+    const suggestions = filteredCategoryItems.filter(item => 
+      item.name.toLowerCase().includes(query)
+    );
+    
+    // Sort by relevance: exact matches first, then starts with, then contains
+    return suggestions.sort((a, b) => {
+      const aName = a.name.toLowerCase();
+      const bName = b.name.toLowerCase();
+      
+      // Exact match gets highest priority
+      if (aName === query) return -1;
+      if (bName === query) return 1;
+      
+      // Starts with query gets second priority
+      if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
+      if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
+      
+      // Both start with or both contain - sort alphabetically
+      return aName.localeCompare(bName);
+    });
+  };
+
   // Handle comma-separated lab item selection
   const handleLabSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === ',' || e.key === 'Enter') {
       e.preventDefault();
       const query = categorySearchQuery.trim();
       if (query) {
-        // Find the closest match from filtered items
-        const matches = filteredCategoryItems.filter(item => 
-          item.name.toLowerCase().includes(query.toLowerCase())
-        );
-        if (matches.length > 0) {
-          const topMatch = matches[0];
+        // Get the top suggestion (closest match)
+        const suggestions = getLabSuggestions();
+        if (suggestions.length > 0) {
+          const topMatch = suggestions[0];
           if (!selectedLabItems.find(item => item.id === topMatch.id)) {
             setSelectedLabItems(prev => [...prev, topMatch]);
           }
@@ -467,13 +492,15 @@ const Outpatient = () => {
                   {/* Show interface for Medicine, Laboratory, X-Ray */}
                   {selectedCategory === 'Laboratory' ? (
                     <div className="space-y-2">
-                      {categorySearchQuery && filteredCategoryItems.length > 0 ? (
+                      {categorySearchQuery && getLabSuggestions().length > 0 ? (
                         <div className="space-y-1 max-h-40 overflow-y-auto">
                           <div className="text-sm font-medium text-muted-foreground mb-2">
                             Matching tests (press comma to add):
                           </div>
-                          {filteredCategoryItems.slice(0, 5).map((item: MedicalItem) => (
-                            <div key={item.id} className="text-xs p-2 bg-muted/20 rounded cursor-pointer hover:bg-muted/40"
+                          {getLabSuggestions().slice(0, 5).map((item: MedicalItem, index) => (
+                            <div key={item.id} className={`text-xs p-2 rounded cursor-pointer hover:bg-muted/40 ${
+                              index === 0 ? 'bg-medical-primary/10 border border-medical-primary/20' : 'bg-muted/20'
+                            }`}
                                  onClick={() => {
                                    if (!selectedLabItems.find(selected => selected.id === item.id)) {
                                      setSelectedLabItems(prev => [...prev, item]);
@@ -481,6 +508,9 @@ const Outpatient = () => {
                                    setCategorySearchQuery('');
                                  }}>
                               <span className="font-medium">{item.name}</span> - {format(item.price)}
+                              {index === 0 && (
+                                <span className="ml-2 text-medical-primary text-xs">← Will be added</span>
+                              )}
                             </div>
                           ))}
                         </div>
