@@ -61,6 +61,15 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        medical: {
+          primary: "hsl(var(--medical-primary))",
+          secondary: "hsl(var(--medical-secondary))",
+          accent: "hsl(var(--medical-accent))",
+        },
+      },
+      backgroundImage: {
+        'medical-gradient': 'linear-gradient(135deg, hsl(var(--medical-gradient-start)), hsl(var(--medical-gradient-end)))',
+        'medical-gradient-soft': 'linear-gradient(135deg, hsl(var(--medical-gradient-start) / 0.1), hsl(var(--medical-gradient-end) / 0.1))',
       },
       keyframes: {
         "accordion-down": {

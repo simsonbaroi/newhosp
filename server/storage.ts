@@ -1,10 +1,4 @@
-import { drizzle } from "drizzle-orm/node-postgres";
-import { eq, and, desc } from "drizzle-orm";
-import pg from "pg";
 import { 
-  users, 
-  medicalItems, 
-  bills,
   type User, 
   type InsertUser,
   type MedicalItem,
@@ -12,14 +6,6 @@ import {
   type Bill,
   type InsertBill
 } from "@shared/schema";
-
-const { Pool } = pg;
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
-
-const db = drizzle(pool);
 
 export interface IStorage {
   // User methods
@@ -42,150 +28,147 @@ export interface IStorage {
   initializeDatabase(): Promise<void>;
 }
 
-export class DatabaseStorage implements IStorage {
+export class MemoryStorage implements IStorage {
+  private users: User[] = [];
+  private medicalItems: MedicalItem[] = [];
+  private bills: Bill[] = [];
+  private nextUserId = 1;
+  private nextMedicalItemId = 1;
+  private nextBillId = 1;
+  private initialized = false;
+
   async getUser(id: number): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
-    return result[0];
+    return this.users.find(user => user.id === id);
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.username, username)).limit(1);
-    return result[0];
+    return this.users.find(user => user.username === username);
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const result = await db.insert(users).values(insertUser).returning();
-    return result[0];
+    const user: User = {
+      id: this.nextUserId++,
+      username: insertUser.username,
+      password: insertUser.password,
+    };
+    this.users.push(user);
+    return user;
   }
 
   async getAllMedicalItems(): Promise<MedicalItem[]> {
-    const result = await db.select().from(medicalItems).orderBy(medicalItems.category, medicalItems.name);
-    return result as MedicalItem[];
+    return [...this.medicalItems].sort((a, b) => {
+      if (a.category !== b.category) {
+        return a.category.localeCompare(b.category);
+      }
+      return a.name.localeCompare(b.name);
+    });
   }
 
   async getMedicalItemsByType(isOutpatient: boolean): Promise<MedicalItem[]> {
-    const result = await db.select().from(medicalItems)
-      .where(eq(medicalItems.isOutpatient, isOutpatient))
-      .orderBy(medicalItems.category, medicalItems.name);
-    return result as MedicalItem[];
+    return this.medicalItems
+      .filter(item => item.isOutpatient === isOutpatient)
+      .sort((a, b) => {
+        if (a.category !== b.category) {
+          return a.category.localeCompare(b.category);
+        }
+        return a.name.localeCompare(b.name);
+      });
   }
 
   async getMedicalItemsByCategory(category: string, isOutpatient: boolean): Promise<MedicalItem[]> {
-    const result = await db.select().from(medicalItems)
-      .where(and(
-        eq(medicalItems.category, category),
-        eq(medicalItems.isOutpatient, isOutpatient)
-      ))
-      .orderBy(medicalItems.name);
-    return result as MedicalItem[];
+    return this.medicalItems
+      .filter(item => item.category === category && item.isOutpatient === isOutpatient)
+      .sort((a, b) => a.name.localeCompare(b.name));
   }
 
   async createMedicalItem(item: InsertMedicalItem): Promise<MedicalItem> {
-    const result = await db.insert(medicalItems).values({
-      ...item,
-      price: item.price.toString()
-    }).returning();
-    return {
-      ...result[0],
-      price: parseFloat(result[0].price)
+    const medicalItem: MedicalItem = {
+      id: this.nextMedicalItemId++,
+      category: item.category,
+      name: item.name,
+      price: item.price,
+      description: item.description || null,
+      isOutpatient: item.isOutpatient,
+      createdAt: new Date(),
     };
+    this.medicalItems.push(medicalItem);
+    return medicalItem;
   }
 
   async updateMedicalItem(id: number, item: Partial<InsertMedicalItem>): Promise<MedicalItem | undefined> {
-    const updateData = item.price ? { ...item, price: item.price.toString() } : item;
-    const result = await db.update(medicalItems)
-      .set(updateData)
-      .where(eq(medicalItems.id, id))
-      .returning();
-    
-    if (result[0]) {
-      return {
-        ...result[0],
-        price: parseFloat(result[0].price)
-      };
-    }
-    return undefined;
+    const index = this.medicalItems.findIndex(medItem => medItem.id === id);
+    if (index === -1) return undefined;
+
+    this.medicalItems[index] = {
+      ...this.medicalItems[index],
+      ...item,
+    };
+    return this.medicalItems[index];
   }
 
   async deleteMedicalItem(id: number): Promise<boolean> {
-    const result = await db.delete(medicalItems).where(eq(medicalItems.id, id)).returning();
-    return result.length > 0;
+    const initialLength = this.medicalItems.length;
+    this.medicalItems = this.medicalItems.filter(item => item.id !== id);
+    return this.medicalItems.length < initialLength;
   }
 
   async searchMedicalItems(query: string, isOutpatient: boolean): Promise<MedicalItem[]> {
-    const result = await db.select().from(medicalItems)
-      .where(and(
-        eq(medicalItems.isOutpatient, isOutpatient)
-      ))
-      .orderBy(medicalItems.category, medicalItems.name);
-    
-    // Filter in memory for simplicity (in production, use database LIKE queries)
-    const filtered = result.filter(item => 
-      item.name.toLowerCase().includes(query.toLowerCase()) ||
-      item.category.toLowerCase().includes(query.toLowerCase())
-    );
-    
-    return filtered.map(item => ({
-      ...item,
-      price: parseFloat(item.price)
-    }));
+    const lowerQuery = query.toLowerCase();
+    return this.medicalItems
+      .filter(item => 
+        item.isOutpatient === isOutpatient &&
+        (item.name.toLowerCase().includes(lowerQuery) ||
+         item.category.toLowerCase().includes(lowerQuery))
+      )
+      .sort((a, b) => {
+        if (a.category !== b.category) {
+          return a.category.localeCompare(b.category);
+        }
+        return a.name.localeCompare(b.name);
+      });
   }
 
   async saveBill(bill: InsertBill): Promise<Bill> {
     // First, try to update existing bill
-    const existing = await this.getBillBySession(bill.sessionId, bill.type);
+    const existingIndex = this.bills.findIndex(b => 
+      b.sessionId === bill.sessionId && b.type === bill.type
+    );
     
-    if (existing) {
-      const result = await db.update(bills)
-        .set({ 
-          billData: bill.billData, 
-          total: bill.total.toString(),
-          daysAdmitted: bill.daysAdmitted,
-          updatedAt: new Date()
-        })
-        .where(and(
-          eq(bills.sessionId, bill.sessionId),
-          eq(bills.type, bill.type)
-        ))
-        .returning();
-      return {
-        ...result[0],
-        total: parseFloat(result[0].total)
+    if (existingIndex !== -1) {
+      this.bills[existingIndex] = {
+        ...this.bills[existingIndex],
+        billData: bill.billData,
+        total: bill.total,
+        daysAdmitted: bill.daysAdmitted || null,
+        updatedAt: new Date(),
       };
+      return this.bills[existingIndex];
     } else {
-      const result = await db.insert(bills).values({
-        ...bill,
-        total: bill.total.toString()
-      }).returning();
-      return {
-        ...result[0],
-        total: parseFloat(result[0].total)
+      const newBill: Bill = {
+        id: this.nextBillId++,
+        type: bill.type,
+        sessionId: bill.sessionId,
+        billData: bill.billData,
+        daysAdmitted: bill.daysAdmitted || 1,
+        total: bill.total,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
+      this.bills.push(newBill);
+      return newBill;
     }
   }
 
   async getBillBySession(sessionId: string, type: "outpatient" | "inpatient"): Promise<Bill | undefined> {
-    const result = await db.select().from(bills)
-      .where(and(
-        eq(bills.sessionId, sessionId),
-        eq(bills.type, type)
-      ))
-      .orderBy(desc(bills.updatedAt))
-      .limit(1);
+    const filtered = this.bills
+      .filter(bill => bill.sessionId === sessionId && bill.type === type)
+      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
     
-    if (result[0]) {
-      return {
-        ...result[0],
-        total: parseFloat(result[0].total)
-      };
-    }
-    return undefined;
+    return filtered[0] || undefined;
   }
 
   async initializeDatabase(): Promise<void> {
-    // Check if medical items already exist
-    const existingItems = await db.select().from(medicalItems).limit(1);
-    if (existingItems.length > 0) {
+    if (this.initialized) {
       return; // Already initialized
     }
 
@@ -218,8 +201,12 @@ export class DatabaseStorage implements IStorage {
       { category: 'Seat & Ad. Fee', name: 'Admission Processing (per day)', price: '200.00', isOutpatient: false },
     ];
 
-    await db.insert(medicalItems).values(defaultItems);
+    for (const item of defaultItems) {
+      await this.createMedicalItem(item);
+    }
+
+    this.initialized = true;
   }
 }
 
-export const storage = new DatabaseStorage();
+export const storage = new MemoryStorage();
