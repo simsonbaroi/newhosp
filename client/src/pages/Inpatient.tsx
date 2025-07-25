@@ -145,11 +145,13 @@ const Inpatient = () => {
     setDaysAdmitted(1);
   };
 
-  // Inpatient category order
+  // Inpatient category order - includes outpatient categories
   const categoryOrder = [
-    'Registration Fees', 'Seat & Ad. Fee', 'Blood', 'Laboratory', 
-    'Medicine', 'Food', 'Halo, O2, NO2, etc.', 'Surgery, O.R. & Delivery',
-    'Others'
+    'Registration Fees', 'Dr. Fees', 'Medic Fee', 'Seat & Ad. Fee', 
+    'Blood', 'Laboratory', 'Medicine', 'Food', 'Halo, O2, NO2, etc.', 
+    'Surgery, O.R. & Delivery', 'Discharge Medicine', 'Medicine, ORS & Anesthesia, Ket, Spinal',
+    'Physical Therapy', 'IV.\'s', 'Plaster/Milk', 'Procedures', 'X-Ray', 
+    'Limb and Brace', 'Lost Laundry', 'Travel', 'Other'
   ];
 
   const orderedCategories = categoryOrder.filter(cat => categories.includes(cat))
