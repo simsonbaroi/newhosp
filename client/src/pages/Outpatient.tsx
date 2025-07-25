@@ -727,21 +727,23 @@ const Outpatient = () => {
                               </div>
                             ))}
                           </div>
-                          <div className="flex justify-between items-center p-2 bg-blue-500/5 rounded-md border border-blue-500/20">
-                            <span className="text-sm font-medium text-blue-600">
-                              Total Price: {format(dropdownSelectedItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              {dropdownSelectedItems.length} item{dropdownSelectedItems.length !== 1 ? 's' : ''}
-                            </span>
+                          {/* Price counter on left, Add to Bill button on right */}
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-4 p-2 bg-blue-500/5 rounded-md border border-blue-500/20">
+                              <span className="text-sm font-medium text-blue-600">
+                                Total Price: {format(dropdownSelectedItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {dropdownSelectedItems.length} item{dropdownSelectedItems.length !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+                            <Button 
+                              onClick={addDropdownSelectedItemsToBill} 
+                              variant="medical"
+                            >
+                              Add {dropdownSelectedItems.length} Test{dropdownSelectedItems.length !== 1 ? 's' : ''} to Bill
+                            </Button>
                           </div>
-                          <Button 
-                            onClick={addDropdownSelectedItemsToBill} 
-                            variant="medical" 
-                            className="w-full"
-                          >
-                            Add {dropdownSelectedItems.length} Test{dropdownSelectedItems.length !== 1 ? 's' : ''} to Bill
-                          </Button>
                         </div>
                       )}
                       
