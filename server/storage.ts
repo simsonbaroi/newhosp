@@ -171,9 +171,9 @@ export class MemoryStorage implements IStorage {
   }
 
   async initializeDatabase(): Promise<void> {
-    if (this.initialized) {
-      return; // Already initialized
-    }
+    // Always reinitialize to ensure clean data
+    this.medicalItems = [];
+    this.nextMedicalItemId = 1;
 
     // Initialize with default data
     const defaultItems = [

@@ -28,8 +28,14 @@ const Outpatient = () => {
     queryKey: ['/api/medical-items', { isOutpatient: true }],
   });
 
-  // Get unique categories
-  const categories = Array.from(new Set(medicalItems.map((item: MedicalItem) => item.category))).sort();
+  // Get unique categories - only allow the 8 specified outpatient categories
+  const allowedCategories = [
+    'Laboratory', 'X-Ray', 'Registration Fees', 'Dr. Fees', 
+    'Medic Fee', 'Medicine', 'Physical Therapy', 'Limb and Brace'
+  ];
+  const categories = Array.from(new Set(medicalItems.map((item: MedicalItem) => item.category)))
+    .filter(cat => allowedCategories.includes(cat))
+    .sort();
 
   // Filter items by category
   const categoryItems = selectedCategory 
