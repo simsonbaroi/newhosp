@@ -274,11 +274,11 @@ const Outpatient = () => {
                     {/* Previous preview button */}
                     <Button
                       variant="medical-ghost"
-                      className="h-auto p-2 text-center flex-shrink-0 opacity-60 hover:opacity-80 max-w-[80px]"
+                      className="h-auto p-2 text-left flex-shrink-0 opacity-60 hover:opacity-80 max-w-[80px] justify-start"
                       onClick={() => navigateCarousel('prev')}
                     >
-                      <div>
-                        <div className="text-xs truncate">
+                      <div className="w-full">
+                        <div className="text-xs truncate text-left">
                           {orderedCategories[(currentCategoryIndex - 1 + orderedCategories.length) % orderedCategories.length]}
                         </div>
                       </div>
@@ -321,11 +321,11 @@ const Outpatient = () => {
                     {/* Next preview button */}
                     <Button
                       variant="medical-ghost"
-                      className="h-auto p-2 text-center flex-shrink-0 opacity-60 hover:opacity-80 max-w-[80px]"
+                      className="h-auto p-2 text-right flex-shrink-0 opacity-60 hover:opacity-80 max-w-[80px] justify-end"
                       onClick={() => navigateCarousel('next')}
                     >
-                      <div>
-                        <div className="text-xs truncate">
+                      <div className="w-full">
+                        <div className="text-xs truncate text-right">
                           {orderedCategories[(currentCategoryIndex + 1) % orderedCategories.length]}
                         </div>
                       </div>
