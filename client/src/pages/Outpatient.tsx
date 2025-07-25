@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Search, Plus, Minus, Calculator, Grid3X3, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +23,7 @@ const Outpatient = () => {
   const [selectedLabItems, setSelectedLabItems] = useState<MedicalItem[]>([]);
   const [dropdownSelectedItems, setDropdownSelectedItems] = useState<MedicalItem[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const { format } = useTakaFormat();
   const queryClient = useQueryClient();
 
@@ -188,6 +189,23 @@ const Outpatient = () => {
     setDropdownSelectedItems([]); // Clear dropdown selections when exiting
     setIsDropdownOpen(false);
   };
+
+  // Handle click outside dropdown to close it
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
 
   // Get sorted lab suggestions with closest match first
   const getLabSuggestions = () => {
@@ -522,7 +540,7 @@ const Outpatient = () => {
                       
                       {/* Dropdown */}
                       {isDropdownOpen && (
-                        <div className="relative">
+                        <div className="relative" ref={dropdownRef}>
                           <div className="absolute top-0 left-0 right-0 z-10 bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-y-auto">
                             {getDropdownOptions().map((item: MedicalItem) => (
                               <div
