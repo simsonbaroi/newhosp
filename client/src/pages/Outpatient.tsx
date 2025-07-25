@@ -175,6 +175,7 @@ const Outpatient = () => {
     setIsCarouselMode(false);
     setSelectedCategory('');
     setCategorySearchQuery('');
+    setGlobalSearchQuery(''); // Clear global search when exiting carousel
   };
 
   return (
@@ -189,43 +190,45 @@ const Outpatient = () => {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Left Column - Categories and Items */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Global Search */}
-            <Card className="glass-card">
-              <CardHeader>
-                <CardTitle className="flex items-center text-medical-primary">
-                  <Search className="mr-2 h-5 w-5" />
-                  Search All Items
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Input
-                  placeholder="Search for medical items..."
-                  value={globalSearchQuery}
-                  onChange={(e) => setGlobalSearchQuery(e.target.value)}
-                  className="w-full"
-                />
-                {globalSearchResults.length > 0 && (
-                  <div className="mt-4 space-y-2 max-h-60 overflow-y-auto">
-                    {globalSearchResults.map((item: MedicalItem) => (
-                      <div key={item.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                        <div>
-                          <div className="font-medium text-foreground">{item.name}</div>
-                          <div className="text-sm text-muted-foreground">{item.category}</div>
+            {/* Global Search - Hidden in carousel mode */}
+            {!isCarouselMode && (
+              <Card className="glass-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-medical-primary">
+                    <Search className="mr-2 h-5 w-5" />
+                    Search All Items
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Input
+                    placeholder="Search for medical items..."
+                    value={globalSearchQuery}
+                    onChange={(e) => setGlobalSearchQuery(e.target.value)}
+                    className="w-full"
+                  />
+                  {globalSearchResults.length > 0 && (
+                    <div className="mt-4 space-y-2 max-h-60 overflow-y-auto">
+                      {globalSearchResults.map((item: MedicalItem) => (
+                        <div key={item.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                          <div>
+                            <div className="font-medium text-foreground">{item.name}</div>
+                            <div className="text-sm text-muted-foreground">{item.category}</div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span className="font-semibold text-medical-primary">
+                              {format(item.price)}
+                            </span>
+                            <Button size="sm" onClick={() => addToBill(item)} variant="medical">
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <span className="font-semibold text-medical-primary">
-                            {format(item.price)}
-                          </span>
-                          <Button size="sm" onClick={() => addToBill(item)} variant="medical">
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Category Buttons */}
             <Card className="glass-card">
