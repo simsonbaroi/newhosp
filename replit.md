@@ -17,7 +17,9 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: Implemented glass morphism effects for cards with hover animations
 - **2025-01-25**: Simplified currency system to use only Bangladeshi Taka (৳) as requested
 - **2025-01-25**: Updated Outpatient calculator with complete API integration and Taka formatting
+- **2025-01-25**: Updated Inpatient calculator with matching design, daily rates, and Taka system
 - **2025-01-25**: Removed unnecessary multi-currency complexity per user preference
+- **2025-01-25**: COMPLETED: Full migration from Replit Agent to standard Replit environment
 
 ## Project Architecture
 - **Frontend**: React with TypeScript, using shadcn/ui components and wouter for routing
