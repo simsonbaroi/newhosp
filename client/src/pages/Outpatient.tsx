@@ -293,9 +293,22 @@ const Outpatient = () => {
                     ))}
                     
                     <div className="border-t pt-4">
-                      <div className="flex justify-between items-center text-xl font-bold">
-                        <span>Total:</span>
-                        <span className="text-primary">₱{total.toLocaleString()}</span>
+                      <div className="bg-gradient-to-r from-emerald-800 to-green-900 text-white p-6 rounded-xl shadow-2xl border border-emerald-700">
+                        <div className="flex justify-between items-center">
+                          <div className="flex flex-col">
+                            <span className="text-emerald-200 text-sm font-medium mb-1">Grand Total</span>
+                            <span className="text-2xl font-bold">₱{total.toLocaleString()}</span>
+                          </div>
+                          <div className="bg-emerald-700/50 p-3 rounded-full">
+                            <Calculator className="h-6 w-6 text-emerald-100" />
+                          </div>
+                        </div>
+                        <div className="mt-3 flex items-center text-emerald-200 text-sm">
+                          <span className="bg-emerald-700/30 px-2 py-1 rounded-full text-xs mr-2">
+                            {billItems.length} item{billItems.length !== 1 ? 's' : ''}
+                          </span>
+                          <span>Outpatient Services</span>
+                        </div>
                       </div>
                     </div>
                   </div>
