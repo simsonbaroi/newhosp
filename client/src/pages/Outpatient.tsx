@@ -2420,8 +2420,8 @@ const Outpatient = () => {
                             {tempSelectedMedicines.map((medicine, index) => (
                               <div key={medicine.tempId} className="medicine-item-card flex items-center justify-between text-sm p-3 rounded-lg">
                                 <div className="flex items-center space-x-3 flex-1 min-w-0">
-                                  <span className="bg-gradient-to-r from-medical-primary to-medical-secondary text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0 shadow-md">
-                                    {index + 1}
+                                  <span className="text-xs font-bold text-medical-primary bg-medical-primary/10 px-2 py-1 rounded-md flex-shrink-0">
+                                    #{index + 1}
                                   </span>
                                   <span className="font-medium text-foreground truncate">
                                     {medicine.name.length > 25 ? `${medicine.name.substring(0, 25)}...` : medicine.name}
