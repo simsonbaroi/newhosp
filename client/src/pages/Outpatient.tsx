@@ -168,8 +168,8 @@ const Outpatient = () => {
                       onClick={() => setSelectedCategory(category)}
                       className={`text-xs px-4 py-3 h-auto text-left justify-start rounded-xl border-2 font-medium transition-all duration-300 transform ${
                         selectedCategory === category 
-                          ? 'bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-xl border-primary scale-105 ring-2 ring-primary/20' 
-                          : 'bg-white dark:bg-card hover:bg-gradient-to-r hover:from-primary/5 hover:to-primary/10 hover:shadow-lg hover:border-primary/40 hover:scale-102 border-border shadow-sm active:scale-95'
+                          ? 'bg-gradient-to-r from-emerald-700 to-emerald-800 text-white shadow-xl border-emerald-600 scale-105 ring-2 ring-emerald-400/30' 
+                          : 'bg-white dark:bg-card hover:bg-gradient-to-r hover:from-emerald-50 hover:to-emerald-100 hover:text-emerald-800 hover:shadow-lg hover:border-emerald-400/60 hover:scale-102 border-emerald-200/40 shadow-sm active:scale-95'
                       }`}
                     >
                       <span className="truncate">{category}</span>

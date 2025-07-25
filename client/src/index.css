@@ -15,30 +15,30 @@
     --popover: 0 0% 100%;
     --popover-foreground: 210 60% 8%;
 
-    --primary: 193 95% 40%;
+    --primary: 160 84% 25%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 193 95% 35%;
+    --primary-hover: 160 84% 20%;
 
-    --secondary: 193 20% 95%;
-    --secondary-foreground: 193 95% 25%;
+    --secondary: 158 20% 90%;
+    --secondary-foreground: 160 84% 15%;
 
-    --muted: 193 20% 96%;
-    --muted-foreground: 193 20% 45%;
+    --muted: 158 20% 94%;
+    --muted-foreground: 158 20% 40%;
 
-    --accent: 142 76% 36%;
+    --accent: 160 84% 35%;
     --accent-foreground: 0 0% 100%;
-    --accent-hover: 142 76% 31%;
+    --accent-hover: 160 84% 30%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 193 20% 90%;
+    --border: 158 20% 88%;
     --input: 0 0% 100%;
-    --ring: 193 95% 40%;
+    --ring: 160 84% 25%;
 
-    --medical-gradient: linear-gradient(135deg, hsl(193 95% 40%), hsl(142 76% 36%));
-    --card-shadow: 0 4px 6px -1px hsl(193 95% 40% / 0.1), 0 2px 4px -2px hsl(193 95% 40% / 0.1);
-    --hover-shadow: 0 10px 15px -3px hsl(193 95% 40% / 0.1), 0 4px 6px -4px hsl(193 95% 40% / 0.1);
+    --medical-gradient: linear-gradient(135deg, hsl(160 84% 25%), hsl(160 84% 35%));
+    --card-shadow: 0 4px 6px -1px hsl(160 84% 25% / 0.1), 0 2px 4px -2px hsl(160 84% 25% / 0.1);
+    --hover-shadow: 0 10px 15px -3px hsl(160 84% 25% / 0.1), 0 4px 6px -4px hsl(160 84% 25% / 0.1);
 
     --radius: 0.5rem;
 
