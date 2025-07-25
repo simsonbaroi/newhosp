@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Search, Plus, Minus, Calculator, Grid3X3, ChevronLeft, ChevronRight, X, AlertTriangle, FileX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -61,7 +61,7 @@ const Outpatient = () => {
   const manualPriceInputRef = useRef<HTMLInputElement>(null);
 
   // X-Ray film view selection state
-  const [selectedXRayForViews, setSelectedXRayForViews] = useState<any>(null);
+  const [selectedXRayForViews, setSelectedXRayForViews] = useState<MedicalItem | null>(null);
   const [xRayViews, setXRayViews] = useState({
     AP: false,
     LAT: false,
@@ -72,13 +72,13 @@ const Outpatient = () => {
   const [showXRayViewSelection, setShowXRayViewSelection] = useState(false);
 
   // Medicine dosage selection state
-  const [selectedMedicineForDosage, setSelectedMedicineForDosage] = useState<any>(null);
+  const [selectedMedicineForDosage, setSelectedMedicineForDosage] = useState<MedicalItem | null>(null);
   const [showMedicineDosageSelection, setShowMedicineDosageSelection] = useState(false);
   const [dosePrescribed, setDosePrescribed] = useState('');
   const [medType, setMedType] = useState('');
   const [doseFrequency, setDoseFrequency] = useState('');
   const [totalDays, setTotalDays] = useState('');
-  const [tempSelectedMedicines, setTempSelectedMedicines] = useState<any[]>([]);
+  const [tempSelectedMedicines, setTempSelectedMedicines] = useState<Array<MedicalItem & { tempId: string }>>([]);
   const doseInputRef = useRef<HTMLInputElement>(null);
   const { format } = useTakaFormat();
   const queryClient = useQueryClient();
@@ -139,7 +139,7 @@ const Outpatient = () => {
           type: 'outpatient',
           sessionId: 'browser-session',
           billData: JSON.stringify(billData),
-          total: calculateTotal().toString(),
+          total: calculateTotal.toString(),
           currency: 'BDT',
         }),
       });
@@ -219,15 +219,16 @@ const Outpatient = () => {
     setBillItems(billItems.filter(item => item.billId !== billId));
   };
 
-  const calculateTotal = () => {
+  // Memoized total calculation for performance
+  const calculateTotal = useMemo(() => {
     return billItems.reduce((total, item) => {
       const price = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
       return total + price; // No quantity multiplier since we removed quantity controls
     }, 0);
-  };
+  }, [billItems]);
 
-  // Group bill items by category for categorized display
-  const getBillItemsByCategory = () => {
+  // Memoized bill items grouped by category for performance
+  const getBillItemsByCategory = useMemo(() => {
     const grouped = billItems.reduce((acc, item) => {
       const category = item.category;
       if (!acc[category]) {
@@ -238,15 +239,15 @@ const Outpatient = () => {
     }, {} as Record<string, BillItem[]>);
 
     return grouped;
-  };
+  }, [billItems]);
 
-  // Calculate category total
-  const calculateCategoryTotal = (items: BillItem[]) => {
+  // Memoized category total calculation
+  const calculateCategoryTotal = useCallback((items: BillItem[]) => {
     return items.reduce((total, item) => {
       const price = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
       return total + price; // No quantity multiplier since we removed quantity controls
     }, 0);
-  };
+  }, []);
 
   const clearBill = () => {
     setBillItems([]);
@@ -1600,6 +1601,28 @@ const Outpatient = () => {
     setTempSelectedMedicines(prev => prev.filter(medicine => medicine.tempId !== tempId));
   };
 
+  const editTempMedicine = (medicine: any) => {
+    // Pre-fill the dosage calculator with existing values
+    if (medicine.dosageInfo) {
+      setSelectedMedicineForDosage(medicine);
+      setDosePrescribed(medicine.dosageInfo.dosePrescribed);
+      setMedType(medicine.dosageInfo.medType);
+      setDoseFrequency(medicine.dosageInfo.doseFrequency);
+      setTotalDays(medicine.dosageInfo.totalDays);
+      setShowMedicineDosageSelection(true);
+      
+      // Remove the medicine from temp list since it will be re-added after editing
+      removeTempMedicine(medicine.tempId);
+      
+      // Focus on dose input for immediate editing
+      setTimeout(() => {
+        if (doseInputRef.current) {
+          doseInputRef.current.focus();
+        }
+      }, 100);
+    }
+  };
+
   const addMedicineToBill = () => {
     if (!selectedMedicineForDosage || !isDosageSelectionComplete()) return;
 
@@ -2427,10 +2450,17 @@ const Outpatient = () => {
                                     {medicine.name.length > 25 ? `${medicine.name.substring(0, 25)}...` : medicine.name}
                                   </span>
                                 </div>
-                                <div className="flex items-center space-x-3 flex-shrink-0">
+                                <div className="flex items-center space-x-2 flex-shrink-0">
                                   <span className="text-medical-primary font-semibold bg-medical-primary/10 px-2 py-1 rounded">
                                     {format(parseFloat(medicine.price))}
                                   </span>
+                                  <button
+                                    onClick={() => editTempMedicine(medicine)}
+                                    className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 p-1 rounded transition-colors"
+                                    title="Edit medicine dosage"
+                                  >
+                                    <Calculator className="h-3 w-3" />
+                                  </button>
                                   <button
                                     onClick={() => removeTempMedicine(medicine.tempId)}
                                     className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 p-1 rounded transition-colors"
@@ -2949,7 +2979,7 @@ const Outpatient = () => {
                 {billItems.length > 0 ? (
                   <div className="space-y-4">
                     <div className="space-y-4 max-h-80 overflow-y-auto">
-                      {Object.entries(getBillItemsByCategory()).map(([category, items]) => (
+                      {Object.entries(getBillItemsByCategory).map(([category, items]) => (
                         <div key={category} className="border-l-4 border-medical-primary/30 pl-3">
                           <div className="flex items-center justify-between mb-2">
                             <h4 className="font-semibold text-medical-primary text-sm">{category}</h4>
@@ -2989,7 +3019,7 @@ const Outpatient = () => {
                     <div className="border-t border-medical-secondary/20 pt-4">
                       <div className="flex items-center justify-between text-lg font-bold">
                         <span className="text-foreground">Grand Total:</span>
-                        <span className="text-medical-primary">{format(calculateTotal())}</span>
+                        <span className="text-medical-primary">{format(calculateTotal)}</span>
                       </div>
                     </div>
                   </div>

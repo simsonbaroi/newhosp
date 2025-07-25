@@ -148,6 +148,9 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: SIMPLIFIED: Removed gradient bar from numbering design for cleaner appearance
 - **2025-01-25**: COMPACTED: Reduced spacing between selected medicines for more compact display
 - **2025-01-25**: RESIZED: Made "Add to Bill" button smaller and right-aligned for better layout
+- **2025-01-25**: ADDED: Edit button for selected medicines to allow modifying dosage after selection
+- **2025-01-25**: ENHANCED: Edit functionality pre-fills dosage calculator with existing values for seamless editing
+- **2025-01-25**: OPTIMIZED: Performance improvements with memoized calculations and reduced re-renders
 - **2025-01-25**: ENHANCED: Updated Outpatient medicine selection interface with professional medical theme styling
 - **2025-01-25**: IMPROVED: Selected medicines display now uses glass morphism cards with medical gradient backgrounds
 - **2025-01-25**: STYLED: Medicine dosage calculator interface with consistent medical color palette and glass effects
