@@ -348,18 +348,24 @@ const Outpatient = () => {
               <Card className="glass-card">
                 <CardHeader>
                   <CardTitle className="text-medical-primary">{selectedCategory}</CardTitle>
-                  {/* Show dropdown for Medicine, Laboratory, X-Ray categories */}
+                  {/* Show search + dropdown for Medicine, Laboratory, X-Ray categories */}
                   {['Medicine', 'Laboratory', 'X-Ray'].includes(selectedCategory) ? (
                     <div className="space-y-4">
+                      <Input
+                        placeholder={`Search in ${selectedCategory}...`}
+                        value={categorySearchQuery}
+                        onChange={(e) => setCategorySearchQuery(e.target.value)}
+                        className="w-full"
+                      />
                       <Select onValueChange={(value) => {
-                        const selectedItem = categoryItems.find(item => item.id.toString() === value);
+                        const selectedItem = (categorySearchQuery ? filteredCategoryItems : categoryItems).find(item => item.id.toString() === value);
                         if (selectedItem) addToBill(selectedItem);
                       }}>
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder={`Select ${selectedCategory} item...`} />
                         </SelectTrigger>
                         <SelectContent className="bg-popover border border-border max-h-60">
-                          {categoryItems.map((item: MedicalItem) => (
+                          {(categorySearchQuery ? filteredCategoryItems : categoryItems).map((item: MedicalItem) => (
                             <SelectItem key={item.id} value={item.id.toString()}>
                               <div className="flex items-center justify-between w-full">
                                 <span>{item.name}</span>
@@ -372,7 +378,7 @@ const Outpatient = () => {
                         </SelectContent>
                       </Select>
                       <div className="text-sm text-muted-foreground">
-                        Select an item from the dropdown to add it to your bill
+                        {categorySearchQuery ? 'Filtered results' : 'All items'} - Select from dropdown to add to bill
                       </div>
                     </div>
                   ) : (
@@ -388,14 +394,17 @@ const Outpatient = () => {
                   )}
                 </CardHeader>
                 <CardContent>
-                  {/* Show dropdown interface for Medicine, Laboratory, X-Ray */}
+                  {/* Show search + dropdown interface for Medicine, Laboratory, X-Ray */}
                   {['Medicine', 'Laboratory', 'X-Ray'].includes(selectedCategory) ? (
                     <div className="space-y-2">
-                      {categoryItems.length > 0 ? (
+                      {(categorySearchQuery ? filteredCategoryItems : categoryItems).length > 0 ? (
                         <div className="text-center text-muted-foreground py-4">
-                          <div className="text-lg font-medium mb-2">Available {selectedCategory} Items</div>
+                          <div className="text-lg font-medium mb-2">
+                            {categorySearchQuery ? 'Search Results' : `Available ${selectedCategory} Items`}
+                          </div>
                           <div className="text-sm">
-                            {categoryItems.length} item{categoryItems.length !== 1 ? 's' : ''} available in database
+                            {(categorySearchQuery ? filteredCategoryItems : categoryItems).length} item{(categorySearchQuery ? filteredCategoryItems : categoryItems).length !== 1 ? 's' : ''} 
+                            {categorySearchQuery ? ' found' : ' available in database'}
                           </div>
                           <div className="text-xs mt-2 opacity-75">
                             Use the dropdown above to select and add items to your bill
@@ -403,7 +412,7 @@ const Outpatient = () => {
                         </div>
                       ) : (
                         <div className="text-center text-muted-foreground py-8">
-                          No items available in this category.
+                          {categorySearchQuery ? 'No items found matching your search.' : 'No items available in this category.'}
                         </div>
                       )}
                     </div>
