@@ -1797,73 +1797,75 @@ const Outpatient = () => {
                     })}
                   </div>
                 ) : (
-                  // Carousel mode with preview buttons
+                  // Carousel mode with preview buttons - mobile-optimized layout
                   <div 
                     ref={swipeRef}
-                    className="flex items-center justify-center space-x-2 relative touch-pan-y user-select-none"
+                    className="w-full px-2 sm:px-0 relative touch-pan-y user-select-none"
                     style={{ touchAction: 'pan-y' }}
                   >
-                    {/* Previous preview button */}
-                    <Button
-                      variant="medical-ghost"
-                      className="h-auto p-1.5 sm:p-2 text-left flex-shrink-0 opacity-60 hover:opacity-80 max-w-[60px] sm:max-w-[80px] justify-start"
-                      onClick={() => navigateCarousel('prev')}
-                    >
-                      <div className="w-full">
-                        <div className="text-xs sm:text-xs truncate text-left leading-tight">
-                          {orderedCategories[(currentCategoryIndex - 1 + orderedCategories.length) % orderedCategories.length]}
+                    <div className="flex items-center justify-center space-x-1 sm:space-x-2 max-w-full overflow-hidden">
+                      {/* Previous preview button - hidden on very small screens */}
+                      <Button
+                        variant="medical-ghost"
+                        className="h-auto p-1 sm:p-1.5 text-left flex-shrink-0 opacity-60 hover:opacity-80 w-12 sm:w-16 justify-start hidden xs:flex"
+                        onClick={() => navigateCarousel('prev')}
+                      >
+                        <div className="w-full overflow-hidden">
+                          <div className="text-xs truncate text-left leading-tight">
+                            {orderedCategories[(currentCategoryIndex - 1 + orderedCategories.length) % orderedCategories.length]}
+                          </div>
                         </div>
-                      </div>
-                    </Button>
+                      </Button>
 
-                    {/* Previous arrow */}
-                    <Button
-                      variant="medical-outline"
-                      size="sm"
-                      onClick={() => navigateCarousel('prev')}
-                      className="h-10 w-10 p-0 flex-shrink-0"
-                      title="Previous category (← key)"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    
-                    {/* Current selected category */}
-                    <Button
-                      variant="outline"
-                      className="h-auto p-2 sm:p-4 text-center flex-1 max-w-[140px] sm:max-w-[200px] border-medical-primary/20 text-medical-primary hover:bg-medical-primary/10"
-                      onClick={() => handleCategoryClick(selectedCategory)}
-                    >
-                      <div className="w-full">
-                        <div className="font-semibold text-xs sm:text-sm truncate leading-tight">{selectedCategory}</div>
-                        <div className="text-xs opacity-75 mt-1">
-                          {medicalItems.filter((item: MedicalItem) => item.category === selectedCategory).length} items
+                      {/* Previous arrow */}
+                      <Button
+                        variant="medical-outline"
+                        size="sm"
+                        onClick={() => navigateCarousel('prev')}
+                        className="h-8 w-8 sm:h-10 sm:w-10 p-0 flex-shrink-0"
+                        title="Previous category (← key)"
+                      >
+                        <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
+                      </Button>
+                      
+                      {/* Current selected category - centered and responsive */}
+                      <Button
+                        variant="outline"
+                        className="h-auto p-2 sm:p-3 text-center flex-1 min-w-0 max-w-[160px] sm:max-w-[200px] border-medical-primary/20 text-medical-primary hover:bg-medical-primary/10"
+                        onClick={() => handleCategoryClick(selectedCategory)}
+                      >
+                        <div className="w-full min-w-0">
+                          <div className="font-semibold text-xs sm:text-sm truncate leading-tight">{selectedCategory}</div>
+                          <div className="text-xs opacity-75 mt-1">
+                            {medicalItems.filter((item: MedicalItem) => item.category === selectedCategory).length} items
+                          </div>
                         </div>
-                      </div>
-                    </Button>
-                    
-                    {/* Next arrow */}
-                    <Button
-                      variant="medical-outline"
-                      size="sm"
-                      onClick={() => navigateCarousel('next')}
-                      className="h-10 w-10 p-0 flex-shrink-0"
-                      title="Next category (→ key)"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
+                      </Button>
+                      
+                      {/* Next arrow */}
+                      <Button
+                        variant="medical-outline"
+                        size="sm"
+                        onClick={() => navigateCarousel('next')}
+                        className="h-8 w-8 sm:h-10 sm:w-10 p-0 flex-shrink-0"
+                        title="Next category (→ key)"
+                      >
+                        <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
+                      </Button>
 
-                    {/* Next preview button */}
-                    <Button
-                      variant="medical-ghost"
-                      className="h-auto p-1.5 sm:p-2 text-right flex-shrink-0 opacity-60 hover:opacity-80 max-w-[60px] sm:max-w-[80px] justify-end"
-                      onClick={() => navigateCarousel('next')}
-                    >
-                      <div className="w-full">
-                        <div className="text-xs sm:text-xs truncate text-right leading-tight">
-                          {orderedCategories[(currentCategoryIndex + 1) % orderedCategories.length]}
+                      {/* Next preview button - hidden on very small screens */}
+                      <Button
+                        variant="medical-ghost"
+                        className="h-auto p-1 sm:p-1.5 text-right flex-shrink-0 opacity-60 hover:opacity-80 w-12 sm:w-16 justify-end hidden xs:flex"
+                        onClick={() => navigateCarousel('next')}
+                      >
+                        <div className="w-full overflow-hidden">
+                          <div className="text-xs truncate text-right leading-tight">
+                            {orderedCategories[(currentCategoryIndex + 1) % orderedCategories.length]}
+                          </div>
                         </div>
-                      </div>
-                    </Button>
+                      </Button>
+                    </div>
                   </div>
                 )}
               </CardContent>
