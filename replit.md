@@ -98,6 +98,11 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: ADDED: Three-option confirmation for duplicates: "Add Again", "Skip", or "Remove Existing"
 - **2025-01-25**: ENHANCED: System now prevents accidental double entries and asks for user confirmation
 - **2025-01-25**: APPLIED: Duplicate prevention system to both Outpatient and Inpatient calculators
+- **2025-01-25**: ENHANCED: Laboratory dropdown now prevents duplicate selections at source
+- **2025-01-25**: VISUAL INDICATORS: Items already in bill show red background with "● Already in Bill" text
+- **2025-01-25**: SEARCH PREVENTION: Both search and dropdown check against existing bill items before allowing selection
+- **2025-01-25**: FIXED: React key warning by implementing unique billId system for duplicate items
+- **2025-01-25**: OPTIMIZED: Users can no longer accidentally select same item multiple times in Laboratory section
 
 ## Project Architecture
 - **Frontend**: React with TypeScript, using shadcn/ui components and wouter for routing

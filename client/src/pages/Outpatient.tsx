@@ -248,12 +248,19 @@ const Outpatient = () => {
   // Handle dropdown selection
   const handleDropdownSelect = (value: string) => {
     const selectedItem = categoryItems.find(item => item.id.toString() === value);
-    if (selectedItem && !dropdownSelectedItems.find(item => item.id === selectedItem.id)) {
+    
+    // Check if item is already selected in dropdown OR already in the bill
+    const alreadyInDropdown = dropdownSelectedItems.find(item => item.id === selectedItem?.id);
+    const alreadyInBill = billItems.find(billItem => billItem.id === selectedItem?.id);
+    
+    if (selectedItem && !alreadyInDropdown && !alreadyInBill) {
       setDropdownSelectedItems(prev => [...prev, selectedItem]);
       // Clear search selections when using dropdown
       setSelectedLabItems([]);
       setCategorySearchQuery('');
     }
+    // If item is already selected, we just ignore the selection (no error message needed)
+    
     setDropdownValue(''); // Reset dropdown after selection
     setHighlightedDropdownIndex(-1); // Reset highlighted index
     setDropdownFilterQuery(''); // Reset filter text for fresh start
@@ -346,9 +353,14 @@ const Outpatient = () => {
         const suggestions = getLabSuggestions();
         if (suggestions.length > 0) {
           const topMatch = suggestions[0];
-          if (!selectedLabItems.find(item => item.id === topMatch.id)) {
+          // Check if item is already selected in search OR already in the bill
+          const alreadyInSearch = selectedLabItems.find(item => item.id === topMatch.id);
+          const alreadyInBill = billItems.find(billItem => billItem.id === topMatch.id);
+          
+          if (!alreadyInSearch && !alreadyInBill) {
             setSelectedLabItems(prev => [...prev, topMatch]);
           }
+          // If item is already selected or in bill, we ignore the selection
         }
         setCategorySearchQuery('');
         // Refocus search input for continuous typing
@@ -772,12 +784,26 @@ const Outpatient = () => {
                             <div className="text-sm font-medium text-muted-foreground mb-2">
                               Matching tests (press comma to add):
                             </div>
-                            {getLabSuggestions().slice(0, 5).map((item: MedicalItem, index) => (
-                              <div key={item.id} className={`text-xs p-2 rounded cursor-pointer hover:bg-muted/40 ${
-                                index === 0 ? 'bg-medical-primary/10 border border-medical-primary/20' : 'bg-muted/20'
+                            {getLabSuggestions().slice(0, 5).map((item: MedicalItem, index) => {
+                              const alreadyInSearch = selectedLabItems.find(selected => selected.id === item.id);
+                              const alreadyInBill = billItems.find(billItem => billItem.id === item.id);
+                              
+                              return (
+                              <div key={item.id} className={`text-xs p-2 rounded ${
+                                alreadyInBill 
+                                  ? 'bg-red-100 text-red-600 cursor-not-allowed border border-red-200'
+                                  : alreadyInSearch
+                                    ? 'bg-green-100 text-green-600 cursor-not-allowed border border-green-200'
+                                    : index === 0 
+                                      ? 'bg-medical-primary/10 border border-medical-primary/20 cursor-pointer hover:bg-muted/40' 
+                                      : 'bg-muted/20 cursor-pointer hover:bg-muted/40'
                               }`}
                                    onClick={() => {
-                                     if (!selectedLabItems.find(selected => selected.id === item.id)) {
+                                     // Check if item is already selected in search OR already in the bill
+                                     const alreadyInSearch = selectedLabItems.find(selected => selected.id === item.id);
+                                     const alreadyInBill = billItems.find(billItem => billItem.id === item.id);
+                                     
+                                     if (!alreadyInSearch && !alreadyInBill) {
                                        setSelectedLabItems(prev => [...prev, item]);
                                      }
                                      setCategorySearchQuery('');
@@ -789,11 +815,18 @@ const Outpatient = () => {
                                      }, 0);
                                    }}>
                                 <span className="font-medium">{item.name}</span> - {format(item.price)}
-                                {index === 0 && (
+                                {alreadyInBill && (
+                                  <span className="ml-2 text-red-600 text-xs">● Already in Bill</span>
+                                )}
+                                {alreadyInSearch && !alreadyInBill && (
+                                  <span className="ml-2 text-green-600 text-xs">✓ Selected</span>
+                                )}
+                                {index === 0 && !alreadyInBill && !alreadyInSearch && (
                                   <span className="ml-2 text-medical-primary text-xs">← Will be added</span>
                                 )}
                               </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         )}
                       </div>
@@ -870,20 +903,25 @@ const Outpatient = () => {
                                     e.preventDefault();
                                     handleDropdownSelect(item.id.toString());
                                   }}
-                                  className={`px-3 py-2 cursor-pointer text-sm flex items-center justify-between hover:bg-muted/50 ${
+                                  className={`px-3 py-2 text-sm flex items-center justify-between ${
                                     index === highlightedDropdownIndex 
                                       ? 'bg-medical-primary/10 border-l-4 border-medical-primary' 
                                       : ''
                                   } ${
                                     dropdownSelectedItems.find(selected => selected.id === item.id)
                                       ? 'bg-blue-500/10 text-blue-600'
-                                      : ''
+                                      : billItems.find(billItem => billItem.id === item.id)
+                                        ? 'bg-red-100 text-red-600 cursor-not-allowed'
+                                        : 'cursor-pointer hover:bg-muted/50'
                                   }`}
                                 >
                                   <div className="flex items-center">
                                     <span>{item.name}</span>
                                     {dropdownSelectedItems.find(selected => selected.id === item.id) && (
                                       <span className="ml-2 text-blue-600 text-xs">✓ Selected</span>
+                                    )}
+                                    {billItems.find(billItem => billItem.id === item.id) && !dropdownSelectedItems.find(selected => selected.id === item.id) && (
+                                      <span className="ml-2 text-red-600 text-xs">● Already in Bill</span>
                                     )}
                                     {index === highlightedDropdownIndex && (
                                       <span className="ml-2 text-medical-primary text-xs">← Highlighted</span>
