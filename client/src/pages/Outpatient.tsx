@@ -69,6 +69,15 @@ const Outpatient = () => {
   });
   const [isOffChargePortable, setIsOffChargePortable] = useState(false);
   const [showXRayViewSelection, setShowXRayViewSelection] = useState(false);
+
+  // Medicine dosage selection state
+  const [selectedMedicineForDosage, setSelectedMedicineForDosage] = useState<any>(null);
+  const [showMedicineDosageSelection, setShowMedicineDosageSelection] = useState(false);
+  const [dosePrescribed, setDosePrescribed] = useState('');
+  const [medType, setMedType] = useState('');
+  const [doseFrequency, setDoseFrequency] = useState('');
+  const [totalDays, setTotalDays] = useState('');
+  const doseInputRef = useRef<HTMLInputElement>(null);
   const { format } = useTakaFormat();
   const queryClient = useQueryClient();
 
@@ -734,6 +743,17 @@ const Outpatient = () => {
     });
   };
 
+  // Handle medicine item selection (redirect to dosage selection)
+  const handleMedicineItemSelect = (item: MedicalItem) => {
+    setSelectedMedicineForDosage(item);
+    setShowMedicineDosageSelection(true);
+    // Reset dosage fields when selecting new medicine
+    setDosePrescribed('');
+    setMedType('');
+    setDoseFrequency('');
+    setTotalDays('');
+  };
+
   // Handle comma-separated X-Ray item selection
   const handleXRaySearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === ',' || e.key === 'Enter') {
@@ -951,7 +971,7 @@ const Outpatient = () => {
       });
   };
 
-  // Medicine tag selection handlers
+  // Medicine tag selection handlers - redirect to dosage selection
   const handleMedicineTagKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === ',' || e.key === 'Enter') {
       e.preventDefault();
@@ -963,11 +983,7 @@ const Outpatient = () => {
         
         if (matchingItems.length > 0) {
           const itemToAdd = matchingItems[0];
-          if (!selectedMedicineItems.find(selected => selected.id === itemToAdd.id)) {
-            setSelectedMedicineItems(prev => [...prev, itemToAdd]);
-            // Clear dropdown selections when using tags
-            setMedicineDropdownSelectedItems([]);
-          }
+          handleMedicineItemSelect(itemToAdd);
         }
         setCategorySearchQuery('');
       }
@@ -1013,15 +1029,15 @@ const Outpatient = () => {
     }, 0);
   };
 
-  // Medicine dropdown selection handlers
+  // Medicine dropdown selection handlers - redirect to dosage selection
   const handleMedicineDropdownSelect = (value: string) => {
     const selectedItem = categoryItems.find(item => item.id.toString() === value);
     
-    const alreadyInDropdown = medicineDropdownSelectedItems.find(item => item.id === selectedItem?.id);
     const alreadyInBill = billItems.find(billItem => billItem.id === selectedItem?.id);
     
-    if (selectedItem && !alreadyInDropdown && !alreadyInBill) {
-      setMedicineDropdownSelectedItems(prev => [...prev, selectedItem]);
+    if (selectedItem && !alreadyInBill) {
+      handleMedicineItemSelect(selectedItem);
+      // Clear search selections when using dropdown
       setSelectedMedicineItems([]);
       setCategorySearchQuery('');
     }
@@ -1447,6 +1463,91 @@ const Outpatient = () => {
     setXRayViews({ AP: false, LAT: false, OBLIQUE: false, BOTH: false });
     setIsOffChargePortable(false);
     setShowXRayViewSelection(false);
+  };
+
+  // Medicine dosage calculation and functions
+  const medTypeOptions = [
+    'Qty', 'Tablet', 'Mg', 'Capsule', 'ml/cc', 'tsp', 'tbsp', 'amp', 'mcg', 'meq', 'tube', 'formula', 'solution'
+  ];
+
+  const doseFrequencyOptions = [
+    { value: 'QD', label: 'QD (Once daily)' },
+    { value: 'BID', label: 'BID (Twice daily)' },
+    { value: 'TID', label: 'TID (Three times daily)' },
+    { value: 'QID', label: 'QID (Four times daily)' },
+    { value: 'QOD', label: 'QOD (Every other day)' },
+    { value: 'QWEEK', label: 'QWEEK (Weekly)' }
+  ];
+
+  const isDosageSelectionComplete = () => {
+    return dosePrescribed.trim() && medType && doseFrequency && totalDays.trim() && parseInt(totalDays) > 0;
+  };
+
+  const calculateMedicineDosage = () => {
+    if (!selectedMedicineForDosage || !isDosageSelectionComplete()) return { totalQuantity: 0, totalPrice: 0 };
+
+    const basePrice = parseFloat(selectedMedicineForDosage.price);
+    const days = parseInt(totalDays);
+    let dailyQuantity = 1;
+
+    // Calculate daily quantity based on frequency
+    switch (doseFrequency) {
+      case 'QD': dailyQuantity = 1; break;
+      case 'BID': dailyQuantity = 2; break;
+      case 'TID': dailyQuantity = 3; break;
+      case 'QID': dailyQuantity = 4; break;
+      case 'QOD': dailyQuantity = 0.5; break;
+      case 'QWEEK': dailyQuantity = 1/7; break;
+      default: dailyQuantity = 1;
+    }
+
+    const totalQuantity = Math.ceil(dailyQuantity * days);
+    const totalPrice = basePrice * totalQuantity;
+
+    return { totalQuantity, totalPrice };
+  };
+
+  const addMedicineToBill = () => {
+    if (!selectedMedicineForDosage || !isDosageSelectionComplete()) return;
+
+    const { totalQuantity, totalPrice } = calculateMedicineDosage();
+    const dosageInfo = `${dosePrescribed} ${medType}, ${doseFrequency}, ${totalDays} days (Total: ${totalQuantity} ${medType})`;
+    
+    // Create medicine item with dosage information
+    const medicineItem = {
+      ...selectedMedicineForDosage,
+      name: `${selectedMedicineForDosage.name} - ${dosageInfo}`,
+      price: totalPrice.toString(),
+      billId: `medicine-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    };
+
+    // Add to bill
+    setBillItems(prev => [...prev, medicineItem]);
+
+    // Reset medicine dosage selection
+    setSelectedMedicineForDosage(null);
+    setShowMedicineDosageSelection(false);
+    setDosePrescribed('');
+    setMedType('');
+    setDoseFrequency('');
+    setTotalDays('');
+
+    // Clear search selections
+    setSelectedMedicineItems([]);
+    setMedicineDropdownSelectedItems([]);
+    setMedicineDropdownValue('');
+    setMedicineHighlightedDropdownIndex(-1);
+    setIsMedicineDropdownOpen(false);
+    setMedicineDropdownFilterQuery('');
+  };
+
+  const cancelMedicineDosageSelection = () => {
+    setSelectedMedicineForDosage(null);
+    setShowMedicineDosageSelection(false);
+    setDosePrescribed('');
+    setMedType('');
+    setDoseFrequency('');
+    setTotalDays('');
   };
 
   return (
@@ -2193,6 +2294,121 @@ const Outpatient = () => {
                           </div>
                         </div>
                       )}
+
+                      {/* Medicine Dosage Selection Interface */}
+                      {showMedicineDosageSelection && selectedMedicineForDosage && (
+                        <div className="mt-6 p-4 border border-medical-primary/20 rounded-lg bg-medical-primary/5">
+                          <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-semibold text-medical-primary">
+                              Set Dosage for: {selectedMedicineForDosage.name}
+                            </h3>
+                            <Button
+                              onClick={cancelMedicineDosageSelection}
+                              variant="ghost"
+                              size="sm"
+                              className="text-muted-foreground hover:text-foreground"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+
+                          <div className="space-y-4">
+                            {/* Dose Prescribed (Manual Entry) */}
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-foreground">Dose Prescribed</label>
+                              <Input
+                                ref={doseInputRef}
+                                placeholder="Enter dose amount (e.g., 500, 1, 2.5)"
+                                value={dosePrescribed}
+                                onChange={(e) => setDosePrescribed(e.target.value)}
+                                className="w-full"
+                              />
+                            </div>
+
+                            {/* Med Type Dropdown */}
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-foreground">Med Type</label>
+                              <Select value={medType} onValueChange={setMedType}>
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Select medication type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {medTypeOptions.map((type) => (
+                                    <SelectItem key={type} value={type}>
+                                      {type}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            {/* Dose Frequency Dropdown */}
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-foreground">Dose Frequency</label>
+                              <Select value={doseFrequency} onValueChange={setDoseFrequency}>
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Select dosing frequency" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {doseFrequencyOptions.map((freq) => (
+                                    <SelectItem key={freq.value} value={freq.value}>
+                                      {freq.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            {/* Total Days */}
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-foreground">Total Days</label>
+                              <Input
+                                type="number"
+                                placeholder="Enter number of days"
+                                value={totalDays}
+                                onChange={(e) => setTotalDays(e.target.value)}
+                                className="w-full"
+                                min="1"
+                              />
+                            </div>
+
+                            {/* Calculation Preview */}
+                            {isDosageSelectionComplete() && (
+                              <div className="p-3 bg-muted/30 rounded-lg">
+                                <div className="text-sm font-medium text-foreground mb-2">Dosage Calculation:</div>
+                                <div className="text-xs text-muted-foreground space-y-1">
+                                  <div>• Base price per unit: {format(selectedMedicineForDosage.price)}</div>
+                                  <div>• Frequency: {doseFrequencyOptions.find(f => f.value === doseFrequency)?.label}</div>
+                                  <div>• Duration: {totalDays} days</div>
+                                  <div>• Total quantity needed: {calculateMedicineDosage().totalQuantity} {medType}</div>
+                                  <div className="font-semibold text-medical-primary">
+                                    • Total cost: {format(calculateMedicineDosage().totalPrice)}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Add to Bill Button */}
+                            <div className="flex justify-end pt-2 border-t border-medical-primary/10">
+                              <Button
+                                onClick={addMedicineToBill}
+                                disabled={!isDosageSelectionComplete()}
+                                variant="medical"
+                                className="flex items-center space-x-2"
+                              >
+                                <Plus className="h-4 w-4" />
+                                <span>Add to Bill</span>
+                              </Button>
+                            </div>
+
+                            <div className="text-xs text-muted-foreground">
+                              • Fill all fields to calculate dosage<br/>
+                              • Price is calculated as: Base price × Total quantity needed<br/>
+                              • Quantity is calculated based on frequency and duration
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ) : selectedCategory === 'Medicine' ? (
                     <div className="space-y-4">
@@ -2357,6 +2573,16 @@ const Outpatient = () => {
                         • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
                       </div>
                     </div>
+                  ) : selectedCategory === 'Medicine' ? (
+                    /* Medicine help text with dosage instructions */
+                    <div className="text-sm text-muted-foreground">
+                      • Search or dropdown: Select medicine to open dosage calculator<br/>
+                      • Set dose amount, medication type (Tablet, Mg, ml/cc, etc.)<br/>
+                      • Choose frequency: QD (daily), BID (twice), TID (3x), QID (4x), QOD, QWEEK<br/>
+                      • Enter total days to auto-calculate total quantity and cost<br/>
+                      • Bill shows complete dosage information and calculated pricing<br/>
+                      • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
+                    </div>
                   ) : ['Physical Therapy', 'Limb and Brace'].includes(selectedCategory) ? (
                     /* Manual entry interface for Physical Therapy and Limb and Brace */
                     <div className="space-y-4">
@@ -2467,12 +2693,12 @@ const Outpatient = () => {
                     </div>
                   ) : selectedCategory === 'Medicine' ? (
                     <div className="text-center text-muted-foreground py-4">
-                      <div className="text-lg font-medium mb-2">Medicine Quick Selection</div>
+                      <div className="text-lg font-medium mb-2">Medicine Dosage Calculator</div>
                       <div className="text-sm">
-                        Type medicine names and press comma to add as tags, or use dropdown below
+                        Select medicine from search or dropdown to set dosage, frequency, and duration
                       </div>
                       <div className="text-xs mt-2 opacity-75">
-                        {selectedMedicineItems.length > 0 ? `${selectedMedicineItems.length} medicine${selectedMedicineItems.length !== 1 ? 's' : ''} selected` : 'No medicines selected yet'}
+                        Each medicine selection opens dosage form with automatic price calculation
                       </div>
                     </div>
                   ) : ['Physical Therapy', 'Limb and Brace'].includes(selectedCategory) ? (

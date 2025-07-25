@@ -111,6 +111,12 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: IMPROVED: X-Ray view selection automatically resets Off-Charge/Portable when film count changes
 - **2025-01-25**: UPDATED: X-Ray help text to reflect new duplicate prevention and Off-Charge/Portable rules
 - **2025-01-25**: FIXED: X-Ray "BOTH" selection now displays as "AP and LAT" in bill instead of "BOTH"
+- **2025-01-25**: IMPLEMENTED: Complete medicine dosage system with dose prescription, medication types, and frequency selection
+- **2025-01-25**: ADDED: Medicine dosage calculator with manual dose entry, Med Type dropdown (Qty, Tablet, Mg, Capsule, ml/cc, tsp, tbsp, amp, mcg, meq, tube, formula, solution)
+- **2025-01-25**: ADDED: Dose frequency dropdown with medical abbreviations (QD, BID, TID, QID, QOD, QWEEK) with descriptions
+- **2025-01-25**: ADDED: Total days input with automatic quantity and cost calculation based on frequency and duration
+- **2025-01-25**: ENHANCED: Medicine bill entries now show complete dosage information including dose, type, frequency, duration, and calculated total quantity
+- **2025-01-25**: REDIRECTED: Medicine search and dropdown selections now open dosage calculator instead of direct addition to bill
 
 ## Project Architecture
 - **Frontend**: React with TypeScript, using shadcn/ui components and wouter for routing
