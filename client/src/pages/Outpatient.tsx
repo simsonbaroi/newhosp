@@ -46,12 +46,32 @@ const Outpatient = () => {
     ? medicalItems.filter((item: MedicalItem) => item.category === selectedCategory)
     : [];
 
-  // Filter category items by search
+  // For Laboratory: separate items for search vs dropdown
+  const getSearchItems = () => {
+    if (selectedCategory === 'Laboratory') {
+      // Only show first 5 items for search suggestions
+      return categoryItems.slice(0, 5);
+    }
+    return categoryItems;
+  };
+
+  const getDropdownItems = () => {
+    if (selectedCategory === 'Laboratory') {
+      // Show different items (items 6 onwards) for dropdown
+      return categoryItems.slice(5);
+    }
+    return categoryItems;
+  };
+
+  const searchItems = getSearchItems();
+  const dropdownItems = getDropdownItems();
+
+  // Filter category items by search (only from search items)
   const filteredCategoryItems = categorySearchQuery
-    ? categoryItems.filter((item: MedicalItem) => 
+    ? searchItems.filter((item: MedicalItem) => 
         item.name.toLowerCase().includes(categorySearchQuery.toLowerCase())
       )
-    : categoryItems;
+    : searchItems;
 
   // Global search results
   const globalSearchResults = globalSearchQuery
@@ -561,15 +581,15 @@ const Outpatient = () => {
                             variant="medical-outline" 
                             className="w-full"
                           >
-                            {isDropdownOpen ? 'Hide All Tests' : 'Show All Available Tests'}
+                            {isDropdownOpen ? 'Hide Additional Tests' : 'Show Additional Tests'}
                           </Button>
                           
                           {isDropdownOpen && (
                             <div className="space-y-1 max-h-60 overflow-y-auto border border-border rounded-md p-2 bg-muted/10" ref={dropdownRef}>
                               <div className="text-sm font-medium text-muted-foreground mb-2">
-                                All laboratory tests (click to select):
+                                Additional laboratory tests (click to select):
                               </div>
-                              {categoryItems.map((item: MedicalItem) => (
+                              {dropdownItems.map((item: MedicalItem) => (
                                 <div key={item.id} className={`text-xs p-2 rounded cursor-pointer hover:bg-muted/40 ${
                                   dropdownSelectedItems.find(selected => selected.id === item.id) ? 'bg-blue-500/10 text-blue-600' : 'bg-muted/20'
                                 }`}
@@ -592,7 +612,7 @@ const Outpatient = () => {
 
                       <div className="text-sm text-muted-foreground">
                         • Type and press comma for quick tag selection<br/>
-                        • Click items in search results or dropdown for multi-selection
+                        • Search shows basic tests, dropdown shows additional tests
                       </div>
                     </div>
                   ) : ['Medicine', 'X-Ray'].includes(selectedCategory) ? (
