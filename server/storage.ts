@@ -271,6 +271,22 @@ export class MemoryStorage implements IStorage {
       
       { category: 'Other', name: 'Miscellaneous Charges', price: '500.00', currency: 'BDT', isOutpatient: false },
       { category: 'Other', name: 'Administrative Fee', price: '300.00', currency: 'BDT', isOutpatient: false },
+      
+      // Adding Outpatient categories to Inpatient
+      { category: 'Dr. Fees', name: 'General Consultation (Inpatient)', price: '600.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Dr. Fees', name: 'Specialist Consultation (Inpatient)', price: '1000.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Dr. Fees', name: 'ICU Consultation', price: '1500.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Dr. Fees', name: 'Daily Round Visit', price: '400.00', currency: 'BDT', isOutpatient: false },
+      
+      { category: 'Medic Fee', name: 'Inpatient Medical Service', price: '400.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Medic Fee', name: 'Advanced Inpatient Care', price: '700.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Medic Fee', name: 'Critical Care Medical Service', price: '1000.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Medic Fee', name: 'Post-operative Care', price: '600.00', currency: 'BDT', isOutpatient: false },
+      
+      { category: 'Medicine', name: 'Oral Medications (per day)', price: '300.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Medicine', name: 'Injectable Medications', price: '500.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Medicine', name: 'Paracetamol 500mg (Inpatient)', price: '20.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Medicine', name: 'Pain Management Package', price: '800.00', currency: 'BDT', isOutpatient: false },
     ];
 
     for (const item of defaultItems) {

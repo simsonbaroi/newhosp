@@ -47,6 +47,8 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: ADDED: "Limb and Brace" category to Outpatient section with 8 medical items (braces, supports, aids)
 - **2025-01-25**: UPDATED: Complete Inpatient categories replacement with 19 comprehensive categories as requested
 - **2025-01-25**: Added detailed medical items for all Inpatient categories including specialized procedures and equipment
+- **2025-01-25**: ADDED: Outpatient categories (Dr. Fees, Medic Fee, Medicine) to Inpatient section per user request
+- **2025-01-25**: Enhanced Inpatient with inpatient-specific items for Dr. Fees, Medic Fee, and Medicine categories
 
 ## Project Architecture
 - **Frontend**: React with TypeScript, using shadcn/ui components and wouter for routing
