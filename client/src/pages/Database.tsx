@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Pencil, Trash2, Search, Database as DatabaseIcon, Save, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Database as DatabaseIcon, Save, X, Grid3X3, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -23,6 +23,8 @@ const Database = () => {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [editingItem, setEditingItem] = useState<DatabaseItem | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [isCarouselMode, setIsCarouselMode] = useState<boolean>(false);
+  const [currentCategoryIndex, setCurrentCategoryIndex] = useState<number>(0);
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -145,6 +147,34 @@ const Database = () => {
     setIsAdding(false);
   };
 
+  // Carousel navigation functions
+  const handleCategoryClick = (category: string) => {
+    if (isCarouselMode && category === filterCategory) {
+      // If already in carousel mode and same category clicked, exit carousel
+      setIsCarouselMode(false);
+      setFilterCategory('all');
+    } else {
+      setFilterCategory(category);
+      setIsCarouselMode(true);
+      setCurrentCategoryIndex(allCategories.indexOf(category));
+    }
+  };
+
+  const navigateCarousel = (direction: 'prev' | 'next') => {
+    const newIndex = direction === 'prev' 
+      ? (currentCategoryIndex - 1 + allCategories.length) % allCategories.length
+      : (currentCategoryIndex + 1) % allCategories.length;
+    
+    setCurrentCategoryIndex(newIndex);
+    setFilterCategory(allCategories[newIndex]);
+  };
+
+  const exitCarousel = () => {
+    setIsCarouselMode(false);
+    setFilterCategory('all');
+    setSearchQuery(''); // Clear search when exiting carousel
+  };
+
   return (
     <Layout>
       <div className="max-w-7xl mx-auto p-6">
@@ -257,14 +287,17 @@ const Database = () => {
             </Button>
           </div>
           
-          <div>
-            <Input
-              placeholder="Search items..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full"
-            />
-          </div>
+          {/* Search - Hidden in carousel mode */}
+          {!isCarouselMode && (
+            <div>
+              <Input
+                placeholder="Search items..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full"
+              />
+            </div>
+          )}
           
           <div>
             <Select value={filterType} onValueChange={(value: any) => setFilterType(value)}>
@@ -296,11 +329,122 @@ const Database = () => {
           </div>
         </div>
 
+        {/* Category Carousel Navigation */}
+        <Card className="glass-card mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between text-medical-primary">
+              <span className="flex items-center">
+                <Grid3X3 className="mr-2 h-5 w-5" />
+                Browse Categories
+              </span>
+              {isCarouselMode && (
+                <Button 
+                  size="sm" 
+                  variant="medical-ghost" 
+                  onClick={exitCarousel}
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {!isCarouselMode ? (
+              // Normal grid mode
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {allCategories.map((category) => {
+                  const itemCount = items.filter(item => item.category === category).length;
+                  return (
+                    <Button
+                      key={category}
+                      variant="medical-outline"
+                      className="h-auto p-3 text-left justify-start"
+                      onClick={() => handleCategoryClick(category)}
+                    >
+                      <div>
+                        <div className="font-semibold text-sm truncate">{category}</div>
+                        <div className="text-xs opacity-75">{itemCount} items</div>
+                      </div>
+                    </Button>
+                  );
+                })}
+              </div>
+            ) : (
+              // Carousel mode with preview buttons
+              <div className="flex items-center justify-center space-x-2">
+                {/* Previous preview button */}
+                <Button
+                  variant="medical-ghost"
+                  className="h-auto p-2 text-left flex-shrink-0 opacity-60 hover:opacity-80 max-w-[80px] justify-start"
+                  onClick={() => navigateCarousel('prev')}
+                >
+                  <div className="w-full">
+                    <div className="text-xs truncate text-left">
+                      {allCategories[(currentCategoryIndex - 1 + allCategories.length) % allCategories.length]}
+                    </div>
+                  </div>
+                </Button>
+
+                {/* Previous arrow */}
+                <Button
+                  variant="medical-outline"
+                  size="sm"
+                  onClick={() => navigateCarousel('prev')}
+                  className="h-10 w-10 p-0 flex-shrink-0"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                
+                {/* Current selected category */}
+                <Button
+                  variant="medical"
+                  className="h-auto p-4 text-center flex-1 max-w-[200px]"
+                  onClick={() => handleCategoryClick(filterCategory)}
+                >
+                  <div>
+                    <div className="font-semibold text-sm">{filterCategory}</div>
+                    <div className="text-xs opacity-75">
+                      {items.filter(item => item.category === filterCategory).length} items
+                    </div>
+                  </div>
+                </Button>
+                
+                {/* Next arrow */}
+                <Button
+                  variant="medical-outline"
+                  size="sm"
+                  onClick={() => navigateCarousel('next')}
+                  className="h-10 w-10 p-0 flex-shrink-0"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+
+                {/* Next preview button */}
+                <Button
+                  variant="medical-ghost"
+                  className="h-auto p-2 text-right flex-shrink-0 opacity-60 hover:opacity-80 max-w-[80px] justify-end"
+                  onClick={() => navigateCarousel('next')}
+                >
+                  <div className="w-full">
+                    <div className="text-xs truncate text-right">
+                      {allCategories[(currentCategoryIndex + 1) % allCategories.length]}
+                    </div>
+                  </div>
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Items List */}
         <Card className="shadow-card">
           <CardHeader>
             <CardTitle>
-              Items ({filteredItems.length} found)
+              {isCarouselMode && filterCategory !== 'all' 
+                ? `${filterCategory} Items (${filteredItems.length} found)`
+                : `Items (${filteredItems.length} found)`
+              }
             </CardTitle>
           </CardHeader>
           <CardContent>
