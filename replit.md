@@ -21,6 +21,10 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: ENHANCED: Header styling with improved visual hierarchy, better spacing, and glass morphism effects
 - **2025-01-25**: IMPROVED: Navigation buttons with hover animations, active states, and professional medical theme integration
 - **2025-01-25**: RESPONSIVE: Enhanced button text sizing to prevent overflow on mobile devices
+- **2025-01-25**: IMPLEMENTED: Touch/swipe gesture support for carousel navigation on mobile devices
+- **2025-01-25**: ADDED: Custom useSwipeGesture hook with configurable threshold and touch event handling
+- **2025-01-25**: ENHANCED: Carousel mode now supports left/right swipe gestures to navigate between categories
+- **2025-01-25**: APPLIED: Swipe functionality to both Outpatient and Inpatient carousel systems
 - **2025-01-25**: Applied consistent responsive design across Database, Outpatient, and Inpatient sections
 - **2025-01-25**: Converted from PostgreSQL to in-memory storage for Replit compatibility
 - **2025-01-25**: Fixed all TypeScript and LSP errors in storage system

@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
 import { useTakaFormat } from '../hooks/useCurrencyFormat';
+import { useSwipeGesture } from '../hooks/useSwipeGesture';
 import type { MedicalItem } from '../../../shared/schema';
 import { calculateMedicineDosage, formatDosageForBill, MEDICINE_RULES } from '../../../shared/medicineCalculations';
 
@@ -288,6 +289,22 @@ const Outpatient = () => {
     setSelectedCategory(orderedCategories[newIndex]);
     setCategorySearchQuery(''); // Reset search when switching categories
   };
+
+  // Swipe gesture support for carousel navigation
+  const swipeRef = useSwipeGesture({
+    onSwipeLeft: () => {
+      if (isCarouselMode) {
+        navigateCarousel('next');
+      }
+    },
+    onSwipeRight: () => {
+      if (isCarouselMode) {
+        navigateCarousel('prev');
+      }
+    },
+    threshold: 75, // Minimum swipe distance
+    preventDefaultEvents: false
+  });
 
   const exitCarousel = () => {
     setIsCarouselMode(false);
@@ -1781,7 +1798,11 @@ const Outpatient = () => {
                   </div>
                 ) : (
                   // Carousel mode with preview buttons
-                  <div className="flex items-center justify-center space-x-2">
+                  <div 
+                    ref={swipeRef}
+                    className="flex items-center justify-center space-x-2 relative touch-pan-y user-select-none"
+                    style={{ touchAction: 'pan-y' }}
+                  >
                     {/* Previous preview button */}
                     <Button
                       variant="medical-ghost"
