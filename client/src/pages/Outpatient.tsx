@@ -656,7 +656,11 @@ const Outpatient = () => {
                                 {selectedLabItems.length} item{selectedLabItems.length !== 1 ? 's' : ''}
                               </span>
                             </div>
-                            <Button onClick={addSelectedLabItemsToBill} variant="medical">
+                            <Button 
+                              onClick={addSelectedLabItemsToBill} 
+                              variant="outline"
+                              className="border-medical-primary/20 text-medical-primary hover:bg-medical-primary/10"
+                            >
                               Add {selectedLabItems.length} Test{selectedLabItems.length !== 1 ? 's' : ''} to Bill
                             </Button>
                           </div>
