@@ -746,6 +746,7 @@ const Outpatient = () => {
 
   // Handle medicine item selection (redirect to dosage selection)
   const handleMedicineItemSelect = (item: MedicalItem) => {
+    console.log('Medicine item selected:', item.name, 'Category:', item.category);
     setSelectedMedicineForDosage(item);
     setShowMedicineDosageSelection(true);
     // Reset dosage fields when selecting new medicine
@@ -753,6 +754,7 @@ const Outpatient = () => {
     setMedType('');
     setDoseFrequency('');
     setTotalDays('');
+    console.log('Medicine dosage selection state set to true');
   };
 
   // Handle comma-separated X-Ray item selection
@@ -984,9 +986,10 @@ const Outpatient = () => {
         
         if (matchingItems.length > 0) {
           const itemToAdd = matchingItems[0];
+          console.log('Medicine search selected:', itemToAdd.name);
           handleMedicineItemSelect(itemToAdd);
+          setCategorySearchQuery('');
         }
-        setCategorySearchQuery('');
       }
     }
   };
@@ -1037,6 +1040,7 @@ const Outpatient = () => {
     const alreadyInBill = billItems.find(billItem => billItem.id === selectedItem?.id);
     
     if (selectedItem && !alreadyInBill) {
+      console.log('Medicine dropdown selected:', selectedItem.name);
       handleMedicineItemSelect(selectedItem);
       // Clear search selections when using dropdown
       setSelectedMedicineItems([]);
