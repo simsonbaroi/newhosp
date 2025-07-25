@@ -22,8 +22,7 @@ const Outpatient = () => {
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState<number>(0);
   const [selectedLabItems, setSelectedLabItems] = useState<MedicalItem[]>([]);
   const [dropdownSelectedItems, setDropdownSelectedItems] = useState<MedicalItem[]>([]);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isUsingSearch, setIsUsingSearch] = useState(false);
+  const [dropdownValue, setDropdownValue] = useState<string>('');
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { format } = useTakaFormat();
   const queryClient = useQueryClient();
@@ -200,26 +199,17 @@ const Outpatient = () => {
     setGlobalSearchQuery(''); // Clear global search when exiting carousel
     setSelectedLabItems([]); // Clear lab selections when exiting
     setDropdownSelectedItems([]); // Clear dropdown selections when exiting
-    setIsDropdownOpen(false);
-    setIsUsingSearch(false); // Reset search mode
+    setDropdownValue(''); // Reset dropdown value
   };
 
-  // Handle click outside dropdown to close it
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false);
-      }
-    };
-
-    if (isDropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+  // Handle dropdown selection
+  const handleDropdownSelect = (value: string) => {
+    const selectedItem = categoryItems.find(item => item.id.toString() === value);
+    if (selectedItem && !dropdownSelectedItems.find(item => item.id === selectedItem.id)) {
+      setDropdownSelectedItems(prev => [...prev, selectedItem]);
     }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isDropdownOpen]);
+    setDropdownValue(''); // Reset dropdown after selection
+  };
 
   // Get sorted lab suggestions with closest match first
   const getLabSuggestions = () => {
@@ -280,14 +270,6 @@ const Outpatient = () => {
     setSelectedLabItems([]);
   };
 
-  // Handle dropdown item selection
-  const handleDropdownSelect = (item: MedicalItem) => {
-    if (!dropdownSelectedItems.find(selected => selected.id === item.id)) {
-      setDropdownSelectedItems(prev => [...prev, item]);
-    }
-    // Keep dropdown open for multiple selections
-  };
-
   // Remove item from dropdown selection
   const removeDropdownItem = (itemId: number) => {
     setDropdownSelectedItems(prev => prev.filter(item => item.id !== itemId));
@@ -295,43 +277,10 @@ const Outpatient = () => {
 
   // Add all dropdown selected items to bill
   const addDropdownSelectedItemsToBill = () => {
-    console.log('Adding dropdown items to bill:', dropdownSelectedItems);
-    dropdownSelectedItems.forEach((item, index) => {
-      console.log(`Adding item ${index + 1}:`, item.name, item.id);
+    dropdownSelectedItems.forEach(item => {
       addToBill(item);
     });
-    console.log('Bill items after adding:', billItems);
     setDropdownSelectedItems([]);
-    setIsDropdownOpen(false);
-  };
-
-  // Get dropdown options sorted by relevance
-  const getDropdownOptions = () => {
-    const allItems = categoryItems;
-    
-    if (!categorySearchQuery) return allItems;
-    
-    const query = categorySearchQuery.toLowerCase();
-    const filtered = allItems.filter(item => 
-      item.name.toLowerCase().includes(query)
-    );
-    
-    // Sort by relevance: exact matches first, then starts with, then contains
-    return filtered.sort((a, b) => {
-      const aName = a.name.toLowerCase();
-      const bName = b.name.toLowerCase();
-      
-      // Exact match gets highest priority
-      if (aName === query) return -1;
-      if (bName === query) return 1;
-      
-      // Starts with query gets second priority
-      if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
-      if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
-      
-      // Both start with or both contain - sort alphabetically
-      return aName.localeCompare(bName);
-    });
   };
 
   return (
@@ -523,22 +472,12 @@ const Outpatient = () => {
                         value={categorySearchQuery}
                         onChange={(e) => {
                           setCategorySearchQuery(e.target.value);
-                          // When user starts typing, activate search mode and close dropdown
+                          // Clear dropdown selections when switching to search
                           if (e.target.value.trim()) {
-                            setIsUsingSearch(true);
-                            setIsDropdownOpen(false);
-                            setDropdownSelectedItems([]); // Clear dropdown selections when switching to search
-                          } else {
-                            setIsUsingSearch(false);
+                            setDropdownSelectedItems([]);
                           }
                         }}
                         onKeyDown={handleLabSearchKeyDown}
-                        onFocus={() => {
-                          // Only open dropdown if not using search mode and no text in input
-                          if (!categorySearchQuery.trim()) {
-                            setIsDropdownOpen(true);
-                          }
-                        }}
                         className="w-full"
                       />
                       {selectedLabItems.length > 0 && (
@@ -576,49 +515,29 @@ const Outpatient = () => {
                       
 
                       
-                      {/* Dropdown with same style as suggestions - only show when not using search */}
-                      {!isUsingSearch && !categorySearchQuery && (
-                        <div className="space-y-2">
-                          <Button 
-                            onClick={() => {
-                              setIsDropdownOpen(!isDropdownOpen);
-                              if (!isDropdownOpen) {
-                                // When opening dropdown, clear search mode
-                                setIsUsingSearch(false);
-                                setSelectedLabItems([]); // Clear search selections when switching to dropdown
-                              }
-                            }} 
-                            variant="medical-outline" 
-                            className="w-full"
-                          >
-                            {isDropdownOpen ? 'Hide Additional Tests' : 'Show Additional Tests'}
-                          </Button>
-                          
-                          {isDropdownOpen && (
-                            <div className="space-y-1 max-h-60 overflow-y-auto border border-border rounded-md p-2 bg-muted/10" ref={dropdownRef}>
-                              <div className="text-sm font-medium text-muted-foreground mb-2">
-                                Additional laboratory tests (click to select):
-                              </div>
-                              {dropdownItems.map((item: MedicalItem) => (
-                                <div key={item.id} className={`text-xs p-2 rounded cursor-pointer hover:bg-muted/40 ${
-                                  dropdownSelectedItems.find(selected => selected.id === item.id) ? 'bg-blue-500/10 text-blue-600' : 'bg-muted/20'
-                                }`}
-                                     onClick={() => handleDropdownSelect(item)}>
-                                  <div className="flex items-center justify-between">
-                                    <span className="font-medium">{item.name}</span>
-                                    <span className="text-medical-primary font-semibold">
-                                      {format(item.price)}
-                                    </span>
-                                  </div>
-                                  {dropdownSelectedItems.find(selected => selected.id === item.id) && (
-                                    <span className="ml-2 text-blue-600 text-xs">✓ Selected</span>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          )}
+                      {/* Separate Dropdown Selection */}
+                      <div className="space-y-2 border-t pt-4">
+                        <div className="text-sm font-medium text-muted-foreground">
+                          Alternative: Select from dropdown
                         </div>
-                      )}
+                        <Select value={dropdownValue} onValueChange={handleDropdownSelect}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select lab test from dropdown..." />
+                          </SelectTrigger>
+                          <SelectContent className="bg-popover border border-border max-h-60">
+                            {categoryItems.map((item: MedicalItem) => (
+                              <SelectItem key={item.id} value={item.id.toString()}>
+                                <div className="flex items-center justify-between w-full">
+                                  <span>{item.name}</span>
+                                  <span className="ml-4 text-medical-primary font-semibold">
+                                    {format(item.price)}
+                                  </span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
                       <div className="text-sm text-muted-foreground">
                         • Type to search and press comma/enter to add as tags<br/>

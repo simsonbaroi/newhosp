@@ -52,6 +52,7 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: FIXED: Laboratory search and dropdown independence - both use same database but work independently
 - **2025-01-25**: Added proper mode switching between search and dropdown with automatic clearing of opposite mode selections
 - **2025-01-25**: Enhanced user experience with clear help text explaining independent search/dropdown functionality
+- **2025-01-25**: Enhanced user experience with clear help text explaining independent search/dropdown functionality
 
 ## Project Architecture
 - **Frontend**: React with TypeScript, using shadcn/ui components and wouter for routing
