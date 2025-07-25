@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'wouter';
 import { Calculator, Database, Users, Stethoscope } from 'lucide-react';
 
 interface LayoutProps {
@@ -7,7 +7,7 @@ interface LayoutProps {
 }
 
 const Layout = ({ children }: LayoutProps) => {
-  const location = useLocation();
+  const [location] = useLocation();
 
   const navigation = [
     { name: 'Home', href: '/', icon: Calculator },
@@ -30,13 +30,13 @@ const Layout = ({ children }: LayoutProps) => {
             
             <nav className="flex space-x-1">
               {navigation.map((item) => {
-                const isActive = location.pathname === item.href;
+                const isActive = location === item.href;
                 const Icon = item.icon;
                 
                 return (
                   <Link
                     key={item.name}
-                    to={item.href}
+                    href={item.href}
                     className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                       isActive
                         ? 'bg-primary text-primary-foreground shadow-hover'

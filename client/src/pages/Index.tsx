@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'wouter';
 import { Calculator, Users, Stethoscope, Database, ArrowRight, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -54,7 +54,7 @@ const Index = () => {
               Manage outpatient and inpatient calculations with real-time pricing and comprehensive database management.
             </p>
             <div className="flex justify-center space-x-4">
-              <Link to="/outpatient">
+              <Link href="/outpatient">
                 <Button size="lg" className="bg-white text-primary hover:bg-white/90 font-semibold">
                   Start Calculating
                   <ArrowRight className="ml-2 h-5 w-5" />
@@ -93,7 +93,7 @@ const Index = () => {
                       <p className="text-muted-foreground mb-6">
                         {feature.description}
                       </p>
-                      <Link to={feature.href}>
+                      <Link href={feature.href}>
                         <Button 
                           className={`w-full ${feature.color} font-semibold`}
                         >
