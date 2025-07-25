@@ -101,7 +101,7 @@ const Outpatient = () => {
   useEffect(() => {
     const loadSavedBill = async () => {
       try {
-        const response = await fetch('/api/bills/browser-session/outpatient');
+        const response = await fetch('/api/bills?sessionId=browser-session&type=outpatient');
         if (response.ok) {
           const bill = await response.json();
           if (bill && bill.billData) {

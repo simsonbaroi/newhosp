@@ -86,6 +86,9 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: COLOR MATCHED: Dropdown "Add to Bill" button now uses blue theme matching dropdown tag items
 - **2025-01-25**: STYLED SEARCH: Applied same outline button style to search "Add to Bill" button with green medical theme
 - **2025-01-25**: CONSISTENT CAROUSEL: Applied outline button style to carousel selected category button for design consistency
+- **2025-01-25**: CRITICAL FIX: Resolved JSON parsing error by correcting API endpoint URLs
+- **2025-01-25**: Fixed /api/bills/browser-session/outpatient to /api/bills?sessionId=browser-session&type=outpatient
+- **2025-01-25**: Updated both Outpatient and Inpatient pages to use correct API query parameters
 
 ## Project Architecture
 - **Frontend**: React with TypeScript, using shadcn/ui components and wouter for routing

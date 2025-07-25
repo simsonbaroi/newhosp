@@ -75,7 +75,7 @@ const Inpatient = () => {
   useEffect(() => {
     const loadSavedBill = async () => {
       try {
-        const response = await fetch('/api/bills/browser-session/inpatient');
+        const response = await fetch('/api/bills?sessionId=browser-session&type=inpatient');
         if (response.ok) {
           const bill = await response.json();
           if (bill && bill.billData) {
