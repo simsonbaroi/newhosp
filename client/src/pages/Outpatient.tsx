@@ -1345,10 +1345,27 @@ const Outpatient = () => {
         return newViews;
       });
     }
+    
+    // Reset Off-Charge/Portable when view selection changes
+    setIsOffChargePortable(false);
   };
 
   const isViewSelectionComplete = () => {
     return xRayViews.AP || xRayViews.LAT || xRayViews.OBLIQUE || xRayViews.BOTH;
+  };
+
+  const getSelectedViewCount = () => {
+    let count = 0;
+    if (xRayViews.AP) count++;
+    if (xRayViews.LAT) count++;
+    if (xRayViews.OBLIQUE) count++;
+    if (xRayViews.BOTH) count += 2; // BOTH counts as 2 views
+    return count;
+  };
+
+  const isOffChargePortableAllowed = () => {
+    // Off-Charge/Portable button only available when exactly 1 film is selected
+    return getSelectedViewCount() === 1;
   };
 
   const addXRayToBill = () => {
@@ -1361,12 +1378,31 @@ const Outpatient = () => {
     if (xRayViews.BOTH) selectedViews.push('BOTH');
 
     const viewsText = selectedViews.join(' + ');
+    const newXRayName = `${selectedXRayForViews.name} (${viewsText})`;
+    
+    // Check if this exact X-ray + film combination already exists in bill
+    const existingXRayWithSameFilm = billItems.find(billItem => 
+      billItem.name === newXRayName
+    );
+    
+    if (existingXRayWithSameFilm) {
+      // Show duplicate confirmation dialog for same X-ray + film combination
+      setDuplicateDialog({ 
+        open: true, 
+        item: { 
+          ...selectedXRayForViews, 
+          name: newXRayName 
+        } 
+      });
+      return;
+    }
+
     const basePrice = parseFloat(selectedXRayForViews.price);
     
     // Create main X-Ray item with views
     const xRayItem = {
       ...selectedXRayForViews,
-      name: `${selectedXRayForViews.name} (${viewsText})`,
+      name: newXRayName,
       billId: `xray-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     };
 
@@ -2108,19 +2144,25 @@ const Outpatient = () => {
                               </div>
                             </div>
 
-                            {/* Off-Charge/Portable Button */}
+                            {/* Off-Charge/Portable Button - only show when exactly 1 film is selected */}
                             <div className="flex items-center justify-between pt-2 border-t border-medical-primary/10">
                               <div>
-                                <Button
-                                  onClick={() => setIsOffChargePortable(!isOffChargePortable)}
-                                  variant={isOffChargePortable ? "medical" : "outline"}
-                                  size="sm"
-                                  className="flex items-center space-x-2"
-                                >
-                                  <FileX className="h-4 w-4" />
-                                  <span>Off-Charge/Portable</span>
-                                  {isOffChargePortable && <span className="text-xs">(+50% fee)</span>}
-                                </Button>
+                                {isOffChargePortableAllowed() ? (
+                                  <Button
+                                    onClick={() => setIsOffChargePortable(!isOffChargePortable)}
+                                    variant={isOffChargePortable ? "medical" : "outline"}
+                                    size="sm"
+                                    className="flex items-center space-x-2"
+                                  >
+                                    <FileX className="h-4 w-4" />
+                                    <span>Off-Charge/Portable</span>
+                                    {isOffChargePortable && <span className="text-xs">(+50% fee)</span>}
+                                  </Button>
+                                ) : (
+                                  <div className="text-xs text-muted-foreground">
+                                    Off-Charge/Portable only available with 1 film selected
+                                  </div>
+                                )}
                               </div>
                               
                               <div className="text-right">
@@ -2143,8 +2185,10 @@ const Outpatient = () => {
                               • Select at least one film view to proceed<br/>
                               • AP, LAT, and OBLIQUE can be combined<br/>
                               • BOTH selection will clear individual view selections<br/>
-                              • Off-Charge/Portable adds 50% additional fee<br/>
-                              • Complete selection before choosing another X-Ray
+                              • Same X-Ray with different films can be added separately<br/>
+                              • Same X-Ray with same film combination cannot be added twice<br/>
+                              • Off-Charge/Portable only available when exactly 1 film is selected<br/>
+                              • Off-Charge/Portable adds 50% additional fee
                             </div>
                           </div>
                         </div>
