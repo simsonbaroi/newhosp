@@ -117,6 +117,14 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: ADDED: Total days input with automatic quantity and cost calculation based on frequency and duration
 - **2025-01-25**: ENHANCED: Medicine bill entries now show complete dosage information including dose, type, frequency, duration, and calculated total quantity
 - **2025-01-25**: REDIRECTED: Medicine search and dropdown selections now open dosage calculator instead of direct addition to bill
+- **2025-01-25**: CREATED: Comprehensive shared medicine calculation system (shared/medicineCalculations.ts) with separate logic for outpatient vs inpatient
+- **2025-01-25**: IMPLEMENTED: Advanced medicine rules - tablets breakable, capsules whole only, syrup/solution full bottles for outpatient, partial allowed for inpatient ward
+- **2025-01-25**: ADDED: Core conversion rates (1cc=1ml, 1tsp=5ml, 1tbsp=15ml) and medicine type rules with proper quantity calculations
+- **2025-01-25**: ENHANCED: Outpatient medicine system uses shared calculation core with isInpatient=false for full bottle requirements
+- **2025-01-25**: IMPLEMENTED: Inpatient medicine system with Ward Medicine vs Discharge Medicine distinction - ward allows partial bottles, discharge requires full
+- **2025-01-25**: ADDED: Inpatient medicine dosage interface with radio button selection for Ward Medicine (partial allowed) vs Discharge Medicine (full bottles)
+- **2025-01-25**: PERFECTED: Medicine calculation accuracy with proper rounding, fraction handling, and medical safety requirements
+- **2025-01-25**: COMPLETED: Full separation of outpatient and inpatient medicine calculation logic while sharing core mathematical functions
 
 ## Project Architecture
 - **Frontend**: React with TypeScript, using shadcn/ui components and wouter for routing

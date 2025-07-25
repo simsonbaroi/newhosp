@@ -4,11 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
 import { useTakaFormat } from '../hooks/useCurrencyFormat';
 import type { MedicalItem } from '../../../shared/schema';
+import { calculateMedicineDosage, formatDosageForBill, MEDICINE_RULES } from '../../../shared/medicineCalculations';
 
 interface BillItem extends MedicalItem {
   quantity: number;
@@ -23,6 +25,16 @@ const Inpatient = () => {
   const [isCarouselMode, setIsCarouselMode] = useState<boolean>(false);
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState<number>(0);
   const [duplicateDialog, setDuplicateDialog] = useState<{open: boolean, item: MedicalItem | null}>({open: false, item: null});
+  
+  // Inpatient Medicine dosage selection state
+  const [selectedMedicineForDosage, setSelectedMedicineForDosage] = useState<any>(null);
+  const [showMedicineDosageSelection, setShowMedicineDosageSelection] = useState(false);
+  const [dosePrescribed, setDosePrescribed] = useState('');
+  const [medType, setMedType] = useState('');
+  const [doseFrequency, setDoseFrequency] = useState('');
+  const [totalDays, setTotalDays] = useState('');
+  const [isDischargeMedicine, setIsDischargeMedicine] = useState(false);
+  
   const { format } = useTakaFormat();
 
   // Get inpatient medical items
@@ -186,6 +198,118 @@ const Inpatient = () => {
     setDaysAdmitted(1);
   };
 
+  // Inpatient Medicine dosage calculation functions
+  const medTypeOptions = Object.keys(MEDICINE_RULES);
+
+  const doseFrequencyOptions = [
+    { value: 'QD', label: 'QD (Once daily)' },
+    { value: 'BID', label: 'BID (Twice daily)' },
+    { value: 'TID', label: 'TID (Three times daily)' },
+    { value: 'QID', label: 'QID (Four times daily)' },
+    { value: 'QOD', label: 'QOD (Every other day)' },
+    { value: 'QWEEK', label: 'QWEEK (Weekly)' }
+  ];
+
+  const isDosageSelectionComplete = () => {
+    return dosePrescribed.trim() && medType && doseFrequency && totalDays.trim() && parseInt(totalDays) > 0;
+  };
+
+  const calculateInpatientMedicineDosage = () => {
+    if (!selectedMedicineForDosage || !isDosageSelectionComplete()) return { totalQuantity: 0, totalPrice: 0, calculationDetails: '' };
+
+    try {
+      const result = calculateMedicineDosage({
+        dosePrescribed,
+        medType,
+        doseFrequency,
+        totalDays: parseInt(totalDays),
+        basePrice: parseFloat(selectedMedicineForDosage.price),
+        isInpatient: true, // Inpatient logic
+        isDischargeMedicine: isDischargeMedicine
+      });
+
+      return {
+        totalQuantity: result.totalQuantity,
+        totalPrice: result.totalPrice,
+        calculationDetails: result.calculationDetails,
+        quantityUnit: result.quantityUnit
+      };
+    } catch (error) {
+      console.error('Medicine calculation error:', error);
+      return { totalQuantity: 0, totalPrice: 0, calculationDetails: 'Calculation error', quantityUnit: '' };
+    }
+  };
+
+  const handleMedicineItemSelect = (item: MedicalItem) => {
+    setSelectedMedicineForDosage(item);
+    setShowMedicineDosageSelection(true);
+    // Reset dosage fields when selecting new medicine
+    setDosePrescribed('');
+    setMedType('');
+    setDoseFrequency('');
+    setTotalDays('');
+    setIsDischargeMedicine(false);
+  };
+
+  const addMedicineToBill = () => {
+    if (!selectedMedicineForDosage || !isDosageSelectionComplete()) return;
+
+    const calculationResult = calculateInpatientMedicineDosage();
+    
+    if (calculationResult.totalQuantity === 0) {
+      console.error('Failed to calculate medicine dosage');
+      return;
+    }
+
+    // Use the shared formatting function
+    const medicineTypeLabel = isDischargeMedicine ? 'Discharge Medicine' : 'Ward Medicine';
+    const formattedName = `${formatDosageForBill(
+      selectedMedicineForDosage.name,
+      dosePrescribed,
+      medType,
+      doseFrequency,
+      parseInt(totalDays),
+      {
+        totalQuantity: calculationResult.totalQuantity,
+        totalPrice: calculationResult.totalPrice,
+        quantityUnit: calculationResult.quantityUnit || medType,
+        pricePerUnit: parseFloat(selectedMedicineForDosage.price),
+        isPartialAllowed: false,
+        calculationDetails: calculationResult.calculationDetails
+      }
+    )} - ${medicineTypeLabel}`;
+    
+    // Create medicine item with dosage information
+    const medicineItem = {
+      ...selectedMedicineForDosage,
+      name: formattedName,
+      price: calculationResult.totalPrice.toString(),
+      quantity: 1 // For inpatient, we use quantity 1 and include total in price
+    };
+
+    // Add to bill
+    setBillItems(prev => [...prev, medicineItem]);
+
+    // Reset medicine dosage selection
+    setSelectedMedicineForDosage(null);
+    setShowMedicineDosageSelection(false);
+    setDosePrescribed('');
+    setMedType('');
+    setDoseFrequency('');
+    setTotalDays('');
+    setIsDischargeMedicine(false);
+  };
+
+  const cancelMedicineDosageSelection = () => {
+    setSelectedMedicineForDosage(null);
+    setShowMedicineDosageSelection(false);
+    setDosePrescribed('');
+    setMedType('');
+    setDoseFrequency('');
+    setTotalDays('');
+    setIsDischargeMedicine(false);
+  };
+
   // Inpatient category order - outpatient categories first, then inpatient-specific
   const categoryOrder = [
     'Laboratory', 'X-Ray', 'Registration Fees', 'Dr. Fees', 
@@ -315,7 +439,7 @@ const Inpatient = () => {
                           <span className="font-semibold text-medical-primary">
                             {format(item.price)}
                           </span>
-                          <Button size="sm" onClick={() => addToBill(item)} variant="medical">
+                          <Button size="sm" onClick={() => item.category === 'Medicine' ? handleMedicineItemSelect(item) : addToBill(item)} variant="medical">
                             <Plus className="h-4 w-4" />
                           </Button>
                         </div>
@@ -477,7 +601,7 @@ const Inpatient = () => {
                                   </div>
                                 )}
                               </div>
-                              <Button size="sm" onClick={() => addToBill(item)} variant="medical">
+                              <Button size="sm" onClick={() => item.category === 'Medicine' ? handleMedicineItemSelect(item) : addToBill(item)} variant="medical">
                                 <Plus className="h-4 w-4" />
                               </Button>
                             </div>
@@ -489,6 +613,152 @@ const Inpatient = () => {
                         {categorySearchQuery ? 'No items found matching your search.' : 'No items in this category.'}
                       </div>
                     )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Medicine Dosage Selection Interface */}
+            {showMedicineDosageSelection && selectedMedicineForDosage && (
+              <Card className="glass-card">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-medical-primary">
+                      Set Dosage for: {selectedMedicineForDosage.name}
+                    </CardTitle>
+                    <Button
+                      onClick={cancelMedicineDosageSelection}
+                      variant="ghost"
+                      size="sm"
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {/* Dose Prescribed (Manual Entry) */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Dose Prescribed</label>
+                      <Input
+                        placeholder="Enter dose amount (e.g., 500, 1, 2.5)"
+                        value={dosePrescribed}
+                        onChange={(e) => setDosePrescribed(e.target.value)}
+                        className="w-full"
+                      />
+                    </div>
+
+                    {/* Med Type Dropdown */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Med Type</label>
+                      <Select value={medType} onValueChange={setMedType}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select medication type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {medTypeOptions.map((type) => (
+                            <SelectItem key={type} value={type}>
+                              {type}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Dose Frequency Dropdown */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Dose Frequency</label>
+                      <Select value={doseFrequency} onValueChange={setDoseFrequency}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select dosing frequency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {doseFrequencyOptions.map((freq) => (
+                            <SelectItem key={freq.value} value={freq.value}>
+                              {freq.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Total Days */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Total Days</label>
+                      <Input
+                        type="number"
+                        placeholder="Enter number of days"
+                        value={totalDays}
+                        onChange={(e) => setTotalDays(e.target.value)}
+                        className="w-full"
+                        min="1"
+                      />
+                    </div>
+
+                    {/* Inpatient Medicine Type Selection */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Medicine Type</label>
+                      <div className="flex items-center space-x-4">
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            name="medicineType"
+                            checked={!isDischargeMedicine}
+                            onChange={() => setIsDischargeMedicine(false)}
+                            className="text-medical-primary"
+                          />
+                          <span className="text-sm">Ward Medicine (can be partial)</span>
+                        </label>
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            name="medicineType"
+                            checked={isDischargeMedicine}
+                            onChange={() => setIsDischargeMedicine(true)}
+                            className="text-medical-primary"
+                          />
+                          <span className="text-sm">Discharge Medicine (full bottles)</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Calculation Preview */}
+                    {isDosageSelectionComplete() && (
+                      <div className="p-3 bg-muted/30 rounded-lg">
+                        <div className="text-sm font-medium text-foreground mb-2">Inpatient Calculation:</div>
+                        <div className="text-xs text-muted-foreground space-y-1">
+                          <div>• Base price per unit: {format(selectedMedicineForDosage.price)}</div>
+                          <div>• Frequency: {doseFrequencyOptions.find(f => f.value === doseFrequency)?.label}</div>
+                          <div>• Duration: {totalDays} days</div>
+                          <div>• Type: {isDischargeMedicine ? 'Discharge Medicine (full bottles)' : 'Ward Medicine (partial allowed)'}</div>
+                          <div>• Calculation: {calculateInpatientMedicineDosage().calculationDetails}</div>
+                          <div className="font-semibold text-medical-primary">
+                            • Total cost: {format(calculateInpatientMedicineDosage().totalPrice)}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Add to Bill Button */}
+                    <div className="flex justify-end pt-2 border-t border-medical-primary/10">
+                      <Button
+                        onClick={addMedicineToBill}
+                        disabled={!isDosageSelectionComplete()}
+                        variant="medical"
+                        className="flex items-center space-x-2"
+                      >
+                        <Plus className="h-4 w-4" />
+                        <span>Add to Bill</span>
+                      </Button>
+                    </div>
+
+                    <div className="text-xs text-muted-foreground">
+                      • Fill all fields to calculate dosage<br/>
+                      • Ward medicines can be given in partial quantities<br/>
+                      • Discharge medicines follow outpatient rules (full bottles)<br/>
+                      • Syrup/Solution bottles: 100ml standard size
+                    </div>
                   </div>
                 </CardContent>
               </Card>

@@ -9,6 +9,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
 import { useTakaFormat } from '../hooks/useCurrencyFormat';
 import type { MedicalItem } from '../../../shared/schema';
+import { calculateMedicineDosage, formatDosageForBill, MEDICINE_RULES } from '../../../shared/medicineCalculations';
 
 interface BillItem extends MedicalItem {
   billId: string; // Unique identifier for each bill entry
@@ -1465,10 +1466,8 @@ const Outpatient = () => {
     setShowXRayViewSelection(false);
   };
 
-  // Medicine dosage calculation and functions
-  const medTypeOptions = [
-    'Qty', 'Tablet', 'Mg', 'Capsule', 'ml/cc', 'tsp', 'tbsp', 'amp', 'mcg', 'meq', 'tube', 'formula', 'solution'
-  ];
+  // Medicine dosage configuration for outpatient
+  const medTypeOptions = Object.keys(MEDICINE_RULES);
 
   const doseFrequencyOptions = [
     { value: 'QD', label: 'QD (Once daily)' },
@@ -1483,41 +1482,64 @@ const Outpatient = () => {
     return dosePrescribed.trim() && medType && doseFrequency && totalDays.trim() && parseInt(totalDays) > 0;
   };
 
-  const calculateMedicineDosage = () => {
-    if (!selectedMedicineForDosage || !isDosageSelectionComplete()) return { totalQuantity: 0, totalPrice: 0 };
+  const calculateOutpatientMedicineDosage = () => {
+    if (!selectedMedicineForDosage || !isDosageSelectionComplete()) return { totalQuantity: 0, totalPrice: 0, calculationDetails: '' };
 
-    const basePrice = parseFloat(selectedMedicineForDosage.price);
-    const days = parseInt(totalDays);
-    let dailyQuantity = 1;
+    try {
+      const result = calculateMedicineDosage({
+        dosePrescribed,
+        medType,
+        doseFrequency,
+        totalDays: parseInt(totalDays),
+        basePrice: parseFloat(selectedMedicineForDosage.price),
+        isInpatient: false, // Outpatient logic
+        isDischargeMedicine: false
+      });
 
-    // Calculate daily quantity based on frequency
-    switch (doseFrequency) {
-      case 'QD': dailyQuantity = 1; break;
-      case 'BID': dailyQuantity = 2; break;
-      case 'TID': dailyQuantity = 3; break;
-      case 'QID': dailyQuantity = 4; break;
-      case 'QOD': dailyQuantity = 0.5; break;
-      case 'QWEEK': dailyQuantity = 1/7; break;
-      default: dailyQuantity = 1;
+      return {
+        totalQuantity: result.totalQuantity,
+        totalPrice: result.totalPrice,
+        calculationDetails: result.calculationDetails,
+        quantityUnit: result.quantityUnit
+      };
+    } catch (error) {
+      console.error('Medicine calculation error:', error);
+      return { totalQuantity: 0, totalPrice: 0, calculationDetails: 'Calculation error', quantityUnit: '' };
     }
-
-    const totalQuantity = Math.ceil(dailyQuantity * days);
-    const totalPrice = basePrice * totalQuantity;
-
-    return { totalQuantity, totalPrice };
   };
 
   const addMedicineToBill = () => {
     if (!selectedMedicineForDosage || !isDosageSelectionComplete()) return;
 
-    const { totalQuantity, totalPrice } = calculateMedicineDosage();
-    const dosageInfo = `${dosePrescribed} ${medType}, ${doseFrequency}, ${totalDays} days (Total: ${totalQuantity} ${medType})`;
+    const calculationResult = calculateOutpatientMedicineDosage();
+    
+    if (calculationResult.totalQuantity === 0) {
+      console.error('Failed to calculate medicine dosage');
+      return;
+    }
+
+    // Use the shared formatting function
+    const formattedName = formatDosageForBill(
+      selectedMedicineForDosage.name,
+      dosePrescribed,
+      medType,
+      doseFrequency,
+      parseInt(totalDays),
+      {
+        totalQuantity: calculationResult.totalQuantity,
+        totalPrice: calculationResult.totalPrice,
+        quantityUnit: calculationResult.quantityUnit || medType,
+        pricePerUnit: parseFloat(selectedMedicineForDosage.price),
+        isPartialAllowed: false,
+        calculationDetails: calculationResult.calculationDetails
+      }
+    );
     
     // Create medicine item with dosage information
     const medicineItem = {
       ...selectedMedicineForDosage,
-      name: `${selectedMedicineForDosage.name} - ${dosageInfo}`,
-      price: totalPrice.toString(),
+      name: formattedName,
+      price: calculationResult.totalPrice.toString(),
       billId: `medicine-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     };
 
@@ -2375,14 +2397,14 @@ const Outpatient = () => {
                             {/* Calculation Preview */}
                             {isDosageSelectionComplete() && (
                               <div className="p-3 bg-muted/30 rounded-lg">
-                                <div className="text-sm font-medium text-foreground mb-2">Dosage Calculation:</div>
+                                <div className="text-sm font-medium text-foreground mb-2">Outpatient Calculation:</div>
                                 <div className="text-xs text-muted-foreground space-y-1">
                                   <div>• Base price per unit: {format(selectedMedicineForDosage.price)}</div>
                                   <div>• Frequency: {doseFrequencyOptions.find(f => f.value === doseFrequency)?.label}</div>
                                   <div>• Duration: {totalDays} days</div>
-                                  <div>• Total quantity needed: {calculateMedicineDosage().totalQuantity} {medType}</div>
+                                  <div>• Calculation: {calculateOutpatientMedicineDosage().calculationDetails}</div>
                                   <div className="font-semibold text-medical-primary">
-                                    • Total cost: {format(calculateMedicineDosage().totalPrice)}
+                                    • Total cost: {format(calculateOutpatientMedicineDosage().totalPrice)}
                                   </div>
                                 </div>
                               </div>
