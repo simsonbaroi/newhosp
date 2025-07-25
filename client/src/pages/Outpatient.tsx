@@ -628,6 +628,30 @@ const Outpatient = () => {
                   {/* Show search + dropdown for Medicine, Laboratory, X-Ray categories */}
                   {selectedCategory === 'Laboratory' ? (
                     <div className="space-y-4">
+                      {/* Total price counter and Add to Bill button above search */}
+                      {selectedLabItems.length > 0 && (
+                        <div className="space-y-2">
+                          {/* Right-aligned price counter */}
+                          <div className="flex justify-end">
+                            <div className="flex items-center gap-4 p-2 bg-medical-primary/5 rounded-md border border-medical-primary/20">
+                              <span className="text-sm font-medium text-medical-primary">
+                                Total Price: {format(selectedLabItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {selectedLabItems.length} item{selectedLabItems.length !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          {/* Add to Bill button - right aligned */}
+                          <div className="flex justify-end">
+                            <Button onClick={addSelectedLabItemsToBill} variant="medical">
+                              Add {selectedLabItems.length} Test{selectedLabItems.length !== 1 ? 's' : ''} to Bill
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="space-y-2">
                         <Input
                           ref={searchInputRef}
@@ -676,38 +700,20 @@ const Outpatient = () => {
                         )}
                       </div>
 
-                      {/* Selected lab items layout with price counter on top and button on right */}
+                      {/* Selected items tags below search */}
                       {selectedLabItems.length > 0 && (
-                        <div className="space-y-2">
-                          {/* Price counter on top */}
-                          <div className="flex justify-between items-center p-2 bg-medical-primary/5 rounded-md border border-medical-primary/20">
-                            <span className="text-sm font-medium text-medical-primary">
-                              Total Price: {format(selectedLabItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              {selectedLabItems.length} item{selectedLabItems.length !== 1 ? 's' : ''}
-                            </span>
-                          </div>
-                          
-                          {/* Selected items with button on right */}
-                          <div className="flex items-start gap-2">
-                            <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md flex-1">
-                              {selectedLabItems.map((item) => (
-                                <div key={item.id} className="inline-flex items-center bg-medical-primary/10 text-medical-primary px-2 py-1 rounded text-xs">
-                                  <span className="mr-1">{item.name}</span>
-                                  <button
-                                    onClick={() => removeLabItem(item.id)}
-                                    className="hover:bg-medical-primary/20 rounded-full p-0.5"
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </button>
-                                </div>
-                              ))}
+                        <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md">
+                          {selectedLabItems.map((item) => (
+                            <div key={item.id} className="inline-flex items-center bg-medical-primary/10 text-medical-primary px-2 py-1 rounded text-xs">
+                              <span className="mr-1">{item.name}</span>
+                              <button
+                                onClick={() => removeLabItem(item.id)}
+                                className="hover:bg-medical-primary/20 rounded-full p-0.5"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
                             </div>
-                            <Button onClick={addSelectedLabItemsToBill} variant="medical" className="flex-shrink-0">
-                              Add to Bill
-                            </Button>
-                          </div>
+                          ))}
                         </div>
                       )}
                       

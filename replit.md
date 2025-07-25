@@ -77,6 +77,9 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-25**: Reorganized search layout: price counter on top, "Add to Bill" button on right side of tags
 - **2025-01-25**: Auto-focus search input when Laboratory category opens for immediate typing
 - **2025-01-25**: Seamless search workflow: type → select → automatically refocused for next search
+- **2025-01-25**: REPOSITIONED: Total price counter and "Add to Bill" moved above search bar, right-aligned
+- **2025-01-25**: Clean layout: price counter directly above "Add to Bill" button for better visual flow
+- **2025-01-25**: Selected item tags now appear below search input for better organization
 
 ## Project Architecture
 - **Frontend**: React with TypeScript, using shadcn/ui components and wouter for routing
