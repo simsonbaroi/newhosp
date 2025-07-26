@@ -46,14 +46,41 @@ const Inpatient = () => {
   
   const { format } = useTakaFormat();
 
+  // Parse DD/MM/YY format to Date object
+  const parseCustomDate = (dateStr: string): Date | null => {
+    if (!dateStr) return null;
+    
+    // Handle DD/MM/YY format
+    const parts = dateStr.split('/');
+    if (parts.length === 3) {
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1; // months are 0-indexed
+      let year = parseInt(parts[2], 10);
+      
+      // Convert YY to full year (assuming 20XX for years 00-99)
+      if (year < 100) {
+        year += 2000;
+      }
+      
+      const date = new Date(year, month, day);
+      
+      // Check if the date is valid
+      if (date.getFullYear() === year && date.getMonth() === month && date.getDate() === day) {
+        return date;
+      }
+    }
+    
+    return null;
+  };
+
   // Calculate total admitted days based on admission and discharge dates
   const calculateAdmittedDays = (admission: string, discharge: string): number => {
     if (!admission || !discharge) return 1;
     
-    const admissionDate = new Date(admission);
-    const dischargeDate = new Date(discharge);
+    const admissionDate = parseCustomDate(admission);
+    const dischargeDate = parseCustomDate(discharge);
     
-    if (dischargeDate < admissionDate) return 1;
+    if (!admissionDate || !dischargeDate || dischargeDate < admissionDate) return 1;
     
     const timeDiff = dischargeDate.getTime() - admissionDate.getTime();
     const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1; // +1 to include both admission and discharge days
@@ -490,9 +517,10 @@ const Inpatient = () => {
                 <Label htmlFor="admissionDate" className="text-foreground font-medium">Admission Date</Label>
                 <Input
                   id="admissionDate"
-                  type="date"
+                  type="text"
                   value={admissionDate}
                   onChange={(e) => setAdmissionDate(e.target.value)}
+                  placeholder="DD/MM/YY"
                   className="w-full"
                 />
               </div>
@@ -501,26 +529,32 @@ const Inpatient = () => {
                 <Label htmlFor="dischargeDate" className="text-foreground font-medium">Discharge Date</Label>
                 <Input
                   id="dischargeDate"
-                  type="date"
+                  type="text"
                   value={dischargeDate}
                   onChange={(e) => setDischargeDate(e.target.value)}
+                  placeholder="DD/MM/YY"
                   className="w-full"
                 />
               </div>
             </div>
             
             {/* Total Admitted Days Counter */}
-            {admissionDate && dischargeDate && (
+            {admissionDate && dischargeDate && parseCustomDate(admissionDate) && parseCustomDate(dischargeDate) && (
               <div className="mt-4 p-3 bg-medical-muted/20 rounded-lg border border-medical-secondary/30">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-foreground">Total Admitted Days:</span>
                   <span className="text-lg font-bold text-medical-primary">{daysAdmitted} {daysAdmitted === 1 ? 'day' : 'days'}</span>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Calculated from {new Date(admissionDate).toLocaleDateString()} to {new Date(dischargeDate).toLocaleDateString()}
+                  Calculated from {admissionDate} to {dischargeDate}
                 </p>
               </div>
             )}
+            
+            {/* Date Format Help */}
+            <div className="mt-2 text-xs text-muted-foreground">
+              <p>Date format: DD/MM/YY (e.g., 25/01/25 for January 25, 2025)</p>
+            </div>
           </CardContent>
         </Card>
 
