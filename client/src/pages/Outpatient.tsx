@@ -291,8 +291,8 @@ const Outpatient = () => {
         navigateCarousel('prev');
       }
     },
-    threshold: 75, // Minimum swipe distance
-    preventDefaultEvents: false
+    threshold: 50, // Reduced threshold for better sensitivity
+    preventDefaultEvents: true
   });
 
   const exitCarousel = () => {
@@ -1789,8 +1789,8 @@ const Outpatient = () => {
                   // Carousel mode with preview buttons - mobile-optimized layout
                   <div 
                     ref={swipeRef}
-                    className="w-full px-2 sm:px-0 relative touch-pan-y user-select-none"
-                    style={{ touchAction: 'pan-y' }}
+                    className="w-full px-2 sm:px-0 relative select-none"
+                    style={{ touchAction: 'pan-x pan-y' }}
                   >
                     <div className="flex items-center justify-center space-x-1 sm:space-x-2 max-w-full overflow-hidden">
                       {/* Previous preview button - hidden on very small screens */}

@@ -23,9 +23,6 @@ export const useSwipeGesture = (options: SwipeGestureOptions) => {
     if (!element) return;
 
     const handleTouchStart = (e: TouchEvent) => {
-      if (preventDefaultEvents) {
-        e.preventDefault();
-      }
       const touch = e.touches[0];
       touchStartRef.current = {
         x: touch.clientX,
@@ -34,16 +31,20 @@ export const useSwipeGesture = (options: SwipeGestureOptions) => {
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      if (preventDefaultEvents) {
-        e.preventDefault();
+      // Allow normal scrolling, don't prevent default unless specifically needed
+      if (preventDefaultEvents && touchStartRef.current) {
+        const touch = e.touches[0];
+        const deltaX = Math.abs(touch.clientX - touchStartRef.current.x);
+        const deltaY = Math.abs(touch.clientY - touchStartRef.current.y);
+        
+        // Only prevent default if it's a horizontal swipe
+        if (deltaX > deltaY && deltaX > 10) {
+          e.preventDefault();
+        }
       }
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
-      if (preventDefaultEvents) {
-        e.preventDefault();
-      }
-      
       if (!touchStartRef.current) return;
 
       const touch = e.changedTouches[0];
@@ -86,9 +87,9 @@ export const useSwipeGesture = (options: SwipeGestureOptions) => {
     };
 
     // Add touch event listeners
-    element.addEventListener('touchstart', handleTouchStart, { passive: !preventDefaultEvents });
-    element.addEventListener('touchmove', handleTouchMove, { passive: !preventDefaultEvents });
-    element.addEventListener('touchend', handleTouchEnd, { passive: !preventDefaultEvents });
+    element.addEventListener('touchstart', handleTouchStart, { passive: true });
+    element.addEventListener('touchmove', handleTouchMove, { passive: false });
+    element.addEventListener('touchend', handleTouchEnd, { passive: true });
 
     // Add mouse event listeners for desktop testing
     element.addEventListener('mousedown', handleMouseDown);
