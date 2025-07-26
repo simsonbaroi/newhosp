@@ -42,6 +42,10 @@ const Inpatient = () => {
   // Date picker modal state
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [datePickerType, setDatePickerType] = useState<'admission' | 'discharge'>('admission');
+  
+  // Time state
+  const [admissionTime, setAdmissionTime] = useState<string>('12:00 PM');
+  const [dischargeTime, setDischargeTime] = useState<string>('12:00 PM');
   const [dosePrescribed, setDosePrescribed] = useState('');
   const [medType, setMedType] = useState('');
   const [doseFrequency, setDoseFrequency] = useState('');
@@ -126,6 +130,24 @@ const Inpatient = () => {
   // Generate day and year options
   const getDayOptions = () => Array.from({ length: 31 }, (_, i) => i + 1);
   const getYearOptions = () => Array.from({ length: 100 }, (_, i) => i);
+  
+  // Generate time options
+  const getHourOptions = () => Array.from({ length: 12 }, (_, i) => i + 1);
+  const getMinuteOptions = () => Array.from({ length: 60 }, (_, i) => i);
+  const getAmPmOptions = () => ['AM', 'PM'];
+  
+  // Parse time string (12:00 PM)
+  const parseTime = (timeStr: string): { hour: number; minute: number; ampm: string } => {
+    const [time, ampm] = timeStr.split(' ');
+    const [hour, minute] = time.split(':').map(num => parseInt(num, 10));
+    return { hour, minute, ampm };
+  };
+  
+  // Format time components back to string
+  const formatTime = (hour: number, minute: number, ampm: string): string => {
+    const paddedMinute = String(minute).padStart(2, '0');
+    return `${hour}:${paddedMinute} ${ampm}`;
+  };
 
   // Set specific date component
   const setDateComponent = (dateStr: string, component: 'day' | 'month' | 'year', value: number): string => {
@@ -250,6 +272,8 @@ const Inpatient = () => {
             billNumber,
             admissionDate,
             dischargeDate,
+            admissionTime,
+            dischargeTime,
           },
         }),
       });
@@ -277,6 +301,8 @@ const Inpatient = () => {
               setBillNumber(bill.patientInfo.billNumber || '');
               setAdmissionDate(bill.patientInfo.admissionDate || '');
               setDischargeDate(bill.patientInfo.dischargeDate || '');
+              setAdmissionTime(bill.patientInfo.admissionTime || '12:00 PM');
+              setDischargeTime(bill.patientInfo.dischargeTime || '12:00 PM');
             }
           }
         }
@@ -289,10 +315,10 @@ const Inpatient = () => {
 
   // Auto-save bill when items or patient info change
   useEffect(() => {
-    if (billItems.length > 0 || daysAdmitted > 1 || patientName || opdNumber || hospitalNumber || billNumber || admissionDate || dischargeDate) {
+    if (billItems.length > 0 || daysAdmitted > 1 || patientName || opdNumber || hospitalNumber || billNumber || admissionDate || dischargeDate || admissionTime !== '12:00 PM' || dischargeTime !== '12:00 PM') {
       saveBillMutation.mutate(billItems);
     }
-  }, [billItems, daysAdmitted, patientName, opdNumber, hospitalNumber, billNumber, admissionDate, dischargeDate]);
+  }, [billItems, daysAdmitted, patientName, opdNumber, hospitalNumber, billNumber, admissionDate, dischargeDate, admissionTime, dischargeTime]);
 
   const addToBill = (item: MedicalItem, quantity: number = 1) => {
     const existingItem = billItems.find(billItem => billItem.id === item.id);
@@ -620,7 +646,7 @@ const Inpatient = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="admissionDate" className="text-foreground font-medium">Admission Date</Label>
+                <Label htmlFor="admissionDate" className="text-foreground font-medium">Admission Date & Time</Label>
                 <Button
                   variant="outline"
                   className="w-full justify-start text-left font-normal h-12"
@@ -630,12 +656,15 @@ const Inpatient = () => {
                   }}
                 >
                   <Calendar className="mr-2 h-4 w-4" />
-                  {admissionDate || '01/01/25'}
+                  <div className="flex flex-col">
+                    <span>{admissionDate || '01/01/25'}</span>
+                    <span className="text-xs text-muted-foreground">{admissionTime}</span>
+                  </div>
                 </Button>
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="dischargeDate" className="text-foreground font-medium">Discharge Date</Label>
+                <Label htmlFor="dischargeDate" className="text-foreground font-medium">Discharge Date & Time</Label>
                 <Button
                   variant="outline"
                   className="w-full justify-start text-left font-normal h-12"
@@ -645,7 +674,10 @@ const Inpatient = () => {
                   }}
                 >
                   <Calendar className="mr-2 h-4 w-4" />
-                  {dischargeDate || '01/01/25'}
+                  <div className="flex flex-col">
+                    <span>{dischargeDate || '01/01/25'}</span>
+                    <span className="text-xs text-muted-foreground">{dischargeTime}</span>
+                  </div>
                 </Button>
               </div>
             </div>
@@ -665,7 +697,7 @@ const Inpatient = () => {
             
             {/* Date Format Help */}
             <div className="mt-2 text-xs text-muted-foreground">
-              <p>Click the date buttons to open the date picker and select admission and discharge dates.</p>
+              <p>Click the date & time buttons to select admission and discharge dates with specific times.</p>
             </div>
           </CardContent>
         </Card>
@@ -1225,14 +1257,14 @@ const Inpatient = () => {
 
       {/* Date Picker Modal */}
       <Dialog open={showDatePicker} onOpenChange={setShowDatePicker}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-4xl">
           <DialogHeader>
             <DialogTitle>
-              Select {datePickerType === 'admission' ? 'Admission' : 'Discharge'} Date
+              Select {datePickerType === 'admission' ? 'Admission' : 'Discharge'} Date & Time
             </DialogTitle>
           </DialogHeader>
           <div className="p-6">
-            <div className="grid grid-cols-3 gap-8 max-h-96 overflow-hidden">
+            <div className="grid grid-cols-6 gap-6 max-h-96 overflow-hidden">
               {/* Month Column */}
               <div className="flex flex-col items-center space-y-3">
                 <div className="text-sm font-medium text-muted-foreground mb-2">Month</div>
@@ -1330,6 +1362,112 @@ const Inpatient = () => {
                         }}
                       >
                         {displayYear}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Hour Column */}
+              <div className="flex flex-col items-center space-y-3">
+                <div className="text-sm font-medium text-muted-foreground mb-2">Hour</div>
+                <div className="flex flex-col space-y-2 overflow-y-auto max-h-80">
+                  {getHourOptions().map((hour) => {
+                    const currentTime = datePickerType === 'admission' ? admissionTime : dischargeTime;
+                    const { hour: selectedHour } = parseTime(currentTime);
+                    const isSelected = selectedHour === hour;
+                    
+                    return (
+                      <button
+                        key={hour}
+                        className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+                          isSelected 
+                            ? 'bg-blue-500 text-white' 
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                        }`}
+                        onClick={() => {
+                          const currentTime = datePickerType === 'admission' ? admissionTime : dischargeTime;
+                          const { minute, ampm } = parseTime(currentTime);
+                          const newTime = formatTime(hour, minute, ampm);
+                          if (datePickerType === 'admission') {
+                            setAdmissionTime(newTime);
+                          } else {
+                            setDischargeTime(newTime);
+                          }
+                        }}
+                      >
+                        {hour}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Minute Column */}
+              <div className="flex flex-col items-center space-y-3">
+                <div className="text-sm font-medium text-muted-foreground mb-2">Min</div>
+                <div className="flex flex-col space-y-2 overflow-y-auto max-h-80">
+                  {getMinuteOptions().map((minute) => {
+                    const currentTime = datePickerType === 'admission' ? admissionTime : dischargeTime;
+                    const { minute: selectedMinute } = parseTime(currentTime);
+                    const isSelected = selectedMinute === minute;
+                    const displayMinute = String(minute).padStart(2, '0');
+                    
+                    return (
+                      <button
+                        key={minute}
+                        className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+                          isSelected 
+                            ? 'bg-blue-500 text-white' 
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                        }`}
+                        onClick={() => {
+                          const currentTime = datePickerType === 'admission' ? admissionTime : dischargeTime;
+                          const { hour, ampm } = parseTime(currentTime);
+                          const newTime = formatTime(hour, minute, ampm);
+                          if (datePickerType === 'admission') {
+                            setAdmissionTime(newTime);
+                          } else {
+                            setDischargeTime(newTime);
+                          }
+                        }}
+                      >
+                        {displayMinute}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* AM/PM Column */}
+              <div className="flex flex-col items-center space-y-3">
+                <div className="text-sm font-medium text-muted-foreground mb-2">AM/PM</div>
+                <div className="flex flex-col space-y-2 overflow-y-auto max-h-80">
+                  {getAmPmOptions().map((ampm) => {
+                    const currentTime = datePickerType === 'admission' ? admissionTime : dischargeTime;
+                    const { ampm: selectedAmPm } = parseTime(currentTime);
+                    const isSelected = selectedAmPm === ampm;
+                    
+                    return (
+                      <button
+                        key={ampm}
+                        className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+                          isSelected 
+                            ? 'bg-blue-500 text-white' 
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                        }`}
+                        onClick={() => {
+                          const currentTime = datePickerType === 'admission' ? admissionTime : dischargeTime;
+                          const { hour, minute } = parseTime(currentTime);
+                          const newTime = formatTime(hour, minute, ampm);
+                          if (datePickerType === 'admission') {
+                            setAdmissionTime(newTime);
+                          } else {
+                            setDischargeTime(newTime);
+                          }
+                        }}
+                      >
+                        {ampm}
                       </button>
                     );
                   })}
