@@ -534,7 +534,8 @@ const Inpatient = () => {
     setMedType('');
     setDoseFrequency('');
     setTotalDays('');
-    setIsDischargeMedicine(false);
+    // Auto-set discharge medicine flag based on category
+    setIsDischargeMedicine(item.category === 'Discharge Medicine');
   };
 
   const addMedicineToBill = () => {
@@ -1180,7 +1181,7 @@ const Inpatient = () => {
                           <span className="font-semibold text-medical-primary">
                             {format(item.price)}
                           </span>
-                          <Button size="sm" onClick={() => item.category === 'Medicine' ? handleMedicineItemSelect(item) : addToBill(item)} variant="medical">
+                          <Button size="sm" onClick={() => (item.category === 'Medicine' || item.category === 'Discharge Medicine') ? handleMedicineItemSelect(item) : addToBill(item)} variant="medical">
                             <Plus className="h-4 w-4" />
                           </Button>
                         </div>
@@ -1582,7 +1583,7 @@ const Inpatient = () => {
                                     </div>
                                   )}
                                 </div>
-                                <Button size="sm" onClick={() => item.category === 'Medicine' ? handleMedicineItemSelect(item) : addToBill(item)} variant="medical">
+                                <Button size="sm" onClick={() => (item.category === 'Medicine' || item.category === 'Discharge Medicine') ? handleMedicineItemSelect(item) : addToBill(item)} variant="medical">
                                   <Plus className="h-4 w-4" />
                                 </Button>
                               </div>
@@ -1681,28 +1682,46 @@ const Inpatient = () => {
                     {/* Inpatient Medicine Type Selection */}
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-foreground">Medicine Type</label>
-                      <div className="flex items-center space-x-4">
-                        <label className="flex items-center space-x-2">
-                          <input
-                            type="radio"
-                            name="medicineType"
-                            checked={!isDischargeMedicine}
-                            onChange={() => setIsDischargeMedicine(false)}
-                            className="text-medical-primary"
-                          />
-                          <span className="text-sm">Ward Medicine (can be partial)</span>
-                        </label>
-                        <label className="flex items-center space-x-2">
-                          <input
-                            type="radio"
-                            name="medicineType"
-                            checked={isDischargeMedicine}
-                            onChange={() => setIsDischargeMedicine(true)}
-                            className="text-medical-primary"
-                          />
-                          <span className="text-sm">Discharge Medicine (full bottles)</span>
-                        </label>
-                      </div>
+                      {selectedMedicineForDosage?.category === 'Discharge Medicine' ? (
+                        <div className="p-3 bg-medical-secondary/10 rounded-lg border border-medical-secondary/20">
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="radio"
+                              name="medicineType"
+                              checked={true}
+                              disabled={true}
+                              className="text-medical-primary"
+                            />
+                            <span className="text-sm font-medium text-medical-primary">Discharge Medicine (full bottles) - Auto-selected</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Items from "Discharge Medicine" category automatically use discharge medicine rules
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center space-x-4">
+                          <label className="flex items-center space-x-2">
+                            <input
+                              type="radio"
+                              name="medicineType"
+                              checked={!isDischargeMedicine}
+                              onChange={() => setIsDischargeMedicine(false)}
+                              className="text-medical-primary"
+                            />
+                            <span className="text-sm">Ward Medicine (can be partial)</span>
+                          </label>
+                          <label className="flex items-center space-x-2">
+                            <input
+                              type="radio"
+                              name="medicineType"
+                              checked={isDischargeMedicine}
+                              onChange={() => setIsDischargeMedicine(true)}
+                              className="text-medical-primary"
+                            />
+                            <span className="text-sm">Discharge Medicine (full bottles)</span>
+                          </label>
+                        </div>
+                      )}
                     </div>
 
                     {/* Calculation Preview */}
