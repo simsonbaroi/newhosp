@@ -654,6 +654,17 @@ export default function InpatientFixed() {
                           
                         </td>
                       </tr>
+                      
+                      {/* Total Bill Row */}
+                      <tr className="border-b border-border">
+                        <td className="border-r border-border p-2 w-1/2 font-bold bg-muted/30">
+                          Total Bill
+                        </td>
+                        <td className="border-r border-border p-2 w-1/4"></td>
+                        <td className="p-2 w-1/4 text-center text-xs text-muted-foreground">
+                          
+                        </td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>

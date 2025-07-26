@@ -220,6 +220,7 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-26**: IMPLEMENTED: Professional hospital bill layout with patient information fields, medical categories table, and payment tracking
 - **2025-01-26**: ADDED: All 19+ medical categories with official codes (50303-50317) matching hospital's billing system
 - **2025-01-26**: SIMPLIFIED: Added "Ancillary" row after Sub. Total Bill and removed complex bottom sections per user request
+- **2025-01-26**: ADDED: "Total Bill" row after Ancillary row in hospital bill form
 - **2025-01-25**: ADDED: Custom CSS classes for medicine-specific styling (medicine-item-card, medicine-dosage-card)
 - **2025-01-25**: ENHANCED: Professional glass morphism effects with medical color palette throughout medicine interface
 - **2025-01-25**: REDESIGNED: Medicine numbering system with clean badge design (#1, #2, etc.) replacing circular numbers
