@@ -376,12 +376,12 @@ export default function InpatientFixed() {
                         <Button
                           key={category}
                           variant="medical-outline"
-                          className="h-auto p-2 sm:p-3 text-left justify-start min-h-[60px]"
+                          className="h-auto p-2 sm:p-3 text-left justify-start min-h-[60px] max-w-full"
                           onClick={() => handleCategoryClick(category)}
                         >
-                          <div className="flex flex-col items-start w-full">
-                            <span className="font-medium text-xs sm:text-sm leading-tight">{category}</span>
-                            <span className="text-xs text-muted-foreground mt-1">{itemCount} items</span>
+                          <div className="flex flex-col items-start w-full overflow-hidden">
+                            <span className="font-medium text-xs leading-tight w-full break-words hyphens-auto line-clamp-2">{category}</span>
+                            <span className="text-xs text-muted-foreground mt-1 flex-shrink-0">{itemCount} items</span>
                           </div>
                         </Button>
                       );
