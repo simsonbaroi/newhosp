@@ -55,6 +55,7 @@ export default function InpatientFixed() {
   const [billNumber, setBillNumber] = useState<string>('');
   const [admissionDate, setAdmissionDate] = useState<string>(currentDateTime.date);
   const [dischargeDate, setDischargeDate] = useState<string>(currentDateTime.date);
+  const [totalVisitation, setTotalVisitation] = useState<string>('');
   
   // Time state
   const [admissionTime, setAdmissionTime] = useState<string>(currentDateTime.time);
@@ -254,10 +255,7 @@ export default function InpatientFixed() {
                     <Calculator className="mr-2 h-5 w-5" />
                     Patient Information
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-xs text-muted-foreground">
-                      Total Admitted Days: <span className="font-semibold text-medical-primary">{daysAdmitted}{daysAdmitted === 1 ? 'day' : 'days'}</span>
-                    </span>
+                  <div className="flex items-center">
                     {isPatientInfoExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </div>
                 </CardTitle>
@@ -341,6 +339,30 @@ export default function InpatientFixed() {
                         <Calendar className="mr-1 h-3 w-3" />
                         <span className="text-xs">{dischargeDate} at {dischargeTime}</span>
                       </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Total Visitation Row */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="totalVisitation" className="text-xs text-foreground font-medium">Total Visitation:</Label>
+                      <Input
+                        id="totalVisitation"
+                        type="text"
+                        value={totalVisitation}
+                        onChange={(e) => setTotalVisitation(e.target.value)}
+                        placeholder="Enter total visitation"
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <Label className="text-xs text-foreground font-medium">Total Days Admitted</Label>
+                      <div className="h-8 px-3 py-2 bg-muted/50 border border-border rounded-md flex items-center">
+                        <span className="text-sm font-semibold text-medical-primary">
+                          {daysAdmitted} {daysAdmitted === 1 ? 'day' : 'days'}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
