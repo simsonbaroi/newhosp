@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Search, Plus, Minus, Calculator, Grid3X3, Calendar, ChevronLeft, ChevronRight, X, AlertTriangle, ChevronUp, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +16,7 @@ import { calculateMedicineDosage, formatDosageForBill, MEDICINE_RULES } from '..
 
 interface BillItem extends MedicalItem {
   quantity: number;
+  billId?: string; // Optional for compatibility with Laboratory functions
 }
 
 const Inpatient = () => {
@@ -54,6 +55,17 @@ const Inpatient = () => {
   const [isCarouselMode, setIsCarouselMode] = useState<boolean>(false);
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState<number>(0);
   const [duplicateDialog, setDuplicateDialog] = useState<{open: boolean, item: MedicalItem | null}>({open: false, item: null});
+  
+  // Laboratory search and dropdown state - identical to Outpatient
+  const [selectedLabItems, setSelectedLabItems] = useState<MedicalItem[]>([]);
+  const [dropdownSelectedItems, setDropdownSelectedItems] = useState<MedicalItem[]>([]);
+  const [dropdownValue, setDropdownValue] = useState<string>('');
+  const [highlightedDropdownIndex, setHighlightedDropdownIndex] = useState<number>(-1);
+  const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
+  const [dropdownFilterQuery, setDropdownFilterQuery] = useState<string>('');
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const dropdownButtonRef = useRef<HTMLButtonElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   
   // Inpatient Medicine dosage selection state
   const [selectedMedicineForDosage, setSelectedMedicineForDosage] = useState<any>(null);
@@ -584,6 +596,330 @@ const Inpatient = () => {
     setIsDischargeMedicine(false);
   };
 
+  // Laboratory functions - identical to Outpatient
+  const getSearchItems = () => {
+    return categoryItems; // Use all items for search
+  };
+
+  const getDropdownItems = () => {
+    return categoryItems; // Use all items for dropdown
+  };
+
+  const searchItems = getSearchItems();
+  const dropdownItems = getDropdownItems();
+
+  // Get sorted Laboratory suggestions with closest match first
+  const getLabSuggestions = () => {
+    if (!categorySearchQuery) return [];
+    
+    const query = categorySearchQuery.toLowerCase();
+    const suggestions = filteredCategoryItems.filter(item => 
+      item.name.toLowerCase().includes(query)
+    );
+    
+    // Sort by relevance: exact matches first, then starts with, then contains
+    return suggestions.sort((a, b) => {
+      const aName = a.name.toLowerCase();
+      const bName = b.name.toLowerCase();
+      
+      // Exact match gets highest priority
+      if (aName === query) return -1;
+      if (bName === query) return 1;
+      
+      // Starts with query gets second priority
+      if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
+      if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
+      
+      // Both start with or both contain - sort alphabetically
+      return aName.localeCompare(bName);
+    });
+  };
+
+  // Handle comma-separated Laboratory item selection
+  const handleLabSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === ',' || e.key === 'Enter') {
+      e.preventDefault();
+      const query = categorySearchQuery.trim();
+      if (query) {
+        // Get the top suggestion (closest match)
+        const suggestions = getLabSuggestions();
+        if (suggestions.length > 0) {
+          const topMatch = suggestions[0];
+          // Check if item is already selected in search OR already in the bill
+          const alreadyInSearch = selectedLabItems.find(selected => selected.id === topMatch.id);
+          const alreadyInBill = billItems.find(billItem => billItem.id === topMatch.id);
+          
+          if (!alreadyInSearch && !alreadyInBill) {
+            setSelectedLabItems(prev => [...prev, topMatch]);
+            // Clear dropdown selections when switching to search
+            setDropdownSelectedItems([]);
+          }
+          // If item is already selected or in bill, we ignore the selection
+        }
+        setCategorySearchQuery('');
+        // Refocus search input for continuous typing
+        setTimeout(() => {
+          if (searchInputRef.current) {
+            searchInputRef.current.focus();
+          }
+        }, 0);
+      }
+    }
+  };
+
+  // Remove Laboratory item from selection
+  const removeLabItem = (itemId: number) => {
+    setSelectedLabItems(prev => prev.filter(item => item.id !== itemId));
+    // Refocus search input after removing item
+    setTimeout(() => {
+      if (searchInputRef.current) {
+        searchInputRef.current.focus();
+      }
+    }, 0);
+  };
+
+  // Add all selected Laboratory items to bill
+  const addSelectedLabItemsToBill = () => {
+    const newItems: MedicalItem[] = [];
+    const duplicateItems: MedicalItem[] = [];
+    
+    selectedLabItems.forEach(item => {
+      const existingItem = billItems.find(billItem => billItem.id === item.id);
+      if (existingItem) {
+        duplicateItems.push(item);
+      } else {
+        newItems.push(item);
+      }
+    });
+    
+    // Add new items immediately
+    if (newItems.length > 0) {
+      const billItemsToAdd = newItems.map(item => ({ 
+        ...item, 
+        quantity: 1,
+        billId: `${item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` 
+      }));
+      setBillItems(prevBillItems => [...prevBillItems, ...billItemsToAdd]);
+    }
+    
+    // Handle duplicates - for now, skip them and show a message
+    if (duplicateItems.length > 0) {
+      // Show duplicate dialog for the first duplicate item
+      setDuplicateDialog({ open: true, item: duplicateItems[0] });
+    }
+    
+    setSelectedLabItems([]);
+    setCategorySearchQuery('');
+    
+    // Refocus search input after adding items
+    setTimeout(() => {
+      if (searchInputRef.current) {
+        searchInputRef.current.focus();
+      }
+    }, 0);
+  };
+
+  // Laboratory dropdown functionality
+  const handleDropdownSelect = (value: string) => {
+    const selectedItem = categoryItems.find(item => item.id.toString() === value);
+    
+    // Check if item is already selected in dropdown OR already in the bill
+    const alreadyInDropdown = dropdownSelectedItems.find(item => item.id === selectedItem?.id);
+    const alreadyInBill = billItems.find(billItem => billItem.id === selectedItem?.id);
+    
+    if (selectedItem && !alreadyInDropdown && !alreadyInBill) {
+      setDropdownSelectedItems(prev => [...prev, selectedItem]);
+      // Clear search selections when using dropdown
+      setSelectedLabItems([]);
+      setCategorySearchQuery('');
+    }
+    // If item is already selected, we just ignore the selection (no error message needed)
+    
+    setDropdownValue(''); // Reset dropdown after selection
+    setHighlightedDropdownIndex(-1); // Reset highlighted index
+    setDropdownFilterQuery(''); // Reset filter text for fresh start
+    
+    // Refocus the dropdown button to continue keyboard input
+    setTimeout(() => {
+      if (dropdownButtonRef.current) {
+        dropdownButtonRef.current.focus();
+      }
+    }, 0);
+    // Keep dropdown open for multiple selections
+  };
+
+  // Handle keyboard navigation for Laboratory dropdown
+  const handleDropdownKeyDown = (e: React.KeyboardEvent) => {
+    const orderedItems = getFilteredDropdownItems();
+    
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedDropdownIndex(prev => 
+        prev < orderedItems.length - 1 ? prev + 1 : 0
+      );
+      if (!isDropdownOpen) setIsDropdownOpen(true);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedDropdownIndex(prev => 
+        prev > 0 ? prev - 1 : orderedItems.length - 1
+      );
+      if (!isDropdownOpen) setIsDropdownOpen(true);
+    } else if (e.key === 'Enter' && highlightedDropdownIndex >= 0) {
+      e.preventDefault();
+      const selectedItem = orderedItems[highlightedDropdownIndex];
+      if (selectedItem) {
+        handleDropdownSelect(selectedItem.id.toString());
+        // Dropdown stays open and focused for more selections
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setIsDropdownOpen(false);
+      setHighlightedDropdownIndex(-1);
+      setDropdownFilterQuery('');
+    } else if (e.key.length === 1 && e.key.match(/[a-zA-Z0-9\s]/)) {
+      // Handle typing to filter dropdown items
+      e.preventDefault();
+      const newQuery = dropdownFilterQuery + e.key.toLowerCase();
+      setDropdownFilterQuery(newQuery);
+      setHighlightedDropdownIndex(0); // Highlight first filtered result
+      if (!isDropdownOpen) setIsDropdownOpen(true);
+    } else if (e.key === 'Backspace') {
+      e.preventDefault();
+      setDropdownFilterQuery(prev => prev.slice(0, -1));
+      setHighlightedDropdownIndex(0);
+    }
+  };
+
+  // Remove item from Laboratory dropdown selection
+  const removeDropdownItem = (itemId: number) => {
+    setDropdownSelectedItems(prev => prev.filter(item => item.id !== itemId));
+  };
+
+  // Add all Laboratory dropdown selected items to bill
+  const addDropdownSelectedItemsToBill = () => {
+    const newItems: MedicalItem[] = [];
+    const duplicateItems: MedicalItem[] = [];
+    
+    dropdownSelectedItems.forEach(item => {
+      const existingItem = billItems.find(billItem => billItem.id === item.id);
+      if (existingItem) {
+        duplicateItems.push(item);
+      } else {
+        newItems.push(item);
+      }
+    });
+    
+    // Add new items immediately
+    if (newItems.length > 0) {
+      const billItemsToAdd = newItems.map(item => ({ 
+        ...item, 
+        quantity: 1,
+        billId: `${item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` 
+      }));
+      setBillItems(prevBillItems => [...prevBillItems, ...billItemsToAdd]);
+    }
+    
+    // Handle duplicates - for now, skip them and show a message
+    if (duplicateItems.length > 0) {
+      // Show duplicate dialog for the first duplicate item
+      setDuplicateDialog({ open: true, item: duplicateItems[0] });
+    }
+    
+    setDropdownSelectedItems([]);
+    // Close dropdown when adding to bill
+    setIsDropdownOpen(false);
+    setHighlightedDropdownIndex(-1);
+    setDropdownFilterQuery('');
+  };
+
+  // Get dropdown items sorted by relevance when user is typing in search
+  const getOrderedDropdownItems = () => {
+    if (!categorySearchQuery.trim()) return categoryItems;
+    
+    const query = categorySearchQuery.toLowerCase();
+    
+    // Sort items by relevance to the search query
+    return [...categoryItems].sort((a, b) => {
+      const aName = a.name.toLowerCase();
+      const bName = b.name.toLowerCase();
+      const aIncludes = aName.includes(query);
+      const bIncludes = bName.includes(query);
+      
+      // Items matching the search query come first
+      if (aIncludes && !bIncludes) return -1;
+      if (bIncludes && !aIncludes) return 1;
+      
+      // Among matching items, sort by relevance
+      if (aIncludes && bIncludes) {
+        // Exact match gets highest priority
+        if (aName === query) return -1;
+        if (bName === query) return 1;
+        
+        // Starts with query gets second priority
+        if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
+        if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
+      }
+      
+      // Default alphabetical sort
+      return aName.localeCompare(bName);
+    });
+  };
+
+  // Get dropdown items filtered by direct typing in dropdown
+  const getFilteredDropdownItems = () => {
+    if (!dropdownFilterQuery.trim()) return getOrderedDropdownItems();
+    
+    const query = dropdownFilterQuery.toLowerCase();
+    
+    // Filter and sort by relevance
+    return categoryItems
+      .filter(item => item.name.toLowerCase().includes(query))
+      .sort((a, b) => {
+        const aName = a.name.toLowerCase();
+        const bName = b.name.toLowerCase();
+        
+        // Exact match gets highest priority
+        if (aName === query) return -1;
+        if (bName === query) return 1;
+        
+        // Starts with gets second priority
+        if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
+        if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
+        
+        // Contains gets third priority - already filtered above
+        return aName.localeCompare(bName);
+      });
+  };
+
+  // Auto-focus search input when Laboratory category is selected
+  useEffect(() => {
+    if (selectedCategory === 'Laboratory' && isCarouselMode && searchInputRef.current) {
+      setTimeout(() => {
+        if (searchInputRef.current) {
+          searchInputRef.current.focus();
+        }
+      }, 100);
+    }
+  }, [selectedCategory, isCarouselMode]);
+
+  // Click outside to close Laboratory dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+        setHighlightedDropdownIndex(-1);
+      }
+    };
+    
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
+
   // Inpatient category order - outpatient categories first, then inpatient-specific
   const categoryOrder = [
     'Laboratory', 'X-Ray', 'Registration Fees', 'Dr. Fees', 
@@ -975,56 +1311,387 @@ const Inpatient = () => {
               <Card className="glass-card">
                 <CardHeader>
                   <CardTitle className="text-medical-primary">{selectedCategory}</CardTitle>
-                  <Input
-                    placeholder={`Search in ${selectedCategory}...`}
-                    value={categorySearchQuery}
-                    onChange={(e) => setCategorySearchQuery(e.target.value)}
-                    className="w-full"
-                  />
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {filteredCategoryItems.length > 0 ? (
-                      filteredCategoryItems.map((item: MedicalItem) => {
-                        const isDailyItem = item.category.includes('Food') || 
-                                           item.category.includes('Seat') || 
-                                           item.category.includes('O2') ||
-                                           item.name.toLowerCase().includes('per day');
-                        return (
-                          <div key={item.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
-                            <div className="flex-1">
-                              <div className="font-medium text-foreground">{item.name}</div>
-                              {item.description && (
-                                <div className="text-sm text-muted-foreground">{item.description}</div>
-                              )}
-                              {isDailyItem && (
-                                <div className="text-xs text-medical-accent font-medium">Daily rate × {daysAdmitted} days</div>
-                              )}
+                  {/* Show Laboratory search + dropdown interface */}
+                  {selectedCategory === 'Laboratory' ? (
+                    <div className="space-y-4">
+                      {/* Selected items, price counter and Add to Bill button above search */}
+                      {selectedLabItems.length > 0 && (
+                        <div className="space-y-2">
+                          {/* Selected items tags */}
+                          <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md">
+                            {selectedLabItems.map((item) => (
+                              <div key={item.id} className="inline-flex items-center bg-medical-primary/10 text-medical-primary px-2 py-1 rounded text-xs">
+                                <span className="mr-1">{item.name}</span>
+                                <button
+                                  onClick={() => removeLabItem(item.id)}
+                                  className="hover:bg-medical-primary/20 rounded-full p-0.5"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Price counter on left, Add to Bill button on right */}
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-4 p-2 bg-medical-primary/5 rounded-md border border-medical-primary/20">
+                              <span className="text-sm font-medium text-medical-primary">
+                                Total Price: {format(selectedLabItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {selectedLabItems.length} item{selectedLabItems.length !== 1 ? 's' : ''}
+                              </span>
                             </div>
-                            <div className="flex items-center space-x-2">
-                              <div className="text-right">
-                                <div className="font-semibold text-medical-primary">
-                                  {format(item.price)}
-                                </div>
-                                {isDailyItem && (
-                                  <div className="text-xs text-muted-foreground">
-                                    Total: {format(parseFloat(item.price.toString()) * daysAdmitted)}
-                                  </div>
+                            <Button 
+                              onClick={addSelectedLabItemsToBill} 
+                              variant="outline"
+                              className="border-medical-primary/20 text-medical-primary hover:bg-medical-primary/10"
+                            >
+                              Add {selectedLabItems.length} Test{selectedLabItems.length !== 1 ? 's' : ''} to Bill
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        <Input
+                          ref={searchInputRef}
+                          placeholder="Type lab test name and press comma or enter to add..."
+                          value={categorySearchQuery}
+                          onChange={(e) => {
+                            setCategorySearchQuery(e.target.value);
+                            // Clear dropdown selections when switching to search
+                            if (e.target.value.trim()) {
+                              setDropdownSelectedItems([]);
+                            }
+                          }}
+                          onKeyDown={handleLabSearchKeyDown}
+                          className="w-full"
+                        />
+                        
+                        {/* Search suggestions appear right below search input */}
+                        {categorySearchQuery && getLabSuggestions().length > 0 && (
+                          <div className="space-y-1 max-h-40 overflow-y-auto border border-border rounded-md p-2 bg-muted/10">
+                            <div className="text-sm font-medium text-muted-foreground mb-2">
+                              Matching tests (press comma to add):
+                            </div>
+                            {getLabSuggestions().slice(0, 5).map((item: MedicalItem, index) => {
+                              const alreadyInSearch = selectedLabItems.find(selected => selected.id === item.id);
+                              const alreadyInBill = billItems.find(billItem => billItem.id === item.id);
+                              
+                              return (
+                              <div key={item.id} className={`text-xs p-2 rounded ${
+                                alreadyInBill 
+                                  ? 'bg-red-100 text-red-600 cursor-not-allowed border border-red-200'
+                                  : alreadyInSearch
+                                    ? 'bg-green-100 text-green-600 cursor-not-allowed border border-green-200'
+                                    : index === 0 
+                                      ? 'bg-medical-primary/10 border border-medical-primary/20 cursor-pointer hover:bg-muted/40' 
+                                      : 'bg-muted/20 cursor-pointer hover:bg-muted/40'
+                              }`}
+                                   onClick={() => {
+                                     // Check if item is already selected in search OR already in the bill
+                                     const alreadyInSearch = selectedLabItems.find(selected => selected.id === item.id);
+                                     const alreadyInBill = billItems.find(billItem => billItem.id === item.id);
+                                     
+                                     if (!alreadyInSearch && !alreadyInBill) {
+                                       setSelectedLabItems(prev => [...prev, item]);
+                                     }
+                                     setCategorySearchQuery('');
+                                     // Refocus search input after clicking suggestion
+                                     setTimeout(() => {
+                                       if (searchInputRef.current) {
+                                         searchInputRef.current.focus();
+                                       }
+                                     }, 0);
+                                   }}>
+                                <span className="font-medium">{item.name}</span> - {format(item.price)}
+                                {alreadyInBill && (
+                                  <span className="ml-2 text-red-600 text-xs">● Already in Bill</span>
+                                )}
+                                {alreadyInSearch && !alreadyInBill && (
+                                  <span className="ml-2 text-green-600 text-xs">✓ Selected</span>
+                                )}
+                                {index === 0 && !alreadyInBill && !alreadyInSearch && (
+                                  <span className="ml-2 text-medical-primary text-xs">← Will be added</span>
                                 )}
                               </div>
-                              <Button size="sm" onClick={() => item.category === 'Medicine' ? handleMedicineItemSelect(item) : addToBill(item)} variant="medical">
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                            </div>
+                              );
+                            })}
                           </div>
-                        );
-                      })
-                    ) : (
-                      <div className="text-center text-muted-foreground py-8">
-                        {categorySearchQuery ? 'No items found matching your search.' : 'No items in this category.'}
+                        )}
                       </div>
-                    )}
-                  </div>
+
+                      {/* Dropdown selected items as tags */}
+                      {dropdownSelectedItems.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md">
+                            {dropdownSelectedItems.map((item) => (
+                              <div key={item.id} className="inline-flex items-center bg-blue-500/10 text-blue-600 px-2 py-1 rounded text-xs">
+                                <span className="mr-1">{item.name}</span>
+                                <button
+                                  onClick={() => removeDropdownItem(item.id)}
+                                  className="hover:bg-blue-500/20 rounded-full p-0.5"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          {/* Price counter on left, Add to Bill button on right */}
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-4 p-2 bg-blue-500/5 rounded-md border border-blue-500/20">
+                              <span className="text-sm font-medium text-blue-600">
+                                Total Price: {format(dropdownSelectedItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {dropdownSelectedItems.length} item{dropdownSelectedItems.length !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+                            <Button 
+                              onClick={addDropdownSelectedItemsToBill} 
+                              variant="outline"
+                              className="border-blue-500/20 text-blue-600 hover:bg-blue-500/10"
+                            >
+                              Add {dropdownSelectedItems.length} Test{dropdownSelectedItems.length !== 1 ? 's' : ''} to Bill
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Separate Dropdown Selection */}
+                      <div className="space-y-2 border-t pt-4">
+                        <div className="text-sm font-medium text-muted-foreground">
+                          Alternative: Select from dropdown
+                        </div>
+                        <div className="relative" ref={dropdownRef}>
+                          <button
+                            ref={dropdownButtonRef}
+                            type="button"
+                            onClick={() => {
+                              setIsDropdownOpen(!isDropdownOpen);
+                              setHighlightedDropdownIndex(-1);
+                            }}
+                            onKeyDown={handleDropdownKeyDown}
+                            className="w-full flex items-center justify-between px-3 py-2 border border-border rounded-md bg-background hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-medical-primary focus:ring-offset-2"
+                          >
+                            <span className="text-sm text-muted-foreground">
+                              {dropdownFilterQuery ? `Filtering: "${dropdownFilterQuery}" (${getFilteredDropdownItems().length} matches)` : 'Select lab test from dropdown... (Type to filter)'}
+                            </span>
+                            <ChevronRight className={`h-4 w-4 transition-transform ${isDropdownOpen ? 'rotate-90' : ''}`} />
+                          </button>
+                          
+                          {isDropdownOpen && (
+                            <div 
+                              className="absolute top-full left-0 right-0 z-50 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-y-auto"
+                            >
+                              {getFilteredDropdownItems().map((item: MedicalItem, index) => (
+                                <div
+                                  key={item.id}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    handleDropdownSelect(item.id.toString());
+                                  }}
+                                  className={`px-3 py-2 text-sm flex items-center justify-between ${
+                                    index === highlightedDropdownIndex 
+                                      ? 'bg-medical-primary/10 border-l-4 border-medical-primary' 
+                                      : ''
+                                  } ${
+                                    dropdownSelectedItems.find(selected => selected.id === item.id)
+                                      ? 'bg-blue-500/10 text-blue-600'
+                                      : billItems.find(billItem => billItem.id === item.id)
+                                        ? 'bg-red-100 text-red-600 cursor-not-allowed'
+                                        : 'cursor-pointer hover:bg-muted/50'
+                                  }`}
+                                >
+                                  <div className="flex items-center">
+                                    <span>{item.name}</span>
+                                    {dropdownSelectedItems.find(selected => selected.id === item.id) && (
+                                      <span className="ml-2 text-blue-600 text-xs">✓ Selected</span>
+                                    )}
+                                    {billItems.find(billItem => billItem.id === item.id) && !dropdownSelectedItems.find(selected => selected.id === item.id) && (
+                                      <span className="ml-2 text-red-600 text-xs">● Already in Bill</span>
+                                    )}
+                                    {index === highlightedDropdownIndex && (
+                                      <span className="ml-2 text-medical-primary text-xs">← Highlighted</span>
+                                    )}
+                                  </div>
+                                  <span className="text-medical-primary font-semibold">
+                                    {format(item.price)}
+                                  </span>
+                                </div>
+                              ))}
+                              {getFilteredDropdownItems().length === 0 && (
+                                <div className="px-3 py-2 text-sm text-muted-foreground">
+                                  No lab tests available
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="text-sm text-muted-foreground">
+                        • Type to search and press comma/enter to add as tags<br/>
+                        • Dropdown: Type letters to filter instantly, stays open for multiple selections<br/>
+                        • Arrow keys to navigate, Enter to select (filter resets after each selection)<br/>
+                        • Click "Add to Bill" or outside dropdown to close • Escape to close without adding<br/>
+                        • Both methods access same database but work independently<br/>
+                        • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
+                      </div>
+                    </div>
+                  ) : (
+                    /* Regular search input for other categories */
+                    <Input
+                      placeholder={`Search in ${selectedCategory}...`}
+                      value={categorySearchQuery}
+                      onChange={(e) => setCategorySearchQuery(e.target.value)}
+                      className="w-full"
+                    />
+                  )}
+                </CardHeader>
+                <CardContent>
+                  {/* Show interface for Laboratory */}
+                  {selectedCategory === 'Laboratory' ? (
+                    <div className="space-y-4">
+                      {/* Separate Dropdown Selection */}
+                      <div className="space-y-2">
+                        <div className="text-sm font-medium text-muted-foreground">
+                          Alternative: Select from dropdown
+                        </div>
+                        <div className="relative" ref={dropdownRef}>
+                          <button
+                            ref={dropdownButtonRef}
+                            type="button"
+                            onClick={() => {
+                              setIsDropdownOpen(!isDropdownOpen);
+                              setHighlightedDropdownIndex(-1);
+                            }}
+                            onKeyDown={handleDropdownKeyDown}
+                            className="w-full flex items-center justify-between px-3 py-2 border border-border rounded-md bg-background hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-medical-primary focus:ring-offset-2"
+                          >
+                            <span className="text-sm text-muted-foreground">
+                              {dropdownFilterQuery ? `Filtering: "${dropdownFilterQuery}" (${getFilteredDropdownItems().length} matches)` : 'Select lab test from dropdown... (Type to filter)'}
+                            </span>
+                            <ChevronRight className={`h-4 w-4 transition-transform ${isDropdownOpen ? 'rotate-90' : ''}`} />
+                          </button>
+                          
+                          {isDropdownOpen && (
+                            <div 
+                              className="absolute top-full left-0 right-0 z-50 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-y-auto"
+                            >
+                              {getFilteredDropdownItems().map((item: MedicalItem, index) => (
+                                <div
+                                  key={item.id}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    handleDropdownSelect(item.id.toString());
+                                  }}
+                                  className={`px-3 py-2 text-sm flex items-center justify-between ${
+                                    index === highlightedDropdownIndex 
+                                      ? 'bg-medical-primary/10 border-l-4 border-medical-primary' 
+                                      : ''
+                                  } ${
+                                    dropdownSelectedItems.find(selected => selected.id === item.id)
+                                      ? 'bg-blue-500/10 text-blue-600'
+                                      : billItems.find(billItem => billItem.id === item.id)
+                                        ? 'bg-red-100 text-red-600 cursor-not-allowed'
+                                        : 'cursor-pointer hover:bg-muted/50'
+                                  }`}
+                                >
+                                  <div className="flex items-center">
+                                    <span>{item.name}</span>
+                                    {dropdownSelectedItems.find(selected => selected.id === item.id) && (
+                                      <span className="ml-2 text-blue-600 text-xs">✓ Selected</span>
+                                    )}
+                                    {billItems.find(billItem => billItem.id === item.id) && !dropdownSelectedItems.find(selected => selected.id === item.id) && (
+                                      <span className="ml-2 text-red-600 text-xs">● Already in Bill</span>
+                                    )}
+                                    {index === highlightedDropdownIndex && (
+                                      <span className="ml-2 text-medical-primary text-xs">← Highlighted</span>
+                                    )}
+                                  </div>
+                                  <span className="text-medical-primary font-semibold">
+                                    {format(item.price)}
+                                  </span>
+                                </div>
+                              ))}
+                              {getFilteredDropdownItems().length === 0 && (
+                                <div className="px-3 py-2 text-sm text-muted-foreground">
+                                  No lab tests available
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="text-center text-muted-foreground py-4">
+                        <div className="text-lg font-medium mb-2">Laboratory Quick Selection</div>
+                        <div className="text-sm">
+                          Type test names and press comma to add as tags, or use dropdown below
+                        </div>
+                        <div className="text-xs mt-2 opacity-75">
+                          {(selectedLabItems.length + dropdownSelectedItems.length) > 0 
+                            ? `${selectedLabItems.length + dropdownSelectedItems.length} test${(selectedLabItems.length + dropdownSelectedItems.length) !== 1 ? 's' : ''} selected` 
+                            : 'No tests selected yet'}
+                        </div>
+                      </div>
+
+                      <div className="text-sm text-muted-foreground">
+                        • Type to search and press comma/enter to add as tags<br/>
+                        • Dropdown: Type letters to filter instantly, stays open for multiple selections<br/>
+                        • Arrow keys to navigate, Enter to select (filter resets after each selection)<br/>
+                        • Click "Add to Bill" or outside dropdown to close • Escape to close without adding<br/>
+                        • Both methods access same database but work independently<br/>
+                        • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
+                      </div>
+                    </div>
+                  ) : (
+                    /* Regular item list for other categories */
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {filteredCategoryItems.length > 0 ? (
+                        filteredCategoryItems.map((item: MedicalItem) => {
+                          const isDailyItem = item.category.includes('Food') || 
+                                             item.category.includes('Seat') || 
+                                             item.category.includes('O2') ||
+                                             item.name.toLowerCase().includes('per day');
+                          return (
+                            <div key={item.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
+                              <div className="flex-1">
+                                <div className="font-medium text-foreground">{item.name}</div>
+                                {item.description && (
+                                  <div className="text-sm text-muted-foreground">{item.description}</div>
+                                )}
+                                {isDailyItem && (
+                                  <div className="text-xs text-medical-accent font-medium">Daily rate × {daysAdmitted} days</div>
+                                )}
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <div className="text-right">
+                                  <div className="font-semibold text-medical-primary">
+                                    {format(item.price)}
+                                  </div>
+                                  {isDailyItem && (
+                                    <div className="text-xs text-muted-foreground">
+                                      Total: {format(parseFloat(item.price.toString()) * daysAdmitted)}
+                                    </div>
+                                  )}
+                                </div>
+                                <Button size="sm" onClick={() => item.category === 'Medicine' ? handleMedicineItemSelect(item) : addToBill(item)} variant="medical">
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="text-center text-muted-foreground py-8">
+                          {categorySearchQuery ? 'No items found matching your search.' : 'No items in this category.'}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
