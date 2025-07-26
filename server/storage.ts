@@ -185,6 +185,8 @@ export class MemoryStorage implements IStorage {
       { category: 'X-Ray', name: 'Extremity X-Ray', price: '600.00', currency: 'BDT', isOutpatient: true },
       { category: 'Registration Fees', name: 'Outpatient Registration', price: '100.00', currency: 'BDT', isOutpatient: true },
       { category: 'Registration Fees', name: 'Emergency Registration', price: '200.00', currency: 'BDT', isOutpatient: true },
+      { category: 'Registration Fees', name: 'Admission Fee', price: '500.00', currency: 'BDT', isOutpatient: true },
+      { category: 'Registration Fees', name: 'ICU Admission', price: '1000.00', currency: 'BDT', isOutpatient: true },
       { category: 'Dr. Fees', name: 'General Consultation', price: '500.00', currency: 'BDT', isOutpatient: true },
       { category: 'Dr. Fees', name: 'Specialist Consultation', price: '800.00', currency: 'BDT', isOutpatient: true },
       { category: 'Dr. Fees', name: 'Emergency Consultation', price: '1000.00', currency: 'BDT', isOutpatient: true },

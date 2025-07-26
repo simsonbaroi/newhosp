@@ -77,6 +77,8 @@ export default function InpatientFixed() {
   const [dropdownSelectedItems, setDropdownSelectedItems] = useState<MedicalItem[]>([]);
   const [selectedXRayItems, setSelectedXRayItems] = useState<MedicalItem[]>([]);
   const [xRayDropdownSelectedItems, setXRayDropdownSelectedItems] = useState<MedicalItem[]>([]);
+  const [selectedRegistrationItems, setSelectedRegistrationItems] = useState<MedicalItem[]>([]);
+  const [registrationDropdownSelectedItems, setRegistrationDropdownSelectedItems] = useState<MedicalItem[]>([]);
   const [dropdownValue, setDropdownValue] = useState<string>('');
   const [highlightedDropdownIndex, setHighlightedDropdownIndex] = useState<number>(-1);
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
@@ -85,6 +87,9 @@ export default function InpatientFixed() {
   const [xRayHighlightedDropdownIndex, setXRayHighlightedDropdownIndex] = useState<number>(-1);
   const [isXRayDropdownOpen, setIsXRayDropdownOpen] = useState<boolean>(false);
   const [xRayDropdownFilterQuery, setXRayDropdownFilterQuery] = useState<string>('');
+  const [registrationHighlightedDropdownIndex, setRegistrationHighlightedDropdownIndex] = useState<number>(-1);
+  const [isRegistrationDropdownOpen, setIsRegistrationDropdownOpen] = useState<boolean>(false);
+  const [registrationDropdownFilterQuery, setRegistrationDropdownFilterQuery] = useState<string>('');
   
   // X-Ray film view selection state
   const [selectedXRayForViews, setSelectedXRayForViews] = useState<MedicalItem | null>(null);
@@ -104,6 +109,9 @@ export default function InpatientFixed() {
   const xRayDropdownRef = useRef<HTMLDivElement>(null);
   const xRayDropdownButtonRef = useRef<HTMLButtonElement>(null);
   const xRaySearchInputRef = useRef<HTMLInputElement>(null);
+  const registrationDropdownRef = useRef<HTMLDivElement>(null);
+  const registrationDropdownButtonRef = useRef<HTMLButtonElement>(null);
+  const registrationSearchInputRef = useRef<HTMLInputElement>(null);
   
   // Cupertino Date picker modal state
   const [showCupertinoDatePicker, setShowCupertinoDatePicker] = useState(false);
