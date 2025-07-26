@@ -71,6 +71,19 @@ const Inpatient = () => {
   const [selectedMedicineForDosage, setSelectedMedicineForDosage] = useState<any>(null);
   const [showMedicineDosageSelection, setShowMedicineDosageSelection] = useState(false);
   
+  // Discharge Medicine selection state (same as outpatient medicine)
+  const [tempSelectedDischargeMedicines, setTempSelectedDischargeMedicines] = useState<Array<MedicalItem & { tempId: string }>>([]);
+  const [selectedDischargeMedicineItems, setSelectedDischargeMedicineItems] = useState<MedicalItem[]>([]);
+  const [dischargeMedicineDropdownSelectedItems, setDischargeMedicineDropdownSelectedItems] = useState<MedicalItem[]>([]);
+  const [dischargeMedicineDropdownValue, setDischargeMedicineDropdownValue] = useState<string>('');
+  const [dischargeMedicineHighlightedDropdownIndex, setDischargeMedicineHighlightedDropdownIndex] = useState<number>(-1);
+  const [isDischargeMedicineDropdownOpen, setIsDischargeMedicineDropdownOpen] = useState<boolean>(false);
+  const [dischargeMedicineDropdownFilterQuery, setDischargeMedicineDropdownFilterQuery] = useState<string>('');
+  const dischargeMedicineDropdownRef = useRef<HTMLDivElement>(null);
+  const dischargeMedicineDropdownButtonRef = useRef<HTMLButtonElement>(null);
+  const dischargeMedicineSearchInputRef = useRef<HTMLInputElement>(null);
+  const dischargeMedicineDoseInputRef = useRef<HTMLInputElement>(null);
+  
   // Cupertino Date picker modal state
   const [showCupertinoDatePicker, setShowCupertinoDatePicker] = useState(false);
   const [cupertinoDatePickerType, setCupertinoDatePickerType] = useState<'admission' | 'discharge'>('admission');
@@ -597,6 +610,80 @@ const Inpatient = () => {
     setIsDischargeMedicine(false);
   };
 
+  // Discharge Medicine functions (copied from outpatient Medicine)
+  const addDischargeMedicineToTempList = () => {
+    if (!selectedMedicineForDosage || !isDosageSelectionComplete()) return;
+
+    const calculation = calculateInpatientMedicineDosage();
+    
+    const tempMedicine = {
+      ...selectedMedicineForDosage,
+      tempId: `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      price: calculation.totalPrice.toString(),
+      dosageInfo: {
+        dosePrescribed,
+        medType,
+        doseFrequency,
+        totalDays,
+        calculationDetails: calculation.calculationDetails,
+        totalQuantity: calculation.totalQuantity,
+        quantityUnit: calculation.quantityUnit
+      }
+    };
+
+    setTempSelectedDischargeMedicines(prev => [...prev, tempMedicine]);
+    
+    // Reset dosage selection
+    cancelMedicineDosageSelection();
+  };
+
+  const addAllDischargeMedicinesToBill = () => {
+    if (tempSelectedDischargeMedicines.length === 0) return;
+
+    const billItemsToAdd = tempSelectedDischargeMedicines.map(medicine => ({
+      ...medicine,
+      billId: `discharge-medicine-${medicine.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    }));
+
+    setBillItems(prevBillItems => [...prevBillItems, ...billItemsToAdd]);
+    setTempSelectedDischargeMedicines([]);
+  };
+
+  const removeTempDischargeMedicine = (tempId: string) => {
+    setTempSelectedDischargeMedicines(prev => prev.filter(medicine => medicine.tempId !== tempId));
+  };
+
+  const editTempDischargeMedicine = (medicine: any) => {
+    // Pre-fill the dosage calculator with existing values
+    if (medicine.dosageInfo) {
+      setSelectedMedicineForDosage(medicine);
+      setDosePrescribed(medicine.dosageInfo.dosePrescribed);
+      setMedType(medicine.dosageInfo.medType);
+      setDoseFrequency(medicine.dosageInfo.doseFrequency);
+      setTotalDays(medicine.dosageInfo.totalDays);
+      setShowMedicineDosageSelection(true);
+      
+      // Remove the medicine from temp list since it will be re-added after editing
+      removeTempDischargeMedicine(medicine.tempId);
+      
+      // Focus on dose input for immediate editing
+      setTimeout(() => {
+        if (dischargeMedicineDoseInputRef.current) {
+          dischargeMedicineDoseInputRef.current.focus();
+        }
+      }, 100);
+    }
+  };
+
+  // Get discharge medicine search items
+  const getDischargeMedicineSearchItems = () => {
+    return selectedCategory === 'Discharge Medicine' ? categoryItems : [];
+  };
+
+  const getDischargeMedicineDropdownItems = () => {
+    return selectedCategory === 'Discharge Medicine' ? categoryItems : [];
+  };
+
   // Laboratory functions - identical to Outpatient
   const getSearchItems = () => {
     return categoryItems; // Use all items for search
@@ -898,6 +985,17 @@ const Inpatient = () => {
       setTimeout(() => {
         if (searchInputRef.current) {
           searchInputRef.current.focus();
+        }
+      }, 100);
+    }
+  }, [selectedCategory, isCarouselMode]);
+
+  // Auto-focus search input when Discharge Medicine category is selected
+  useEffect(() => {
+    if (selectedCategory === 'Discharge Medicine' && isCarouselMode && dischargeMedicineSearchInputRef.current) {
+      setTimeout(() => {
+        if (dischargeMedicineSearchInputRef.current) {
+          dischargeMedicineSearchInputRef.current.focus();
         }
       }, 100);
     }
@@ -1552,6 +1650,116 @@ const Inpatient = () => {
                         • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
                       </div>
                     </div>
+                  ) : selectedCategory === 'Discharge Medicine' ? (
+                    <div className="space-y-4">
+                      {/* Compact Selected Discharge Medicines Display - positioned below Discharge Medicine label */}
+                      {tempSelectedDischargeMedicines.length > 0 && (
+                        <div className="medicine-dosage-card p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-sm font-semibold text-medical-primary flex items-center">
+                              <Calculator className="h-4 w-4 mr-2" />
+                              Selected: {tempSelectedDischargeMedicines.length} medicines
+                            </span>
+                            <span className="text-sm font-bold text-medical-primary bg-medical-primary/10 px-2 py-1 rounded-md">
+                              {format(tempSelectedDischargeMedicines.reduce((sum, medicine) => sum + parseFloat(medicine.price), 0))}
+                            </span>
+                          </div>
+                          <div className="space-y-1">
+                            {tempSelectedDischargeMedicines.map((medicine, index) => (
+                              <div key={medicine.tempId} className="medicine-item-card flex items-center justify-between text-sm p-2 rounded-lg">
+                                <div className="flex items-center space-x-3 flex-1 min-w-0">
+                                  <span className="text-xs font-bold text-medical-primary bg-medical-primary/10 px-2 py-1 rounded-md flex-shrink-0">
+                                    #{index + 1}
+                                  </span>
+                                  <span className="font-medium text-foreground truncate">
+                                    {medicine.name.length > 25 ? `${medicine.name.substring(0, 25)}...` : medicine.name}
+                                  </span>
+                                </div>
+                                <div className="flex items-center space-x-2 flex-shrink-0">
+                                  <span className="text-medical-primary font-semibold bg-medical-primary/10 px-2 py-1 rounded">
+                                    {format(parseFloat(medicine.price))}
+                                  </span>
+                                  <button
+                                    onClick={() => editTempDischargeMedicine(medicine)}
+                                    className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 p-1 rounded transition-colors"
+                                    title="Edit medicine dosage"
+                                  >
+                                    <Calculator className="h-3 w-3" />
+                                  </button>
+                                  <button
+                                    onClick={() => removeTempDischargeMedicine(medicine.tempId)}
+                                    className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 p-1 rounded transition-colors"
+                                    title="Remove medicine"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          
+                          {/* Add to Bill Button */}
+                          <div className="flex justify-end pt-3 border-t border-medical-primary/10 mt-3">
+                            <Button 
+                              onClick={addAllDischargeMedicinesToBill}
+                              variant="outline" 
+                              className="text-sm border-medical-primary/20 text-medical-primary hover:bg-medical-primary/10"
+                            >
+                              Add {tempSelectedDischargeMedicines.length} Medicine{tempSelectedDischargeMedicines.length !== 1 ? 's' : ''} to Bill
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Search Input */}
+                      <div className="space-y-2">
+                        <Input
+                          ref={dischargeMedicineSearchInputRef}
+                          placeholder="Search discharge medicines..."
+                          value={categorySearchQuery}
+                          onChange={(e) => setCategorySearchQuery(e.target.value)}
+                          className="w-full"
+                        />
+                      </div>
+
+                      {/* Medicine Results */}
+                      <div className="space-y-2 max-h-96 overflow-y-auto">
+                        {filteredCategoryItems.length > 0 ? (
+                          filteredCategoryItems.map((item: MedicalItem) => (
+                            <div key={item.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
+                              <div className="flex-1">
+                                <div className="font-medium text-foreground">{item.name}</div>
+                                {item.description && (
+                                  <div className="text-sm text-muted-foreground">{item.description}</div>
+                                )}
+                                <div className="text-xs text-medical-accent font-medium">Discharge Medicine (full bottles)</div>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <span className="font-semibold text-medical-primary">
+                                  {format(item.price)}
+                                </span>
+                                <Button size="sm" onClick={() => handleMedicineItemSelect(item)} variant="medical">
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-center text-muted-foreground py-8">
+                            {categorySearchQuery ? 'No discharge medicines found matching your search.' : 'No discharge medicines available.'}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="text-sm text-muted-foreground">
+                        • Search: Select medicine to open dosage calculator<br/>
+                        • Set dose amount, medication type (Tablet, Mg, ml/cc, etc.)<br/>
+                        • Choose frequency: QD (daily), BID (twice), TID (3x), QID (4x), QOD, QWEEK<br/>
+                        • Enter total days to auto-calculate total quantity and cost<br/>
+                        • Discharge medicines automatically calculate for full bottles only<br/>
+                        • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
+                      </div>
+                    </div>
                   ) : (
                     /* Regular item list for other categories */
                     <div className="space-y-2 max-h-96 overflow-y-auto">
@@ -1744,13 +1952,13 @@ const Inpatient = () => {
                     {/* Add to Bill Button */}
                     <div className="flex justify-end pt-2 border-t border-medical-primary/10">
                       <Button
-                        onClick={addMedicineToBill}
+                        onClick={selectedMedicineForDosage?.category === 'Discharge Medicine' ? addDischargeMedicineToTempList : addMedicineToBill}
                         disabled={!isDosageSelectionComplete()}
                         variant="medical"
                         className="flex items-center space-x-2"
                       >
                         <Plus className="h-4 w-4" />
-                        <span>Add to Bill</span>
+                        <span>{selectedMedicineForDosage?.category === 'Discharge Medicine' ? 'Add' : 'Add to Bill'}</span>
                       </Button>
                     </div>
 
