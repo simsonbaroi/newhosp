@@ -202,6 +202,7 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-26**: IMPLEMENTED: Inpatient category content display with search functionality and add-to-bill capability
 - **2025-01-26**: FIXED: Inpatient category order restored to original specification - outpatient categories first, then inpatient-specific categories
 - **2025-01-26**: FIXED: Inpatient category button text overflow - added proper text wrapping, line clamping, and overflow handling for long category names
+- **2025-01-26**: REMOVED: Dr. Fees and Medic Fee categories from inpatient system as requested by user
 - **2025-01-25**: ADDED: Custom CSS classes for medicine-specific styling (medicine-item-card, medicine-dosage-card)
 - **2025-01-25**: ENHANCED: Professional glass morphism effects with medical color palette throughout medicine interface
 - **2025-01-25**: REDESIGNED: Medicine numbering system with clean badge design (#1, #2, etc.) replacing circular numbers
