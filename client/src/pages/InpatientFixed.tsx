@@ -182,14 +182,23 @@ export default function InpatientFixed() {
   });
 
   // Get inpatient categories from the database
-  const inpatientCategories = Array.from(new Set(
+  const categories = Array.from(new Set(
     medicalItems
       .filter((item: MedicalItem) => !item.isOutpatient)
       .map((item: MedicalItem) => item.category)
-  )).sort();
+  ));
 
-  // Ordered categories for consistent display
-  const orderedCategories = inpatientCategories;
+  // Inpatient category order - outpatient categories first, then inpatient-specific
+  const categoryOrder = [
+    'Laboratory', 'X-Ray', 'Registration Fees', 'Dr. Fees', 
+    'Medic Fee', 'Medicine', 'Physical Therapy', 'Limb and Brace',
+    'Seat & Ad. Fee', 'Blood', 'Food', 'Halo, O2, NO2, etc.', 
+    'Surgery, O.R. & Delivery', 'Discharge Medicine', 'Medicine, ORS & Anesthesia, Ket, Spinal',
+    'IV.\'s', 'Plaster/Milk', 'Procedures', 'Lost Laundry', 'Travel', 'Other'
+  ];
+
+  const orderedCategories = categoryOrder.filter(cat => categories.includes(cat))
+    .concat(categories.filter(cat => !categoryOrder.includes(cat)));
 
   // Category navigation functions
   const handleCategoryClick = (category: string) => {
