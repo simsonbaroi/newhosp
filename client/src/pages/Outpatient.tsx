@@ -11,6 +11,7 @@ import { useTakaFormat } from '../hooks/useCurrencyFormat';
 import { useSwipeGesture } from '../hooks/useSwipeGesture';
 import type { MedicalItem } from '../../../shared/schema';
 import { calculateMedicineDosage, formatDosageForBill, MEDICINE_RULES } from '../../../shared/medicineCalculations';
+import { getCategoryNames, getCategoryInterface } from '../lib/categories';
 
 interface BillItem extends MedicalItem {
   billId: string; // Unique identifier for each bill entry
@@ -89,14 +90,8 @@ const Outpatient = () => {
     queryKey: ['/api/medical-items', { isOutpatient: true }],
   });
 
-  // Get unique categories - only allow the 8 specified outpatient categories
-  const allowedCategories = [
-    'Registration Fees', 'Dr. Fees', 'Medic Fee', 'Medicine', 
-    'Laboratory', 'X-Ray', 'Physical Therapy', 'Limb and Brace'
-  ];
-  const categories = Array.from(new Set(medicalItems.map((item: MedicalItem) => item.category)))
-    .filter(cat => allowedCategories.includes(cat))
-    .sort();
+  // Get permanent outpatient categories in correct order
+  const categories = getCategoryNames(true); // Use permanent outpatient categories
 
   // Filter items by category
   const categoryItems = selectedCategory 
@@ -254,17 +249,11 @@ const Outpatient = () => {
     setBillItems([]);
   };
 
-  // Category button order as specified by user
-  const categoryOrder = [
-    'Registration Fees', 'Dr. Fees', 'Medic Fee', 'Medicine', 
-    'Laboratory', 'X-Ray', 'Physical Therapy', 'Limb and Brace'
-  ];
-
   // Categories that should not have search functionality
   const categoriesWithoutSearch = ['Registration Fees', 'Dr. Fees', 'Medic Fee'];
 
-  const orderedCategories = categoryOrder.filter(cat => categories.includes(cat))
-    .concat(categories.filter(cat => !categoryOrder.includes(cat)));
+  // Use categories directly since they're already in correct order from permanent config
+  const orderedCategories = categories;
 
   // Carousel navigation functions
   const handleCategoryClick = (category: string) => {

@@ -13,6 +13,7 @@ import { useSwipeGesture } from '../hooks/useSwipeGesture';
 import { CupertinoDateTimePicker } from '@/components/CupertinoDateTimePicker';
 import type { MedicalItem } from '../../../shared/schema';
 import { calculateMedicineDosage, formatDosageForBill, MEDICINE_RULES } from '../../../shared/medicineCalculations';
+import { getCategoryNames, getCategoryInterface } from '../lib/categories';
 
 interface BillItem {
   id: string;
@@ -673,25 +674,11 @@ export default function Inpatient() {
     };
   }, [isXRayDropdownOpen]);
 
-  // Get inpatient categories from the database, excluding Dr. Fees, Medic Fee, and Medicine
-  const excludedCategories = ['Dr. Fees', 'Medic Fee', 'Medicine'];
-  const categories = Array.from(new Set(
-    medicalItems
-      .filter((item: MedicalItem) => !item.isOutpatient && !excludedCategories.includes(item.category))
-      .map((item: MedicalItem) => item.category)
-  ));
+  // Get permanent inpatient categories (already filtered for inpatient use)
+  const categories = getCategoryNames(false); // Use permanent inpatient categories
 
-  // Inpatient category order - updated per user request (removed Dr. Fees, Medic Fee, Medicine)
-  const categoryOrder = [
-    'Blood', 'Laboratory', 'Limb and Brace', 'Food', 
-    'Halo, O2, NO2, etc.', 'Orthopedic, S.Roll, etc.', 'Surgery, O.R. & Delivery', 
-    'Registration Fees', 'Discharge Medicine', 'Medicine, ORS & Anesthesia, Ket, Spinal',
-    'Physical Therapy', 'IV.\'s', 'Plaster/Milk', 'Procedures', 
-    'Seat & Ad. Fee', 'X-Ray', 'Lost Laundry', 'Travel', 'Others'
-  ];
-
-  const orderedCategories = categoryOrder.filter(cat => categories.includes(cat))
-    .concat(categories.filter(cat => !categoryOrder.includes(cat)));
+  // Use categories directly since they're already in correct order from permanent config
+  const orderedCategories = categories;
 
   // Category navigation functions
   const handleCategoryClick = (category: string) => {

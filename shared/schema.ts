@@ -1,9 +1,9 @@
-import { pgTable, text, serial, integer, boolean, decimal, timestamp } from "drizzle-orm/pg-core";
+import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
+export const users = sqliteTable("users", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
 });
@@ -16,37 +16,41 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
-// Medical items table
-export const medicalItems = pgTable("medical_items", {
-  id: serial("id").primaryKey(),
+// Medical item prices table - only stores prices, categories are hardcoded
+export const medicalItemPrices = sqliteTable("medical_item_prices", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   category: text("category").notNull(),
   name: text("name").notNull(),
-  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  price: real("price").notNull(),
   currency: text("currency").notNull().default("BDT"),
   description: text("description"),
-  isOutpatient: boolean("is_outpatient").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  isOutpatient: integer("is_outpatient", { mode: "boolean" }).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
 });
 
-export const insertMedicalItemSchema = createInsertSchema(medicalItems).omit({
+export const insertMedicalItemPriceSchema = createInsertSchema(medicalItemPrices).omit({
   id: true,
   createdAt: true,
 });
 
-export type InsertMedicalItem = z.infer<typeof insertMedicalItemSchema>;
-export type MedicalItem = typeof medicalItems.$inferSelect;
+export type InsertMedicalItemPrice = z.infer<typeof insertMedicalItemPriceSchema>;
+export type MedicalItemPrice = typeof medicalItemPrices.$inferSelect;
+
+// Legacy interface for compatibility - maps to the new price table
+export type MedicalItem = MedicalItemPrice;
+export type InsertMedicalItem = InsertMedicalItemPrice;
 
 // Bills table for saved calculations
-export const bills = pgTable("bills", {
-  id: serial("id").primaryKey(),
+export const bills = sqliteTable("bills", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   type: text("type", { enum: ["outpatient", "inpatient"] }).notNull(),
   sessionId: text("session_id").notNull(), // For browser session persistence
   billData: text("bill_data").notNull(), // JSON string of bill items
   daysAdmitted: integer("days_admitted").default(1),
-  total: decimal("total", { precision: 10, scale: 2 }).notNull(),
+  total: real("total").notNull(),
   currency: text("currency").notNull().default("BDT"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
 });
 
 export const insertBillSchema = createInsertSchema(bills).omit({

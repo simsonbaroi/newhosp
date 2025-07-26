@@ -4,8 +4,14 @@ import {
   type MedicalItem,
   type InsertMedicalItem,
   type Bill,
-  type InsertBill
+  type InsertBill,
+  medicalItemPrices,
+  users,
+  bills
 } from "@shared/schema";
+import { db, initializeDatabase } from "./db";
+import { eq, and, like } from "drizzle-orm";
+import { getOrderedCategories, getDefaultItems } from "@shared/categories";
 
 export interface IStorage {
   // User methods
@@ -28,35 +34,27 @@ export interface IStorage {
   initializeDatabase(): Promise<void>;
 }
 
-export class MemoryStorage implements IStorage {
-  private users: User[] = [];
-  private medicalItems: MedicalItem[] = [];
-  private bills: Bill[] = [];
-  private nextUserId = 1;
-  private nextMedicalItemId = 1;
-  private nextBillId = 1;
+export class SQLiteStorage implements IStorage {
   private initialized = false;
 
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.find(user => user.id === id);
+    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    return result[0];
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return this.users.find(user => user.username === username);
+    const result = await db.select().from(users).where(eq(users.username, username)).limit(1);
+    return result[0];
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const user: User = {
-      id: this.nextUserId++,
-      username: insertUser.username,
-      password: insertUser.password,
-    };
-    this.users.push(user);
-    return user;
+    const result = await db.insert(users).values(insertUser).returning();
+    return result[0];
   }
 
   async getAllMedicalItems(): Promise<MedicalItem[]> {
-    return [...this.medicalItems].sort((a, b) => {
+    const result = await db.select().from(medicalItemPrices);
+    return result.sort((a, b) => {
       if (a.category !== b.category) {
         return a.category.localeCompare(b.category);
       }
@@ -65,278 +63,211 @@ export class MemoryStorage implements IStorage {
   }
 
   async getMedicalItemsByType(isOutpatient: boolean): Promise<MedicalItem[]> {
-    return this.medicalItems
-      .filter(item => item.isOutpatient === isOutpatient)
-      .sort((a, b) => {
-        if (a.category !== b.category) {
-          return a.category.localeCompare(b.category);
-        }
-        return a.name.localeCompare(b.name);
-      });
+    const result = await db.select().from(medicalItemPrices).where(eq(medicalItemPrices.isOutpatient, isOutpatient));
+    return result.sort((a, b) => {
+      if (a.category !== b.category) {
+        return a.category.localeCompare(b.category);
+      }
+      return a.name.localeCompare(b.name);
+    });
   }
 
   async getMedicalItemsByCategory(category: string, isOutpatient: boolean): Promise<MedicalItem[]> {
-    return this.medicalItems
-      .filter(item => item.category === category && item.isOutpatient === isOutpatient)
-      .sort((a, b) => a.name.localeCompare(b.name));
+    const result = await db.select().from(medicalItemPrices)
+      .where(and(
+        eq(medicalItemPrices.category, category),
+        eq(medicalItemPrices.isOutpatient, isOutpatient)
+      ));
+    return result.sort((a, b) => a.name.localeCompare(b.name));
   }
 
   async createMedicalItem(item: InsertMedicalItem): Promise<MedicalItem> {
-    const medicalItem: MedicalItem = {
-      id: this.nextMedicalItemId++,
-      category: item.category,
-      name: item.name,
-      price: item.price,
-      currency: 'BDT',
-      description: item.description || null,
-      isOutpatient: item.isOutpatient,
+    const result = await db.insert(medicalItemPrices).values({
+      ...item,
       createdAt: new Date(),
-    };
-    this.medicalItems.push(medicalItem);
-    return medicalItem;
+    }).returning();
+    return result[0];
   }
 
   async updateMedicalItem(id: number, item: Partial<InsertMedicalItem>): Promise<MedicalItem | undefined> {
-    const index = this.medicalItems.findIndex(medItem => medItem.id === id);
-    if (index === -1) return undefined;
-
-    this.medicalItems[index] = {
-      ...this.medicalItems[index],
-      ...item,
-    };
-    return this.medicalItems[index];
+    const result = await db.update(medicalItemPrices)
+      .set(item)
+      .where(eq(medicalItemPrices.id, id))
+      .returning();
+    return result[0];
   }
 
   async deleteMedicalItem(id: number): Promise<boolean> {
-    const initialLength = this.medicalItems.length;
-    this.medicalItems = this.medicalItems.filter(item => item.id !== id);
-    return this.medicalItems.length < initialLength;
+    const result = await db.delete(medicalItemPrices)
+      .where(eq(medicalItemPrices.id, id))
+      .returning();
+    return result.length > 0;
   }
 
   async searchMedicalItems(query: string, isOutpatient: boolean): Promise<MedicalItem[]> {
-    const lowerQuery = query.toLowerCase();
-    return this.medicalItems
-      .filter(item => 
-        item.isOutpatient === isOutpatient &&
-        (item.name.toLowerCase().includes(lowerQuery) ||
-         item.category.toLowerCase().includes(lowerQuery))
-      )
-      .sort((a, b) => {
-        if (a.category !== b.category) {
-          return a.category.localeCompare(b.category);
-        }
-        return a.name.localeCompare(b.name);
-      });
+    const lowerQuery = `%${query.toLowerCase()}%`;
+    const result = await db.select().from(medicalItemPrices)
+      .where(and(
+        eq(medicalItemPrices.isOutpatient, isOutpatient),
+        like(medicalItemPrices.name, lowerQuery)
+      ));
+    return result.sort((a, b) => {
+      if (a.category !== b.category) {
+        return a.category.localeCompare(b.category);
+      }
+      return a.name.localeCompare(b.name);
+    });
   }
 
   async saveBill(bill: InsertBill): Promise<Bill> {
-    // First, try to update existing bill
-    const existingIndex = this.bills.findIndex(b => 
-      b.sessionId === bill.sessionId && b.type === bill.type
-    );
+    // First, try to find existing bill
+    const existingBill = await db.select().from(bills)
+      .where(and(
+        eq(bills.sessionId, bill.sessionId),
+        eq(bills.type, bill.type)
+      ))
+      .limit(1);
     
-    if (existingIndex !== -1) {
-      this.bills[existingIndex] = {
-        ...this.bills[existingIndex],
-        billData: bill.billData,
-        total: bill.total,
-        currency: 'BDT',
-        daysAdmitted: bill.daysAdmitted || null,
-        updatedAt: new Date(),
-      };
-      return this.bills[existingIndex];
+    if (existingBill.length > 0) {
+      // Update existing bill
+      const result = await db.update(bills)
+        .set({
+          billData: bill.billData,
+          total: bill.total,
+          daysAdmitted: bill.daysAdmitted || 1,
+          updatedAt: new Date(),
+        })
+        .where(eq(bills.id, existingBill[0].id))
+        .returning();
+      return result[0];
     } else {
-      const newBill: Bill = {
-        id: this.nextBillId++,
-        type: bill.type,
-        sessionId: bill.sessionId,
-        billData: bill.billData,
+      // Create new bill
+      const result = await db.insert(bills).values({
+        ...bill,
         daysAdmitted: bill.daysAdmitted || 1,
-        total: bill.total,
-        currency: 'BDT',
         createdAt: new Date(),
         updatedAt: new Date(),
-      };
-      this.bills.push(newBill);
-      return newBill;
+      }).returning();
+      return result[0];
     }
   }
 
   async getBillBySession(sessionId: string, type: "outpatient" | "inpatient"): Promise<Bill | undefined> {
-    const filtered = this.bills
-      .filter(bill => bill.sessionId === sessionId && bill.type === type)
-      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
-    
-    return filtered[0] || undefined;
+    const result = await db.select().from(bills)
+      .where(and(
+        eq(bills.sessionId, sessionId),
+        eq(bills.type, type)
+      ))
+      .orderBy(bills.updatedAt)
+      .limit(1);
+    return result[0];
   }
 
   async initializeDatabase(): Promise<void> {
-    // Always reinitialize to ensure clean data
-    this.medicalItems = [];
-    this.nextMedicalItemId = 1;
-
-    // Initialize with default data
+    if (this.initialized) return;
+    
+    // Initialize SQLite database
+    await initializeDatabase();
+    
+    // Clear existing data to ensure clean state
+    await db.delete(medicalItemPrices);
+    
+    // Initialize with default price data only - categories come from shared/categories.ts
     const defaultItems = [
       // Outpatient items
-      { category: 'Laboratory', name: 'Complete Blood Count', price: '250.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Laboratory', name: 'Urinalysis', price: '150.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Laboratory', name: 'Blood Chemistry', price: '400.00', currency: 'BDT', isOutpatient: true },
-      { category: 'X-Ray', name: 'Chest X-Ray', price: '800.00', currency: 'BDT', isOutpatient: true },
-      { category: 'X-Ray', name: 'Extremity X-Ray', price: '600.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Registration Fees', name: 'Outpatient Registration', price: '100.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Registration Fees', name: 'Emergency Registration', price: '200.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Registration Fees', name: 'Admission Fee', price: '500.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Registration Fees', name: 'ICU Admission', price: '1000.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Dr. Fees', name: 'General Consultation', price: '500.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Dr. Fees', name: 'Specialist Consultation', price: '800.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Dr. Fees', name: 'Emergency Consultation', price: '1000.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Medic Fee', name: 'Basic Medical Service', price: '300.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Medic Fee', name: 'Advanced Medical Service', price: '500.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Medic Fee', name: 'Emergency Medical Service', price: '700.00', currency: 'BDT', isOutpatient: true },
+      { category: 'Laboratory', name: 'Complete Blood Count', price: 250.00, currency: 'BDT', isOutpatient: true },
+      { category: 'Laboratory', name: 'Urinalysis', price: 150.00, currency: 'BDT', isOutpatient: true },
+      { category: 'Laboratory', name: 'Blood Chemistry', price: 400.00, currency: 'BDT', isOutpatient: true },
+      { category: 'Laboratory', name: 'Liver Function Test', price: 600.00, currency: 'BDT', isOutpatient: true },
+      { category: 'Laboratory', name: 'Kidney Function Test', price: 550.00, currency: 'BDT', isOutpatient: true },
+      { category: 'Laboratory', name: 'Lipid Profile', price: 450.00, currency: 'BDT', isOutpatient: true },
+      { category: 'Laboratory', name: 'Thyroid Function Test', price: 800.00, currency: 'BDT', isOutpatient: true },
+      { category: 'Laboratory', name: 'Blood Sugar', price: 100.00, currency: 'BDT', isOutpatient: true },
+      { category: 'Laboratory', name: 'HbA1c', price: 650.00, currency: 'BDT', isOutpatient: true },
+      { category: 'Laboratory', name: 'ESR', price: 120.00, currency: 'BDT', isOutpatient: true },
+      
+      { category: 'X-Ray', name: 'Chest X-Ray', price: 800.00, currency: 'BDT', isOutpatient: true },
+      { category: 'X-Ray', name: 'Extremity X-Ray', price: 600.00, currency: 'BDT', isOutpatient: true },
+      { category: 'X-Ray', name: 'Spine X-Ray', price: 900.00, currency: 'BDT', isOutpatient: true },
+      { category: 'X-Ray', name: 'Abdomen X-Ray', price: 700.00, currency: 'BDT', isOutpatient: true },
+      { category: 'X-Ray', name: 'Pelvis X-Ray', price: 750.00, currency: 'BDT', isOutpatient: true },
+      
+      { category: 'Registration Fees', name: 'Outpatient Registration', price: 100.00, currency: 'BDT', isOutpatient: true },
+      { category: 'Registration Fees', name: 'Emergency Registration', price: 200.00, currency: 'BDT', isOutpatient: true },
+      { category: 'Registration Fees', name: 'Admission Fee', price: 500.00, currency: 'BDT', isOutpatient: true },
+      { category: 'Registration Fees', name: 'ICU Admission', price: 1000.00, currency: 'BDT', isOutpatient: true },
+      
+      { category: 'Dr. Fees', name: 'General Consultation', price: 500.00, currency: 'BDT', isOutpatient: true },
+      { category: 'Dr. Fees', name: 'Specialist Consultation', price: 800.00, currency: 'BDT', isOutpatient: true },
+      { category: 'Dr. Fees', name: 'Emergency Consultation', price: 1000.00, currency: 'BDT', isOutpatient: true },
+      
+      { category: 'Medic Fee', name: 'Basic Medical Service', price: 300.00, currency: 'BDT', isOutpatient: true },
+      { category: 'Medic Fee', name: 'Advanced Medical Service', price: 500.00, currency: 'BDT', isOutpatient: true },
+      { category: 'Medic Fee', name: 'Emergency Medical Service', price: 700.00, currency: 'BDT', isOutpatient: true },
+      
       // Medicine - Outpatient
-      { category: 'Medicine', name: 'Paracetamol 500mg', price: '15.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Medicine', name: 'Aspirin 75mg', price: '12.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Medicine', name: 'Amoxicillin 500mg', price: '25.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Medicine', name: 'Ibuprofen 400mg', price: '18.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Medicine', name: 'Omeprazole 20mg', price: '22.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Medicine', name: 'Cetirizine 10mg', price: '14.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Medicine', name: 'Metformin 500mg', price: '16.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Medicine', name: 'Amlodipine 5mg', price: '20.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Medicine', name: 'Atorvastatin 20mg', price: '35.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Medicine', name: 'Azithromycin 500mg', price: '45.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Medicine', name: 'Prednisolone 5mg', price: '28.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Medicine', name: 'Salbutamol Inhaler', price: '85.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Medicine', name: 'Cough Syrup 100ml', price: '45.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Medicine', name: 'Vitamin D3 1000IU', price: '30.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Medicine', name: 'Iron Tablet 65mg', price: '12.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Medicine', name: 'Calcium Carbonate 500mg', price: '18.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Medicine', name: 'Losartan 50mg', price: '24.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Medicine', name: 'Diclofenac 50mg', price: '16.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Medicine', name: 'Ranitidine 150mg', price: '14.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Medicine', name: 'Fluconazole 150mg', price: '65.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Physical Therapy', name: 'PT Session', price: '300.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Limb and Brace', name: 'Ankle Brace', price: '1200.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Limb and Brace', name: 'Knee Brace', price: '1800.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Limb and Brace', name: 'Wrist Splint', price: '800.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Limb and Brace', name: 'Elbow Support', price: '900.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Limb and Brace', name: 'Back Brace', price: '2500.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Limb and Brace', name: 'Arm Sling', price: '400.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Limb and Brace', name: 'Cervical Collar', price: '1500.00', currency: 'BDT', isOutpatient: true },
-      { category: 'Limb and Brace', name: 'Walking Crutches (pair)', price: '1600.00', currency: 'BDT', isOutpatient: true },
+      { category: 'Medicine', name: 'Paracetamol 500mg', price: 15.00, currency: 'BDT', isOutpatient: true },
+      { category: 'Medicine', name: 'Aspirin 75mg', price: 12.00, currency: 'BDT', isOutpatient: true },
+      { category: 'Medicine', name: 'Amoxicillin 500mg', price: 25.00, currency: 'BDT', isOutpatient: true },
+      { category: 'Medicine', name: 'Ibuprofen 400mg', price: 18.00, currency: 'BDT', isOutpatient: true },
+      { category: 'Medicine', name: 'Omeprazole 20mg', price: 22.00, currency: 'BDT', isOutpatient: true },
+      { category: 'Medicine', name: 'Cetirizine 10mg', price: 14.00, currency: 'BDT', isOutpatient: true },
+      { category: 'Medicine', name: 'Metformin 500mg', price: 16.00, currency: 'BDT', isOutpatient: true },
+      { category: 'Medicine', name: 'Amlodipine 5mg', price: 20.00, currency: 'BDT', isOutpatient: true },
+      { category: 'Medicine', name: 'Atorvastatin 20mg', price: 35.00, currency: 'BDT', isOutpatient: true },
+      { category: 'Medicine', name: 'Azithromycin 500mg', price: 45.00, currency: 'BDT', isOutpatient: true },
       
       // Inpatient items
-      { category: 'Blood', name: 'Blood Transfusion', price: '2500.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Blood', name: 'Blood Cross-matching', price: '800.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Blood', name: 'Platelet Transfusion', price: '3500.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Laboratory', name: 'Complete Blood Count', price: 300.00, currency: 'BDT', isOutpatient: false },
+      { category: 'Laboratory', name: 'Blood Chemistry Panel', price: 500.00, currency: 'BDT', isOutpatient: false },
+      { category: 'Laboratory', name: 'Liver Function Test', price: 600.00, currency: 'BDT', isOutpatient: false },
+      { category: 'Laboratory', name: 'Kidney Function Test', price: 550.00, currency: 'BDT', isOutpatient: false },
+      { category: 'Laboratory', name: 'Cardiac Enzymes', price: 800.00, currency: 'BDT', isOutpatient: false },
+      { category: 'Laboratory', name: 'Coagulation Studies', price: 700.00, currency: 'BDT', isOutpatient: false },
+      { category: 'Laboratory', name: 'Blood Gas Analysis', price: 650.00, currency: 'BDT', isOutpatient: false },
+      { category: 'Laboratory', name: 'Electrolyte Panel', price: 400.00, currency: 'BDT', isOutpatient: false },
       
-      { category: 'Laboratory', name: 'Complete Blood Count', price: '300.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Laboratory', name: 'Blood Chemistry Panel', price: '500.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Laboratory', name: 'Liver Function Test', price: '600.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Halo, O2, NO2, etc.', name: 'Oxygen Therapy (per day)', price: 400.00, currency: 'BDT', isOutpatient: false },
+      { category: 'Halo, O2, NO2, etc.', name: 'Nitrous Oxide', price: 600.00, currency: 'BDT', isOutpatient: false },
+      { category: 'Halo, O2, NO2, etc.', name: 'Halo Traction', price: 1200.00, currency: 'BDT', isOutpatient: false },
+      { category: 'Halo, O2, NO2, etc.', name: 'CPAP Machine (per day)', price: 800.00, currency: 'BDT', isOutpatient: false },
       
-      { category: 'Limb and Brace', name: 'Post-surgical Brace', price: '2000.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Limb and Brace', name: 'Hospital Walker', price: '1800.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Limb and Brace', name: 'Compression Stockings', price: '900.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Orthopedic, S.Roll, etc.', name: 'Orthopedic Consultation', price: 800.00, currency: 'BDT', isOutpatient: false },
+      { category: 'Orthopedic, S.Roll, etc.', name: 'Spinal Roll Support', price: 1500.00, currency: 'BDT', isOutpatient: false },
+      { category: 'Orthopedic, S.Roll, etc.', name: 'Orthopedic Brace', price: 2200.00, currency: 'BDT', isOutpatient: false },
+      { category: 'Orthopedic, S.Roll, etc.', name: 'Spine Support System', price: 3500.00, currency: 'BDT', isOutpatient: false },
+      { category: 'Orthopedic, S.Roll, etc.', name: 'Orthopedic Device Setup', price: 1800.00, currency: 'BDT', isOutpatient: false },
       
-      { category: 'Food', name: 'Regular Diet (per day)', price: '350.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Food', name: 'Special Diet (per day)', price: '450.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Food', name: 'Liquid Diet (per day)', price: '300.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Surgery, O.R. & Delivery', name: 'Minor Surgery', price: 15000.00, currency: 'BDT', isOutpatient: false },
+      { category: 'Surgery, O.R. & Delivery', name: 'Major Surgery', price: 35000.00, currency: 'BDT', isOutpatient: false },
+      { category: 'Surgery, O.R. & Delivery', name: 'Normal Delivery', price: 8000.00, currency: 'BDT', isOutpatient: false },
+      { category: 'Surgery, O.R. & Delivery', name: 'C-Section Delivery', price: 25000.00, currency: 'BDT', isOutpatient: false },
+      { category: 'Surgery, O.R. & Delivery', name: 'Operating Room Fee', price: 5000.00, currency: 'BDT', isOutpatient: false },
+      { category: 'Surgery, O.R. & Delivery', name: 'Anesthesia Fee', price: 3000.00, currency: 'BDT', isOutpatient: false },
       
-      { category: 'Halo, O2, NO2, etc.', name: 'Oxygen Therapy (per day)', price: '400.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Halo, O2, NO2, etc.', name: 'Nitrous Oxide', price: '600.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Halo, O2, NO2, etc.', name: 'Halo Traction', price: '1200.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Registration Fees', name: 'Admission Fee', price: 500.00, currency: 'BDT', isOutpatient: false },
+      { category: 'Registration Fees', name: 'ICU Admission', price: 1000.00, currency: 'BDT', isOutpatient: false },
+      { category: 'Registration Fees', name: 'Private Room Fee', price: 800.00, currency: 'BDT', isOutpatient: false },
+      { category: 'Registration Fees', name: 'Semi-Private Room Fee', price: 600.00, currency: 'BDT', isOutpatient: false },
       
-      { category: 'Orthopedic, S.Roll, etc.', name: 'Orthopedic Consultation', price: '800.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Orthopedic, S.Roll, etc.', name: 'Spinal Roll Support', price: '1500.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Orthopedic, S.Roll, etc.', name: 'Orthopedic Brace', price: '2200.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Orthopedic, S.Roll, etc.', name: 'Spine Support System', price: '3500.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Orthopedic, S.Roll, etc.', name: 'Orthopedic Device Setup', price: '1800.00', currency: 'BDT', isOutpatient: false },
-      
-      { category: 'Surgery, O.R. & Delivery', name: 'Minor Surgery', price: '15000.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Surgery, O.R. & Delivery', name: 'Major Surgery', price: '35000.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Surgery, O.R. & Delivery', name: 'Normal Delivery', price: '8000.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Surgery, O.R. & Delivery', name: 'C-Section Delivery', price: '25000.00', currency: 'BDT', isOutpatient: false },
-      
-      { category: 'Registration Fees', name: 'Admission Fee', price: '500.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Registration Fees', name: 'ICU Admission', price: '1000.00', currency: 'BDT', isOutpatient: false },
-      
-      { category: 'Discharge Medicine', name: 'Discharge Medication Package', price: '800.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Discharge Medicine', name: 'Pain Relief Package', price: '400.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Discharge Medicine', name: 'Antibiotic Course', price: '600.00', currency: 'BDT', isOutpatient: false },
-      
-      // Medicine - Inpatient (exact copy from Outpatient)
-      { category: 'Medicine', name: 'Paracetamol 500mg', price: '15.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Medicine', name: 'Aspirin 75mg', price: '12.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Medicine', name: 'Amoxicillin 500mg', price: '25.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Medicine', name: 'Ibuprofen 400mg', price: '18.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Medicine', name: 'Omeprazole 20mg', price: '22.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Medicine', name: 'Cetirizine 10mg', price: '14.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Medicine', name: 'Metformin 500mg', price: '16.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Medicine', name: 'Amlodipine 5mg', price: '20.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Medicine', name: 'Atorvastatin 20mg', price: '35.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Medicine', name: 'Azithromycin 500mg', price: '45.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Medicine', name: 'Prednisolone 5mg', price: '28.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Medicine', name: 'Salbutamol Inhaler', price: '85.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Medicine', name: 'Cough Syrup 100ml', price: '45.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Medicine', name: 'Vitamin D3 1000IU', price: '30.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Medicine', name: 'Iron Tablet 65mg', price: '12.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Medicine', name: 'Calcium Carbonate 500mg', price: '18.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Medicine', name: 'Losartan 50mg', price: '24.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Medicine', name: 'Diclofenac 50mg', price: '16.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Medicine', name: 'Ranitidine 150mg', price: '14.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Medicine', name: 'Fluconazole 150mg', price: '65.00', currency: 'BDT', isOutpatient: false },
-      
-      { category: 'Medicine, ORS & Anesthesia, Ket, Spinal', name: 'General Anesthesia', price: '3000.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Medicine, ORS & Anesthesia, Ket, Spinal', name: 'Spinal Anesthesia', price: '2000.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Medicine, ORS & Anesthesia, Ket, Spinal', name: 'Ketamine', price: '800.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Medicine, ORS & Anesthesia, Ket, Spinal', name: 'ORS Solution', price: '50.00', currency: 'BDT', isOutpatient: false },
-      
-      { category: 'Physical Therapy', name: 'Physical Therapy Session', price: '400.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Physical Therapy', name: 'Rehabilitation Package', price: '1200.00', currency: 'BDT', isOutpatient: false },
-      
-      { category: 'IV.\'s', name: 'IV Fluid (Normal Saline)', price: '200.00', currency: 'BDT', isOutpatient: false },
-      { category: 'IV.\'s', name: 'IV Antibiotics', price: '800.00', currency: 'BDT', isOutpatient: false },
-      { category: 'IV.\'s', name: 'IV Pain Medication', price: '300.00', currency: 'BDT', isOutpatient: false },
-      
-      { category: 'Plaster/Milk', name: 'Plaster Cast Application', price: '1500.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Plaster/Milk', name: 'Cast Removal', price: '500.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Plaster/Milk', name: 'Milk Formula (per day)', price: '150.00', currency: 'BDT', isOutpatient: false },
-      
-      { category: 'Procedures', name: 'Wound Dressing', price: '300.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Procedures', name: 'Catheter Insertion', price: '800.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Procedures', name: 'Suture Removal', price: '200.00', currency: 'BDT', isOutpatient: false },
-      
-      { category: 'Seat & Ad. Fee', name: 'Admission Processing (per day)', price: '200.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Seat & Ad. Fee', name: 'Bed Fee (General Ward)', price: '500.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Seat & Ad. Fee', name: 'Bed Fee (Private Room)', price: '1200.00', currency: 'BDT', isOutpatient: false },
-      
-      { category: 'X-Ray', name: 'Chest X-Ray', price: '800.00', currency: 'BDT', isOutpatient: false },
-      { category: 'X-Ray', name: 'Extremity X-Ray', price: '600.00', currency: 'BDT', isOutpatient: false },
-      { category: 'X-Ray', name: 'CT Scan', price: '4000.00', currency: 'BDT', isOutpatient: false },
-      
-      { category: 'Lost Laundry', name: 'Hospital Gown Replacement', price: '300.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Lost Laundry', name: 'Bed Sheet Replacement', price: '200.00', currency: 'BDT', isOutpatient: false },
-      
-      { category: 'Travel', name: 'Ambulance Service (Local)', price: '1500.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Travel', name: 'Ambulance Service (Long Distance)', price: '3000.00', currency: 'BDT', isOutpatient: false },
-      
-      { category: 'Other', name: 'Miscellaneous Charges', price: '500.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Other', name: 'Administrative Fee', price: '300.00', currency: 'BDT', isOutpatient: false },
-      
-      // Medicine, ORS & Anesthesia, Ket, Spinal category
-      { category: 'Medicine, ORS & Anesthesia, Ket, Spinal', name: 'General Anesthesia', price: '3000.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Medicine, ORS & Anesthesia, Ket, Spinal', name: 'Spinal Anesthesia', price: '2500.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Medicine, ORS & Anesthesia, Ket, Spinal', name: 'Ketamine Injection', price: '800.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Medicine, ORS & Anesthesia, Ket, Spinal', name: 'ORS Solution (per bottle)', price: '50.00', currency: 'BDT', isOutpatient: false },
-      { category: 'Medicine, ORS & Anesthesia, Ket, Spinal', name: 'IV Fluid with ORS', price: '300.00', currency: 'BDT', isOutpatient: false },
-
+      { category: 'Discharge Medicine', name: 'Discharge Medication Package', price: 800.00, currency: 'BDT', isOutpatient: false },
+      { category: 'Discharge Medicine', name: 'Pain Relief Package', price: 400.00, currency: 'BDT', isOutpatient: false },
+      { category: 'Discharge Medicine', name: 'Antibiotic Course', price: 600.00, currency: 'BDT', isOutpatient: false },
+      { category: 'Discharge Medicine', name: 'Chronic Disease Package', price: 1200.00, currency: 'BDT', isOutpatient: false },
     ];
 
+    // Insert default price data
     for (const item of defaultItems) {
-      await this.createMedicalItem(item);
+      await db.insert(medicalItemPrices).values({
+        ...item,
+        createdAt: new Date(),
+      });
     }
 
     this.initialized = true;
+    console.log('SQLite database initialized with default price data');
   }
 }
 
-export const storage = new MemoryStorage();
+// Export singleton instance
+export const storage = new SQLiteStorage();
