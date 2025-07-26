@@ -79,6 +79,12 @@ export default function Inpatient() {
   const [xRayDropdownSelectedItems, setXRayDropdownSelectedItems] = useState<MedicalItem[]>([]);
   const [selectedRegistrationItems, setSelectedRegistrationItems] = useState<MedicalItem[]>([]);
   const [registrationDropdownSelectedItems, setRegistrationDropdownSelectedItems] = useState<MedicalItem[]>([]);
+  const [selectedOrthopedicItems, setSelectedOrthopedicItems] = useState<MedicalItem[]>([]);
+  const [orthopedicDropdownSelectedItems, setOrthopedicDropdownSelectedItems] = useState<MedicalItem[]>([]);
+  const [selectedSurgeryItems, setSelectedSurgeryItems] = useState<MedicalItem[]>([]);
+  const [surgeryDropdownSelectedItems, setSurgeryDropdownSelectedItems] = useState<MedicalItem[]>([]);
+  const [selectedProceduresItems, setSelectedProceduresItems] = useState<MedicalItem[]>([]);
+  const [proceduresDropdownSelectedItems, setProceduresDropdownSelectedItems] = useState<MedicalItem[]>([]);
   const [dropdownValue, setDropdownValue] = useState<string>('');
   const [highlightedDropdownIndex, setHighlightedDropdownIndex] = useState<number>(-1);
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
@@ -90,6 +96,18 @@ export default function Inpatient() {
   const [registrationHighlightedDropdownIndex, setRegistrationHighlightedDropdownIndex] = useState<number>(-1);
   const [isRegistrationDropdownOpen, setIsRegistrationDropdownOpen] = useState<boolean>(false);
   const [registrationDropdownFilterQuery, setRegistrationDropdownFilterQuery] = useState<string>('');
+  const [orthopedicDropdownValue, setOrthopedicDropdownValue] = useState<string>('');
+  const [orthopedicHighlightedDropdownIndex, setOrthopedicHighlightedDropdownIndex] = useState<number>(-1);
+  const [isOrthopedicDropdownOpen, setIsOrthopedicDropdownOpen] = useState<boolean>(false);
+  const [orthopedicDropdownFilterQuery, setOrthopedicDropdownFilterQuery] = useState<string>('');
+  const [surgeryDropdownValue, setSurgeryDropdownValue] = useState<string>('');
+  const [surgeryHighlightedDropdownIndex, setSurgeryHighlightedDropdownIndex] = useState<number>(-1);
+  const [isSurgeryDropdownOpen, setIsSurgeryDropdownOpen] = useState<boolean>(false);
+  const [surgeryDropdownFilterQuery, setSurgeryDropdownFilterQuery] = useState<string>('');
+  const [proceduresDropdownValue, setProceduresDropdownValue] = useState<string>('');
+  const [proceduresHighlightedDropdownIndex, setProceduresHighlightedDropdownIndex] = useState<number>(-1);
+  const [isProceduresDropdownOpen, setIsProceduresDropdownOpen] = useState<boolean>(false);
+  const [proceduresDropdownFilterQuery, setProceduresDropdownFilterQuery] = useState<string>('');
   
   // X-Ray film view selection state
   const [selectedXRayForViews, setSelectedXRayForViews] = useState<MedicalItem | null>(null);
@@ -116,6 +134,18 @@ export default function Inpatient() {
   const [medicineSearchQuery, setMedicineSearchQuery] = useState('');
   const [medicineSearchSuggestions, setMedicineSearchSuggestions] = useState<MedicalItem[]>([]);
   const [highlightedSearchIndex, setHighlightedSearchIndex] = useState(-1);
+  
+  // Orthopedic search and dropdown state
+  const [orthopedicSearchSuggestions, setOrthopedicSearchSuggestions] = useState<MedicalItem[]>([]);
+  const [orthopedicHighlightedSearchIndex, setOrthopedicHighlightedSearchIndex] = useState(-1);
+  
+  // Surgery search and dropdown state
+  const [surgerySearchSuggestions, setSurgerySearchSuggestions] = useState<MedicalItem[]>([]);
+  const [surgeryHighlightedSearchIndex, setSurgeryHighlightedSearchIndex] = useState(-1);
+  
+  // Procedures search and dropdown state
+  const [proceduresSearchSuggestions, setProceduresSearchSuggestions] = useState<MedicalItem[]>([]);
+  const [proceduresHighlightedSearchIndex, setProceduresHighlightedSearchIndex] = useState(-1);
   const [medicineDropdownValue, setMedicineDropdownValue] = useState<string>('');
   const [medicineHighlightedDropdownIndex, setMedicineHighlightedDropdownIndex] = useState<number>(-1);
   const [isMedicineDropdownOpen, setIsMedicineDropdownOpen] = useState<boolean>(false);
@@ -138,6 +168,15 @@ export default function Inpatient() {
   const medicineDropdownButtonRef = useRef<HTMLButtonElement>(null);
   const medicineSearchInputRef = useRef<HTMLInputElement>(null);
   const doseInputRef = useRef<HTMLInputElement>(null);
+  const orthopedicDropdownRef = useRef<HTMLDivElement>(null);
+  const orthopedicDropdownButtonRef = useRef<HTMLButtonElement>(null);
+  const orthopedicSearchInputRef = useRef<HTMLInputElement>(null);
+  const surgeryDropdownRef = useRef<HTMLDivElement>(null);
+  const surgeryDropdownButtonRef = useRef<HTMLButtonElement>(null);
+  const surgerySearchInputRef = useRef<HTMLInputElement>(null);
+  const proceduresDropdownRef = useRef<HTMLDivElement>(null);
+  const proceduresDropdownButtonRef = useRef<HTMLButtonElement>(null);
+  const proceduresSearchInputRef = useRef<HTMLInputElement>(null);
   
   // Cupertino Date picker modal state
   const [showCupertinoDatePicker, setShowCupertinoDatePicker] = useState(false);
@@ -920,6 +959,162 @@ export default function Inpatient() {
     }
   }, [selectedCategory, isCarouselMode]);
 
+  // Auto-focus search input when Orthopedic category is selected
+  useEffect(() => {
+    if (selectedCategory === 'Orthopedic, S.Roll, etc.' && isCarouselMode && orthopedicSearchInputRef.current) {
+      orthopedicSearchInputRef.current.focus();
+    }
+  }, [selectedCategory, isCarouselMode]);
+
+  // Orthopedic search suggestions - update whenever categorySearchQuery changes for Orthopedic
+  useEffect(() => {
+    if (selectedCategory === 'Orthopedic, S.Roll, etc.' && categorySearchQuery) {
+      const query = categorySearchQuery.toLowerCase();
+      const suggestions = categoryItems.filter((item: MedicalItem) => 
+        item.name.toLowerCase().includes(query)
+      );
+      
+      // Sort by relevance: exact matches first, then starts with, then contains
+      const sortedSuggestions = suggestions.sort((a: MedicalItem, b: MedicalItem) => {
+        const aName = a.name.toLowerCase();
+        const bName = b.name.toLowerCase();
+        
+        // Exact match gets highest priority
+        if (aName === query) return -1;
+        if (bName === query) return 1;
+        
+        // Starts with query gets second priority
+        if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
+        if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
+        
+        // Both start with or both contain - sort alphabetically
+        return aName.localeCompare(bName);
+      });
+      
+      setOrthopedicSearchSuggestions(sortedSuggestions.slice(0, 10)); // Limit to top 10
+      setOrthopedicHighlightedSearchIndex(-1);
+    } else {
+      setOrthopedicSearchSuggestions([]);
+      setOrthopedicHighlightedSearchIndex(-1);
+    }
+  }, [categorySearchQuery, selectedCategory]);
+
+  // Auto-focus search input when Surgery category is selected
+  useEffect(() => {
+    if (selectedCategory === 'Surgery' && isCarouselMode && surgerySearchInputRef.current) {
+      surgerySearchInputRef.current.focus();
+    }
+  }, [selectedCategory, isCarouselMode]);
+
+  // Surgery search suggestions - update whenever categorySearchQuery changes for Surgery
+  useEffect(() => {
+    if (selectedCategory === 'Surgery' && categorySearchQuery) {
+      const query = categorySearchQuery.toLowerCase();
+      const suggestions = categoryItems.filter((item: MedicalItem) => 
+        item.name.toLowerCase().includes(query)
+      );
+      
+      const sortedSuggestions = suggestions.sort((a: MedicalItem, b: MedicalItem) => {
+        const aName = a.name.toLowerCase();
+        const bName = b.name.toLowerCase();
+        
+        if (aName === query) return -1;
+        if (bName === query) return 1;
+        
+        if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
+        if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
+        
+        return aName.localeCompare(bName);
+      });
+      
+      setSurgerySearchSuggestions(sortedSuggestions.slice(0, 10));
+      setSurgeryHighlightedSearchIndex(-1);
+    } else {
+      setSurgerySearchSuggestions([]);
+      setSurgeryHighlightedSearchIndex(-1);
+    }
+  }, [categorySearchQuery, selectedCategory]);
+
+  // Auto-focus search input when Procedures category is selected
+  useEffect(() => {
+    if (selectedCategory === 'Procedures' && isCarouselMode && proceduresSearchInputRef.current) {
+      proceduresSearchInputRef.current.focus();
+    }
+  }, [selectedCategory, isCarouselMode]);
+
+  // Procedures search suggestions - update whenever categorySearchQuery changes for Procedures
+  useEffect(() => {
+    if (selectedCategory === 'Procedures' && categorySearchQuery) {
+      const query = categorySearchQuery.toLowerCase();
+      const suggestions = categoryItems.filter((item: MedicalItem) => 
+        item.name.toLowerCase().includes(query)
+      );
+      
+      const sortedSuggestions = suggestions.sort((a: MedicalItem, b: MedicalItem) => {
+        const aName = a.name.toLowerCase();
+        const bName = b.name.toLowerCase();
+        
+        if (aName === query) return -1;
+        if (bName === query) return 1;
+        
+        if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
+        if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
+        
+        return aName.localeCompare(bName);
+      });
+      
+      setProceduresSearchSuggestions(sortedSuggestions.slice(0, 10));
+      setProceduresHighlightedSearchIndex(-1);
+    } else {
+      setProceduresSearchSuggestions([]);
+      setProceduresHighlightedSearchIndex(-1);
+    }
+  }, [categorySearchQuery, selectedCategory]);
+
+  // Generic search key down handler for Orthopedic, Surgery, and Procedures
+  const handleSearchKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    selectedItems: MedicalItem[],
+    setSelectedItems: React.Dispatch<React.SetStateAction<MedicalItem[]>>,
+    suggestions: MedicalItem[],
+    highlightedIndex: number,
+    setHighlightedIndex: React.Dispatch<React.SetStateAction<number>>
+  ) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedIndex(prev => prev < suggestions.length - 1 ? prev + 1 : prev);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedIndex(prev => prev > 0 ? prev - 1 : -1);
+    } else if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      if (highlightedIndex >= 0 && suggestions[highlightedIndex]) {
+        const item = suggestions[highlightedIndex];
+        const alreadySelected = selectedItems.find(selected => selected.id === item.id);
+        const alreadyInBill = billItems.find(billItem => billItem.id === item.id.toString());
+        
+        if (!alreadySelected && !alreadyInBill) {
+          setSelectedItems(prev => [...prev, item]);
+        }
+        setCategorySearchQuery('');
+        setHighlightedIndex(-1);
+      } else if (categorySearchQuery.trim() && suggestions.length > 0) {
+        const firstItem = suggestions[0];
+        const alreadySelected = selectedItems.find(selected => selected.id === firstItem.id);
+        const alreadyInBill = billItems.find(billItem => billItem.id === firstItem.id.toString());
+        
+        if (!alreadySelected && !alreadyInBill) {
+          setSelectedItems(prev => [...prev, firstItem]);
+        }
+        setCategorySearchQuery('');
+        setHighlightedIndex(-1);
+      }
+    } else if (e.key === 'Escape') {
+      setCategorySearchQuery('');
+      setHighlightedIndex(-1);
+    }
+  };
+
   // X-Ray specific functions (same as Laboratory)
   
   // Get sorted X-Ray suggestions with closest match first
@@ -1455,223 +1650,623 @@ export default function Inpatient() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {selectedCategory === 'Laboratory' ? (
+                  {['Laboratory', 'Orthopedic, S.Roll, etc.', 'Surgery', 'Procedures'].includes(selectedCategory) ? (
                     <div className="space-y-4">
-                      {/* Selected items, price counter and Add to Bill button above search */}
-                      {selectedLabItems.length > 0 && (
-                        <div className="space-y-2">
-                          {/* Selected items tags */}
-                          <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md">
-                            {selectedLabItems.map((item) => (
-                              <div key={item.id} className="inline-flex items-center bg-medical-primary/10 text-medical-primary px-2 py-1 rounded text-xs">
-                                <span className="mr-1">{item.name}</span>
-                                <button
-                                  onClick={() => removeLabItem(item.id)}
-                                  className="hover:bg-medical-primary/20 rounded-full p-0.5"
-                                >
-                                  <X className="h-3 w-3" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-
-                          {/* Price counter on left, Add to Bill button on right */}
-                          <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-4 p-2 bg-medical-primary/5 rounded-md border border-medical-primary/20">
-                              <span className="text-sm font-medium text-medical-primary">
-                                Total Price: {format(selectedLabItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {selectedLabItems.length} item{selectedLabItems.length !== 1 ? 's' : ''}
-                              </span>
+                      {/* Dynamic selected items based on category */}
+                      {(() => {
+                        const getSelectedItems = () => {
+                          switch (selectedCategory) {
+                            case 'Laboratory': return selectedLabItems;
+                            case 'Orthopedic, S.Roll, etc.': return selectedOrthopedicItems;
+                            case 'Surgery': return selectedSurgeryItems;
+                            case 'Procedures': return selectedProceduresItems;
+                            default: return [];
+                          }
+                        };
+                        
+                        const getRemoveItemFunction = () => {
+                          switch (selectedCategory) {
+                            case 'Laboratory': return removeLabItem;
+                            case 'Orthopedic, S.Roll, etc.': return (id: number) => setSelectedOrthopedicItems(prev => prev.filter(item => item.id !== id));
+                            case 'Surgery': return (id: number) => setSelectedSurgeryItems(prev => prev.filter(item => item.id !== id));
+                            case 'Procedures': return (id: number) => setSelectedProceduresItems(prev => prev.filter(item => item.id !== id));
+                            default: return () => {};
+                          }
+                        };
+                        
+                        const getAddToBillFunction = () => {
+                          switch (selectedCategory) {
+                            case 'Laboratory': return addSelectedLabItemsToBill;
+                            case 'Orthopedic, S.Roll, etc.': return () => {
+                              const items = [...selectedOrthopedicItems];
+                              setSelectedOrthopedicItems([]);
+                              setCategorySearchQuery('');
+                              items.forEach(item => {
+                                const billId = `${sessionId}-${Date.now()}-${Math.random()}`;
+                                addItemToBill({ id: billId, ...item, billId });
+                              });
+                              toast({ title: "Items Added", description: `${items.length} item${items.length !== 1 ? 's' : ''} added to bill` });
+                            };
+                            case 'Surgery': return () => {
+                              const items = [...selectedSurgeryItems];
+                              setSelectedSurgeryItems([]);
+                              setCategorySearchQuery('');
+                              items.forEach(item => {
+                                const billId = `${sessionId}-${Date.now()}-${Math.random()}`;
+                                addItemToBill({ id: billId, ...item, billId });
+                              });
+                              toast({ title: "Items Added", description: `${items.length} item${items.length !== 1 ? 's' : ''} added to bill` });
+                            };
+                            case 'Procedures': return () => {
+                              const items = [...selectedProceduresItems];
+                              setSelectedProceduresItems([]);
+                              setCategorySearchQuery('');
+                              items.forEach(item => {
+                                const billId = `${sessionId}-${Date.now()}-${Math.random()}`;
+                                addItemToBill({ id: billId, ...item, billId });
+                              });
+                              toast({ title: "Items Added", description: `${items.length} item${items.length !== 1 ? 's' : ''} added to bill` });
+                            };
+                            default: return () => {};
+                          }
+                        };
+                        
+                        const selectedItems = getSelectedItems();
+                        const removeItemFn = getRemoveItemFunction();
+                        const addToBillFn = getAddToBillFunction();
+                        
+                        const getItemTypeName = () => {
+                          switch (selectedCategory) {
+                            case 'Laboratory': return 'Test';
+                            case 'Orthopedic, S.Roll, etc.': return 'Item';
+                            case 'Surgery': return 'Procedure';
+                            case 'Procedures': return 'Procedure';
+                            default: return 'Item';
+                          }
+                        };
+                        
+                        return selectedItems.length > 0 ? (
+                          <div className="space-y-2">
+                            {/* Selected items tags */}
+                            <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md">
+                              {selectedItems.map((item) => (
+                                <div key={item.id} className="inline-flex items-center bg-medical-primary/10 text-medical-primary px-2 py-1 rounded text-xs">
+                                  <span className="mr-1">{item.name}</span>
+                                  <button
+                                    onClick={() => removeItemFn(item.id)}
+                                    className="hover:bg-medical-primary/20 rounded-full p-0.5"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              ))}
                             </div>
-                            <Button 
-                              onClick={addSelectedLabItemsToBill} 
-                              variant="outline"
-                              className="border-medical-primary/20 text-medical-primary hover:bg-medical-primary/10"
-                            >
-                              Add {selectedLabItems.length} Test{selectedLabItems.length !== 1 ? 's' : ''} to Bill
-                            </Button>
+
+                            {/* Price counter on left, Add to Bill button on right */}
+                            <div className="flex justify-between items-center">
+                              <div className="flex items-center gap-4 p-2 bg-medical-primary/5 rounded-md border border-medical-primary/20">
+                                <span className="text-sm font-medium text-medical-primary">
+                                  Total Price: {format(selectedItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {selectedItems.length} item{selectedItems.length !== 1 ? 's' : ''}
+                                </span>
+                              </div>
+                              <Button 
+                                onClick={addToBillFn} 
+                                variant="outline"
+                                className="border-medical-primary/20 text-medical-primary hover:bg-medical-primary/10"
+                              >
+                                Add {selectedItems.length} {getItemTypeName()}{selectedItems.length !== 1 ? 's' : ''} to Bill
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        ) : null;
+                      })()}
 
                       <div className="space-y-2">
-                        <Input
-                          ref={searchInputRef}
-                          placeholder="Type lab test name and press comma or enter to add..."
-                          value={categorySearchQuery}
-                          onChange={(e) => {
-                            setCategorySearchQuery(e.target.value);
-                            // Clear dropdown selections when switching to search
-                            if (e.target.value.trim()) {
-                              setDropdownSelectedItems([]);
+                        {(() => {
+                          const getSearchInputRef = () => {
+                            switch (selectedCategory) {
+                              case 'Laboratory': return searchInputRef;
+                              case 'Orthopedic, S.Roll, etc.': return orthopedicSearchInputRef;
+                              case 'Surgery': return surgerySearchInputRef;
+                              case 'Procedures': return proceduresSearchInputRef;
+                              default: return searchInputRef;
                             }
-                          }}
-                          onKeyDown={handleLabSearchKeyDown}
-                          className="w-full"
-                        />
-                        
-                        {/* Search suggestions appear right below search input */}
-                        {categorySearchQuery && getLabSuggestions().length > 0 && (
-                          <div className="space-y-1 max-h-40 overflow-y-auto border border-border rounded-md p-2 bg-muted/10">
-                            <div className="text-sm font-medium text-muted-foreground mb-2">
-                              Matching tests (press comma to add):
-                            </div>
-                            {getLabSuggestions().slice(0, 5).map((item: MedicalItem, index) => {
-                              const alreadyInSearch = selectedLabItems.find(selected => selected.id === item.id);
-                              const alreadyInBill = billItems.find(billItem => billItem.id === item.id.toString());
+                          };
+                          
+                          const getPlaceholder = () => {
+                            switch (selectedCategory) {
+                              case 'Laboratory': return "Type lab test name and press comma or enter to add...";
+                              case 'Orthopedic, S.Roll, etc.': return "Type orthopedic item name and press comma or enter to add...";
+                              case 'Surgery': return "Type surgery name and press comma or enter to add...";
+                              case 'Procedures': return "Type procedure name and press comma or enter to add...";
+                              default: return "Type item name and press comma or enter to add...";
+                            }
+                          };
+                          
+                          const getDropdownSelectedItems = () => {
+                            switch (selectedCategory) {
+                              case 'Laboratory': return dropdownSelectedItems;
+                              case 'Orthopedic, S.Roll, etc.': return orthopedicDropdownSelectedItems;
+                              case 'Surgery': return surgeryDropdownSelectedItems;
+                              case 'Procedures': return proceduresDropdownSelectedItems;
+                              default: return [];
+                            }
+                          };
+                          
+                          const setDropdownSelectedItemsFn = () => {
+                            switch (selectedCategory) {
+                              case 'Laboratory': return setDropdownSelectedItems;
+                              case 'Orthopedic, S.Roll, etc.': return setOrthopedicDropdownSelectedItems;
+                              case 'Surgery': return setSurgeryDropdownSelectedItems;
+                              case 'Procedures': return setProceduresDropdownSelectedItems;
+                              default: return () => {};
+                            }
+                          };
+                          
+                          const getKeyDownHandler = () => {
+                            switch (selectedCategory) {
+                              case 'Laboratory': return handleLabSearchKeyDown;
+                              case 'Orthopedic, S.Roll, etc.': return (e: any) => handleSearchKeyDown(e, selectedOrthopedicItems, setSelectedOrthopedicItems, orthopedicSearchSuggestions, orthopedicHighlightedSearchIndex, setOrthopedicHighlightedSearchIndex);
+                              case 'Surgery': return (e: any) => handleSearchKeyDown(e, selectedSurgeryItems, setSelectedSurgeryItems, surgerySearchSuggestions, surgeryHighlightedSearchIndex, setSurgeryHighlightedSearchIndex);
+                              case 'Procedures': return (e: any) => handleSearchKeyDown(e, selectedProceduresItems, setSelectedProceduresItems, proceduresSearchSuggestions, proceduresHighlightedSearchIndex, setProceduresHighlightedSearchIndex);
+                              default: return () => {};
+                            }
+                          };
+                          
+                          const getSuggestions = () => {
+                            switch (selectedCategory) {
+                              case 'Laboratory': return getLabSuggestions();
+                              case 'Orthopedic, S.Roll, etc.': return orthopedicSearchSuggestions;
+                              case 'Surgery': return surgerySearchSuggestions;
+                              case 'Procedures': return proceduresSearchSuggestions;
+                              default: return [];
+                            }
+                          };
+                          
+                          const getSelectedItems = () => {
+                            switch (selectedCategory) {
+                              case 'Laboratory': return selectedLabItems;
+                              case 'Orthopedic, S.Roll, etc.': return selectedOrthopedicItems;
+                              case 'Surgery': return selectedSurgeryItems;
+                              case 'Procedures': return selectedProceduresItems;
+                              default: return [];
+                            }
+                          };
+                          
+                          const setSelectedItemsFn = () => {
+                            switch (selectedCategory) {
+                              case 'Laboratory': return setSelectedLabItems;
+                              case 'Orthopedic, S.Roll, etc.': return setSelectedOrthopedicItems;
+                              case 'Surgery': return setSelectedSurgeryItems;
+                              case 'Procedures': return setSelectedProceduresItems;
+                              default: return () => {};
+                            }
+                          };
+                          
+                          const getItemTypeName = () => {
+                            switch (selectedCategory) {
+                              case 'Laboratory': return 'tests';
+                              case 'Orthopedic, S.Roll, etc.': return 'items';
+                              case 'Surgery': return 'procedures';
+                              case 'Procedures': return 'procedures';
+                              default: return 'items';
+                            }
+                          };
+                          
+                          return (
+                            <>
+                              <Input
+                                ref={getSearchInputRef()}
+                                placeholder={getPlaceholder()}
+                                value={categorySearchQuery}
+                                onChange={(e) => {
+                                  setCategorySearchQuery(e.target.value);
+                                  // Clear dropdown selections when switching to search
+                                  if (e.target.value.trim()) {
+                                    setDropdownSelectedItemsFn()([]);
+                                  }
+                                }}
+                                onKeyDown={getKeyDownHandler()}
+                                className="w-full"
+                              />
                               
-                              return (
-                              <div key={item.id} className={`text-xs p-2 rounded ${
-                                alreadyInBill 
-                                  ? 'bg-red-100 text-red-600 cursor-not-allowed border border-red-200'
-                                  : alreadyInSearch
-                                    ? 'bg-green-100 text-green-600 cursor-not-allowed border border-green-200'
-                                    : index === 0 
-                                      ? 'bg-medical-primary/10 border border-medical-primary/20 cursor-pointer hover:bg-muted/40' 
-                                      : 'bg-muted/20 cursor-pointer hover:bg-muted/40'
-                              }`}
-                                   onClick={() => {
-                                     // Check if item is already selected in search OR already in the bill
-                                     const alreadyInSearch = selectedLabItems.find(selected => selected.id === item.id);
-                                     const alreadyInBill = billItems.find(billItem => billItem.id === item.id.toString());
-                                     
-                                     if (!alreadyInSearch && !alreadyInBill) {
-                                       setSelectedLabItems(prev => [...prev, item]);
-                                     }
-                                     setCategorySearchQuery('');
-                                     // Refocus search input after clicking suggestion
-                                     setTimeout(() => {
-                                       if (searchInputRef.current) {
-                                         searchInputRef.current.focus();
-                                       }
-                                     }, 0);
-                                   }}>
-                                <span className="font-medium">{item.name}</span> - {format(item.price)}
-                                {alreadyInBill && (
-                                  <span className="ml-2 text-red-600 text-xs">● Already in Bill</span>
-                                )}
-                                {alreadyInSearch && !alreadyInBill && (
-                                  <span className="ml-2 text-green-600 text-xs">✓ Selected</span>
-                                )}
-                                {index === 0 && !alreadyInBill && !alreadyInSearch && (
-                                  <span className="ml-2 text-medical-primary text-xs">← Will be added</span>
-                                )}
-                              </div>
-                              );
-                            })}
-                          </div>
-                        )}
+                              {/* Search suggestions appear right below search input */}
+                              {categorySearchQuery && getSuggestions().length > 0 && (
+                                <div className="space-y-1 max-h-40 overflow-y-auto border border-border rounded-md p-2 bg-muted/10">
+                                  <div className="text-sm font-medium text-muted-foreground mb-2">
+                                    Matching {getItemTypeName()} (press comma to add):
+                                  </div>
+                                  {getSuggestions().slice(0, 5).map((item: MedicalItem, index) => {
+                                    const selectedItems = getSelectedItems();
+                                    const alreadyInSearch = selectedItems.find(selected => selected.id === item.id);
+                                    const alreadyInBill = billItems.find(billItem => billItem.id === item.id.toString());
+                                    
+                                    return (
+                                    <div key={item.id} className={`text-xs p-2 rounded ${
+                                      alreadyInBill 
+                                        ? 'bg-red-100 text-red-600 cursor-not-allowed border border-red-200'
+                                        : alreadyInSearch
+                                          ? 'bg-green-100 text-green-600 cursor-not-allowed border border-green-200'
+                                          : index === 0 
+                                            ? 'bg-medical-primary/10 border border-medical-primary/20 cursor-pointer hover:bg-muted/40' 
+                                            : 'bg-muted/20 cursor-pointer hover:bg-muted/40'
+                                    }`}
+                                         onClick={() => {
+                                           const selectedItems = getSelectedItems();
+                                           const alreadyInSearch = selectedItems.find(selected => selected.id === item.id);
+                                           const alreadyInBill = billItems.find(billItem => billItem.id === item.id.toString());
+                                           
+                                           if (!alreadyInSearch && !alreadyInBill) {
+                                             setSelectedItemsFn()(prev => [...prev, item]);
+                                           }
+                                           setCategorySearchQuery('');
+                                           // Refocus search input after clicking suggestion
+                                           setTimeout(() => {
+                                             const inputRef = getSearchInputRef();
+                                             if (inputRef.current) {
+                                               inputRef.current.focus();
+                                             }
+                                           }, 0);
+                                         }}>
+                                      <span className="font-medium">{item.name}</span> - {format(item.price)}
+                                      {alreadyInBill && (
+                                        <span className="ml-2 text-red-600 text-xs">● Already in Bill</span>
+                                      )}
+                                      {alreadyInSearch && !alreadyInBill && (
+                                        <span className="ml-2 text-green-600 text-xs">✓ Selected</span>
+                                      )}
+                                      {index === 0 && !alreadyInBill && !alreadyInSearch && (
+                                        <span className="ml-2 text-medical-primary text-xs">← Will be added</span>
+                                      )}
+                                    </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
                       </div>
 
-                      {/* Dropdown selected items as tags */}
-                      {dropdownSelectedItems.length > 0 && (
-                        <div className="space-y-2">
-                          <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md">
-                            {dropdownSelectedItems.map((item) => (
-                              <div key={item.id} className="inline-flex items-center bg-blue-500/10 text-blue-600 px-2 py-1 rounded text-xs">
-                                <span className="mr-1">{item.name}</span>
-                                <button
-                                  onClick={() => removeDropdownItem(item.id)}
-                                  className="hover:bg-blue-500/20 rounded-full p-0.5"
-                                >
-                                  <X className="h-3 w-3" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                          {/* Price counter on left, Add to Bill button on right */}
-                          <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-4 p-2 bg-blue-500/5 rounded-md border border-blue-500/20">
-                              <span className="text-sm font-medium text-blue-600">
-                                Total Price: {format(dropdownSelectedItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {dropdownSelectedItems.length} item{dropdownSelectedItems.length !== 1 ? 's' : ''}
-                              </span>
+                      {/* Dynamic Dropdown selected items as tags */}
+                      {(() => {
+                        const getDropdownSelectedItems = () => {
+                          switch (selectedCategory) {
+                            case 'Laboratory': return dropdownSelectedItems;
+                            case 'Orthopedic, S.Roll, etc.': return orthopedicDropdownSelectedItems;
+                            case 'Surgery': return surgeryDropdownSelectedItems;
+                            case 'Procedures': return proceduresDropdownSelectedItems;
+                            default: return [];
+                          }
+                        };
+                        
+                        const getRemoveDropdownItemFn = () => {
+                          switch (selectedCategory) {
+                            case 'Laboratory': return removeDropdownItem;
+                            case 'Orthopedic, S.Roll, etc.': return (id: number) => setOrthopedicDropdownSelectedItems(prev => prev.filter(item => item.id !== id));
+                            case 'Surgery': return (id: number) => setSurgeryDropdownSelectedItems(prev => prev.filter(item => item.id !== id));
+                            case 'Procedures': return (id: number) => setProceduresDropdownSelectedItems(prev => prev.filter(item => item.id !== id));
+                            default: return () => {};
+                          }
+                        };
+                        
+                        const getAddDropdownToBillFn = () => {
+                          switch (selectedCategory) {
+                            case 'Laboratory': return addDropdownSelectedItemsToBill;
+                            case 'Orthopedic, S.Roll, etc.': return () => {
+                              const items = [...orthopedicDropdownSelectedItems];
+                              setOrthopedicDropdownSelectedItems([]);
+                              items.forEach(item => {
+                                const billId = `${sessionId}-${Date.now()}-${Math.random()}`;
+                                addItemToBill({ id: billId, ...item, billId });
+                              });
+                              toast({ title: "Items Added", description: `${items.length} item${items.length !== 1 ? 's' : ''} added to bill` });
+                            };
+                            case 'Surgery': return () => {
+                              const items = [...surgeryDropdownSelectedItems];
+                              setSurgeryDropdownSelectedItems([]);
+                              items.forEach(item => {
+                                const billId = `${sessionId}-${Date.now()}-${Math.random()}`;
+                                addItemToBill({ id: billId, ...item, billId });
+                              });
+                              toast({ title: "Items Added", description: `${items.length} item${items.length !== 1 ? 's' : ''} added to bill` });
+                            };
+                            case 'Procedures': return () => {
+                              const items = [...proceduresDropdownSelectedItems];
+                              setProceduresDropdownSelectedItems([]);
+                              items.forEach(item => {
+                                const billId = `${sessionId}-${Date.now()}-${Math.random()}`;
+                                addItemToBill({ id: billId, ...item, billId });
+                              });
+                              toast({ title: "Items Added", description: `${items.length} item${items.length !== 1 ? 's' : ''} added to bill` });
+                            };
+                            default: return () => {};
+                          }
+                        };
+                        
+                        const getItemTypeName = () => {
+                          switch (selectedCategory) {
+                            case 'Laboratory': return 'Test';
+                            case 'Orthopedic, S.Roll, etc.': return 'Item';
+                            case 'Surgery': return 'Procedure';
+                            case 'Procedures': return 'Procedure';
+                            default: return 'Item';
+                          }
+                        };
+                        
+                        const dropdownItems = getDropdownSelectedItems();
+                        const removeDropdownItemFn = getRemoveDropdownItemFn();
+                        const addDropdownToBillFn = getAddDropdownToBillFn();
+                        
+                        return dropdownItems.length > 0 ? (
+                          <div className="space-y-2">
+                            <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md">
+                              {dropdownItems.map((item) => (
+                                <div key={item.id} className="inline-flex items-center bg-blue-500/10 text-blue-600 px-2 py-1 rounded text-xs">
+                                  <span className="mr-1">{item.name}</span>
+                                  <button
+                                    onClick={() => removeDropdownItemFn(item.id)}
+                                    className="hover:bg-blue-500/20 rounded-full p-0.5"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              ))}
                             </div>
-                            <Button 
-                              onClick={addDropdownSelectedItemsToBill} 
-                              variant="outline"
-                              className="border-blue-500/20 text-blue-600 hover:bg-blue-500/10"
-                            >
-                              Add {dropdownSelectedItems.length} Test{dropdownSelectedItems.length !== 1 ? 's' : ''} to Bill
-                            </Button>
+                            {/* Price counter on left, Add to Bill button on right */}
+                            <div className="flex justify-between items-center">
+                              <div className="flex items-center gap-4 p-2 bg-blue-500/5 rounded-md border border-blue-500/20">
+                                <span className="text-sm font-medium text-blue-600">
+                                  Total Price: {format(dropdownItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {dropdownItems.length} item{dropdownItems.length !== 1 ? 's' : ''}
+                                </span>
+                              </div>
+                              <Button 
+                                onClick={addDropdownToBillFn} 
+                                variant="outline"
+                                className="border-blue-500/20 text-blue-600 hover:bg-blue-500/10"
+                              >
+                                Add {dropdownItems.length} {getItemTypeName()}{dropdownItems.length !== 1 ? 's' : ''} to Bill
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        ) : null;
+                      })()}
                       
-                      {/* Separate Dropdown Selection */}
+                      {/* Dynamic Separate Dropdown Selection */}
                       <div className="space-y-2 border-t pt-4">
                         <div className="text-sm font-medium text-muted-foreground">
                           Alternative: Select from dropdown
                         </div>
-                        <div className="relative" ref={dropdownRef}>
-                          <button
-                            ref={dropdownButtonRef}
-                            type="button"
-                            onClick={() => {
-                              setIsDropdownOpen(!isDropdownOpen);
-                              setHighlightedDropdownIndex(-1);
-                            }}
-                            onKeyDown={handleDropdownKeyDown}
-                            className="w-full flex items-center justify-between px-3 py-2 border border-border rounded-md bg-background hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-medical-primary focus:ring-offset-2"
-                          >
-                            <span className="text-sm text-muted-foreground">
-                              {dropdownFilterQuery ? `Filtering: "${dropdownFilterQuery}" (${getFilteredDropdownItems().length} matches)` : 'Select lab test from dropdown... (Type to filter)'}
-                            </span>
-                            <ChevronRight className={`h-4 w-4 transition-transform ${isDropdownOpen ? 'rotate-90' : ''}`} />
-                          </button>
+                        {(() => {
+                          const getDropdownRef = () => {
+                            switch (selectedCategory) {
+                              case 'Laboratory': return dropdownRef;
+                              case 'Orthopedic, S.Roll, etc.': return orthopedicDropdownRef;
+                              case 'Surgery': return surgeryDropdownRef;
+                              case 'Procedures': return proceduresDropdownRef;
+                              default: return dropdownRef;
+                            }
+                          };
                           
-                          {isDropdownOpen && (
-                            <div 
-                              className="absolute top-full left-0 right-0 z-50 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-y-auto"
-                            >
-                              {getFilteredDropdownItems().map((item: MedicalItem, index) => (
-                                <div
-                                  key={item.id}
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    handleDropdownSelect(item.id.toString());
-                                  }}
-                                  className={`px-3 py-2 text-sm flex items-center justify-between ${
-                                    index === highlightedDropdownIndex 
-                                      ? 'bg-medical-primary/10 border-l-4 border-medical-primary' 
-                                      : ''
-                                  } ${
-                                    dropdownSelectedItems.find(selected => selected.id === item.id)
-                                      ? 'bg-blue-500/10 text-blue-600'
-                                      : billItems.find(billItem => billItem.id === item.id.toString())
-                                        ? 'bg-red-100 text-red-600 cursor-not-allowed'
-                                        : 'cursor-pointer hover:bg-muted/50'
-                                  }`}
+                          const getDropdownButtonRef = () => {
+                            switch (selectedCategory) {
+                              case 'Laboratory': return dropdownButtonRef;
+                              case 'Orthopedic, S.Roll, etc.': return orthopedicDropdownButtonRef;
+                              case 'Surgery': return surgeryDropdownButtonRef;
+                              case 'Procedures': return proceduresDropdownButtonRef;
+                              default: return dropdownButtonRef;
+                            }
+                          };
+                          
+                          const getIsDropdownOpen = () => {
+                            switch (selectedCategory) {
+                              case 'Laboratory': return isDropdownOpen;
+                              case 'Orthopedic, S.Roll, etc.': return isOrthopedicDropdownOpen;
+                              case 'Surgery': return isSurgeryDropdownOpen;
+                              case 'Procedures': return isProceduresDropdownOpen;
+                              default: return false;
+                            }
+                          };
+                          
+                          const setIsDropdownOpenFn = () => {
+                            switch (selectedCategory) {
+                              case 'Laboratory': return setIsDropdownOpen;
+                              case 'Orthopedic, S.Roll, etc.': return setIsOrthopedicDropdownOpen;
+                              case 'Surgery': return setIsSurgeryDropdownOpen;
+                              case 'Procedures': return setIsProceduresDropdownOpen;
+                              default: return () => {};
+                            }
+                          };
+                          
+                          const getHighlightedDropdownIndex = () => {
+                            switch (selectedCategory) {
+                              case 'Laboratory': return highlightedDropdownIndex;
+                              case 'Orthopedic, S.Roll, etc.': return orthopedicHighlightedDropdownIndex;
+                              case 'Surgery': return surgeryHighlightedDropdownIndex;
+                              case 'Procedures': return proceduresHighlightedDropdownIndex;
+                              default: return -1;
+                            }
+                          };
+                          
+                          const setHighlightedDropdownIndexFn = () => {
+                            switch (selectedCategory) {
+                              case 'Laboratory': return setHighlightedDropdownIndex;
+                              case 'Orthopedic, S.Roll, etc.': return setOrthopedicHighlightedDropdownIndex;
+                              case 'Surgery': return setSurgeryHighlightedDropdownIndex;
+                              case 'Procedures': return setProceduresHighlightedDropdownIndex;
+                              default: return () => {};
+                            }
+                          };
+                          
+                          const getDropdownFilterQuery = () => {
+                            switch (selectedCategory) {
+                              case 'Laboratory': return dropdownFilterQuery;
+                              case 'Orthopedic, S.Roll, etc.': return orthopedicDropdownFilterQuery;
+                              case 'Surgery': return surgeryDropdownFilterQuery;
+                              case 'Procedures': return proceduresDropdownFilterQuery;
+                              default: return '';
+                            }
+                          };
+                          
+                          const getFilteredDropdownItemsFn = () => {
+                            switch (selectedCategory) {
+                              case 'Laboratory': return getFilteredDropdownItems();
+                              case 'Orthopedic, S.Roll, etc.': return categoryItems; // Simple filtering for new categories
+                              case 'Surgery': return categoryItems;
+                              case 'Procedures': return categoryItems;
+                              default: return [];
+                            }
+                          };
+                          
+                          const getDropdownSelectedItems = () => {
+                            switch (selectedCategory) {
+                              case 'Laboratory': return dropdownSelectedItems;
+                              case 'Orthopedic, S.Roll, etc.': return orthopedicDropdownSelectedItems;
+                              case 'Surgery': return surgeryDropdownSelectedItems;
+                              case 'Procedures': return proceduresDropdownSelectedItems;
+                              default: return [];
+                            }
+                          };
+                          
+                          const getHandleDropdownSelect = () => {
+                            switch (selectedCategory) {
+                              case 'Laboratory': return handleDropdownSelect;
+                              case 'Orthopedic, S.Roll, etc.': return (itemId: string) => {
+                                const item = categoryItems.find(item => item.id.toString() === itemId);
+                                if (item) {
+                                  const alreadySelected = orthopedicDropdownSelectedItems.find(selected => selected.id === item.id);
+                                  const alreadyInBill = billItems.find(billItem => billItem.id === item.id.toString());
+                                  if (!alreadySelected && !alreadyInBill) {
+                                    setOrthopedicDropdownSelectedItems(prev => [...prev, item]);
+                                  }
+                                }
+                              };
+                              case 'Surgery': return (itemId: string) => {
+                                const item = categoryItems.find(item => item.id.toString() === itemId);
+                                if (item) {
+                                  const alreadySelected = surgeryDropdownSelectedItems.find(selected => selected.id === item.id);
+                                  const alreadyInBill = billItems.find(billItem => billItem.id === item.id.toString());
+                                  if (!alreadySelected && !alreadyInBill) {
+                                    setSurgeryDropdownSelectedItems(prev => [...prev, item]);
+                                  }
+                                }
+                              };
+                              case 'Procedures': return (itemId: string) => {
+                                const item = categoryItems.find(item => item.id.toString() === itemId);
+                                if (item) {
+                                  const alreadySelected = proceduresDropdownSelectedItems.find(selected => selected.id === item.id);
+                                  const alreadyInBill = billItems.find(billItem => billItem.id === item.id.toString());
+                                  if (!alreadySelected && !alreadyInBill) {
+                                    setProceduresDropdownSelectedItems(prev => [...prev, item]);
+                                  }
+                                }
+                              };
+                              default: return () => {};
+                            }
+                          };
+                          
+                          const getPlaceholderText = () => {
+                            switch (selectedCategory) {
+                              case 'Laboratory': return 'Select lab test from dropdown... (Type to filter)';
+                              case 'Orthopedic, S.Roll, etc.': return 'Select orthopedic item from dropdown... (Type to filter)';
+                              case 'Surgery': return 'Select surgery from dropdown... (Type to filter)';
+                              case 'Procedures': return 'Select procedure from dropdown... (Type to filter)';
+                              default: return 'Select item from dropdown... (Type to filter)';
+                            }
+                          };
+                          
+                          const getItemTypeName = () => {
+                            switch (selectedCategory) {
+                              case 'Laboratory': return 'lab tests';
+                              case 'Orthopedic, S.Roll, etc.': return 'orthopedic items';
+                              case 'Surgery': return 'surgeries';
+                              case 'Procedures': return 'procedures';
+                              default: return 'items';
+                            }
+                          };
+                          
+                          const isDropdownOpenValue = getIsDropdownOpen();
+                          const setIsDropdownOpenValue = setIsDropdownOpenFn();
+                          const highlightedDropdownIndexValue = getHighlightedDropdownIndex();
+                          const setHighlightedDropdownIndexValue = setHighlightedDropdownIndexFn();
+                          const dropdownFilterQueryValue = getDropdownFilterQuery();
+                          const filteredDropdownItems = getFilteredDropdownItemsFn();
+                          const dropdownSelectedItemsValue = getDropdownSelectedItems();
+                          const handleDropdownSelectValue = getHandleDropdownSelect();
+                          
+                          return (
+                            <div className="relative" ref={getDropdownRef()}>
+                              <button
+                                ref={getDropdownButtonRef()}
+                                type="button"
+                                onClick={() => {
+                                  setIsDropdownOpenValue(!isDropdownOpenValue);
+                                  setHighlightedDropdownIndexValue(-1);
+                                }}
+                                className="w-full flex items-center justify-between px-3 py-2 border border-border rounded-md bg-background hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-medical-primary focus:ring-offset-2"
+                              >
+                                <span className="text-sm text-muted-foreground">
+                                  {dropdownFilterQueryValue ? `Filtering: "${dropdownFilterQueryValue}" (${filteredDropdownItems.length} matches)` : getPlaceholderText()}
+                                </span>
+                                <ChevronRight className={`h-4 w-4 transition-transform ${isDropdownOpenValue ? 'rotate-90' : ''}`} />
+                              </button>
+                              
+                              {isDropdownOpenValue && (
+                                <div 
+                                  className="absolute top-full left-0 right-0 z-50 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-y-auto"
                                 >
-                                  <div className="flex items-center">
-                                    <span>{item.name}</span>
-                                    {dropdownSelectedItems.find(selected => selected.id === item.id) && (
-                                      <span className="ml-2 text-blue-600 text-xs">✓ Selected</span>
-                                    )}
-                                    {billItems.find(billItem => billItem.id === item.id.toString()) && !dropdownSelectedItems.find(selected => selected.id === item.id) && (
-                                      <span className="ml-2 text-red-600 text-xs">● Already in Bill</span>
-                                    )}
-                                    {index === highlightedDropdownIndex && (
-                                      <span className="ml-2 text-medical-primary text-xs">← Highlighted</span>
-                                    )}
-                                  </div>
-                                  <span className="text-medical-primary font-semibold">
-                                    {format(item.price)}
-                                  </span>
-                                </div>
-                              ))}
-                              {getFilteredDropdownItems().length === 0 && (
-                                <div className="px-3 py-2 text-sm text-muted-foreground">
-                                  No lab tests available
+                                  {filteredDropdownItems.map((item: MedicalItem, index) => (
+                                    <div
+                                      key={item.id}
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        handleDropdownSelectValue(item.id.toString());
+                                      }}
+                                      className={`px-3 py-2 text-sm flex items-center justify-between ${
+                                        index === highlightedDropdownIndexValue 
+                                          ? 'bg-medical-primary/10 border-l-4 border-medical-primary' 
+                                          : ''
+                                      } ${
+                                        dropdownSelectedItemsValue.find(selected => selected.id === item.id)
+                                          ? 'bg-blue-500/10 text-blue-600'
+                                          : billItems.find(billItem => billItem.id === item.id.toString())
+                                            ? 'bg-red-100 text-red-600 cursor-not-allowed'
+                                            : 'cursor-pointer hover:bg-muted/50'
+                                      }`}
+                                    >
+                                      <div className="flex items-center">
+                                        <span>{item.name}</span>
+                                        {dropdownSelectedItemsValue.find(selected => selected.id === item.id) && (
+                                          <span className="ml-2 text-blue-600 text-xs">✓ Selected</span>
+                                        )}
+                                        {billItems.find(billItem => billItem.id === item.id.toString()) && !dropdownSelectedItemsValue.find(selected => selected.id === item.id) && (
+                                          <span className="ml-2 text-red-600 text-xs">● Already in Bill</span>
+                                        )}
+                                        {index === highlightedDropdownIndexValue && (
+                                          <span className="ml-2 text-medical-primary text-xs">← Highlighted</span>
+                                        )}
+                                      </div>
+                                      <span className="text-medical-primary font-semibold">
+                                        {format(item.price)}
+                                      </span>
+                                    </div>
+                                  ))}
+                                  {filteredDropdownItems.length === 0 && (
+                                    <div className="px-3 py-2 text-sm text-muted-foreground">
+                                      No {getItemTypeName()} available
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </div>
-                          )}
-                        </div>
+                          );
+                        })()}
                       </div>
 
                       <div className="text-sm text-muted-foreground">
@@ -2287,8 +2882,8 @@ export default function Inpatient() {
                         </div>
                       </div>
                     </div>
-                  ) : ['Physical Therapy', 'Limb and Brace', 'Blood'].includes(selectedCategory) ? (
-                    /* Manual entry interface for Physical Therapy, Limb and Brace, and Blood matching outpatient */
+                  ) : ['Physical Therapy', 'Limb and Brace', 'Blood', 'Food'].includes(selectedCategory) ? (
+                    /* Manual entry interface for Physical Therapy, Limb and Brace, Blood, and Food matching outpatient */
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-foreground">Service Name</label>
