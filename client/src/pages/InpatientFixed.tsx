@@ -545,6 +545,153 @@ export default function InpatientFixed() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Hospital Bill Form */}
+            <Card className="glass-card">
+              <CardHeader className="text-center pb-4">
+                <div className="space-y-1">
+                  <h2 className="text-xl font-bold text-foreground">Memorial Christian Hospital</h2>
+                  <p className="text-base font-semibold text-muted-foreground">P.O. Malumghat Hospital</p>
+                  <p className="text-sm text-muted-foreground">District Cox's Bazar</p>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Patient Information Row */}
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="flex">
+                    <span className="font-medium">Patient's Name:</span>
+                    <div className="flex-1 border-b border-dotted border-muted-foreground/50 ml-1"></div>
+                  </div>
+                  <div className="flex">
+                    <span className="font-medium">O.D. No:</span>
+                    <div className="flex-1 border-b border-dotted border-muted-foreground/50 ml-1"></div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="flex">
+                    <span className="font-medium">Hospital No:</span>
+                    <div className="flex-1 border-b border-dotted border-muted-foreground/50 ml-1"></div>
+                  </div>
+                  <div className="flex">
+                    <span className="font-medium">Bill Date:</span>
+                    <div className="flex-1 border-b border-dotted border-muted-foreground/50 ml-1"></div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="flex">
+                    <span className="font-medium">Bill No:</span>
+                    <div className="flex-1 border-b border-dotted border-muted-foreground/50 ml-1"></div>
+                  </div>
+                  <div className="flex">
+                    <span className="font-medium">Date Discharged:</span>
+                    <div className="flex-1 border-b border-dotted border-muted-foreground/50 ml-1"></div>
+                  </div>
+                </div>
+
+                <div className="flex text-sm">
+                  <span className="font-medium">Date Admitted:</span>
+                  <div className="flex-1 border-b border-dotted border-muted-foreground/50 ml-1"></div>
+                </div>
+
+                {/* Bill Categories Table */}
+                <div className="border border-border rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <tbody>
+                      {[
+                        { category: 'Blood', code: '50303' },
+                        { category: 'Laboratory', code: '50303' },
+                        { category: 'Limb and Brace', code: '50304' },
+                        { category: 'Food', code: '50319' },
+                        { category: 'Halo, O2, NO2, etc.', code: '50319' },
+                        { category: 'Orthopedic, S. Roll, etc.', code: '50306' },
+                        { category: 'Surgery, O.R. & Delivery', code: '50306' },
+                        { category: 'Registration fees', code: '50307' },
+                        { category: 'Discharge Medicine', code: '50308' },
+                        { category: 'Medicine, ORS & Anesthesia, Ket, Spinal', code: '50308' },
+                        { category: 'Physical Therapy', code: '50309' },
+                        { category: 'IV.\'s', code: '50310' },
+                        { category: 'Plaster/Milk', code: '50310' },
+                        { category: 'Procedures', code: '50310' },
+                        { category: 'Seat & Ad. Fee', code: '50313' },
+                        { category: 'X-Ray', code: '50315' },
+                        { category: 'Lost Laundry', code: '50310' },
+                        { category: 'Travel', code: '20901' },
+                        { category: 'Other', code: '50317' },
+                        { category: '', code: '' },
+                        { category: '', code: '' }
+                      ].map((row, index) => (
+                        <tr key={index} className="border-b border-border">
+                          <td className="border-r border-border p-2 w-1/2 font-medium bg-muted/20">
+                            {row.category}
+                          </td>
+                          <td className="border-r border-border p-2 w-1/4"></td>
+                          <td className="p-2 w-1/4 text-center text-xs text-muted-foreground">
+                            {row.code}
+                          </td>
+                        </tr>
+                      ))}
+                      
+                      {/* Sub Total Bill Row */}
+                      <tr className="border-b border-border">
+                        <td className="border-r border-border p-2 w-1/2 font-bold bg-muted/30">
+                          Sub. Total Bill
+                        </td>
+                        <td className="border-r border-border p-2 w-1/4"></td>
+                        <td className="p-2 w-1/4 text-center text-xs text-muted-foreground">
+                          50311
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Bottom Section */}
+                <div className="border border-border rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <tbody>
+                      <tr className="border-b border-border">
+                        <td className="border-r border-border p-2 w-1/6 font-medium bg-muted/20">Ancillary</td>
+                        <td className="border-r border-border p-2 w-1/6"></td>
+                        <td className="border-r border-border p-2 w-1/6 font-medium bg-muted/20 text-center">Date</td>
+                        <td className="p-2 w-1/2"></td>
+                      </tr>
+                      <tr className="border-b border-border">
+                        <td className="border-r border-border p-2 font-medium bg-muted/20">R. No</td>
+                        <td className="border-r border-border p-2 font-medium bg-muted/20">Signature</td>
+                        <td className="border-r border-border p-2 font-medium bg-muted/20 text-center">Total bill</td>
+                        <td className="p-2"></td>
+                      </tr>
+                      <tr className="border-b border-border">
+                        <td rowSpan={4} className="border-r border-border p-2 align-top"></td>
+                        <td rowSpan={4} className="border-r border-border p-2 align-top"></td>
+                        <td className="border-r border-border p-2 font-medium bg-muted/20">Amount Paid -</td>
+                        <td className="p-2"></td>
+                      </tr>
+                      <tr className="border-b border-border">
+                        <td className="border-r border-border p-2 font-medium bg-muted/20">Amount Due -</td>
+                        <td className="p-2"></td>
+                      </tr>
+                      <tr className="border-b border-border">
+                        <td className="border-r border-border p-2 font-medium bg-muted/20">Amount Paid -</td>
+                        <td className="p-2"></td>
+                      </tr>
+                      <tr className="border-b border-border">
+                        <td className="border-r border-border p-2 font-medium bg-muted/20">Amount Due -</td>
+                        <td className="p-2"></td>
+                      </tr>
+                      <tr>
+                        <td className="p-2"></td>
+                        <td className="p-2"></td>
+                        <td className="border-r border-border p-2 font-medium bg-muted/20">Amount Paid-</td>
+                        <td className="p-2"></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
