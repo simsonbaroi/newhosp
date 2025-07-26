@@ -181,6 +181,48 @@ export default function InpatientFixed() {
     queryKey: ['/api/medical-items'],
   });
 
+  // Get inpatient categories from the database
+  const inpatientCategories = Array.from(new Set(
+    medicalItems
+      .filter((item: MedicalItem) => !item.isOutpatient)
+      .map((item: MedicalItem) => item.category)
+  )).sort();
+
+  // Ordered categories for consistent display
+  const orderedCategories = inpatientCategories;
+
+  // Category navigation functions
+  const handleCategoryClick = (category: string) => {
+    setSelectedCategory(category);
+    setCurrentCategoryIndex(orderedCategories.indexOf(category));
+    setIsCarouselMode(true);
+    setCategorySearchQuery('');
+  };
+
+  const exitCarousel = () => {
+    setIsCarouselMode(false);
+    setSelectedCategory('');
+    setCategorySearchQuery('');
+  };
+
+  const goToPreviousCategory = () => {
+    if (currentCategoryIndex > 0) {
+      const newIndex = currentCategoryIndex - 1;
+      setCurrentCategoryIndex(newIndex);
+      setSelectedCategory(orderedCategories[newIndex]);
+      setCategorySearchQuery('');
+    }
+  };
+
+  const goToNextCategory = () => {
+    if (currentCategoryIndex < orderedCategories.length - 1) {
+      const newIndex = currentCategoryIndex + 1;
+      setCurrentCategoryIndex(newIndex);
+      setSelectedCategory(orderedCategories[newIndex]);
+      setCategorySearchQuery('');
+    }
+  };
+
   return (
     <Layout>
       <div className="container mx-auto px-4 py-6 space-y-6">
@@ -294,6 +336,154 @@ export default function InpatientFixed() {
                 </CardContent>
               )}
             </Card>
+
+            {/* Category Buttons */}
+            <Card className="glass-card">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between text-medical-primary">
+                  <span className="flex items-center">
+                    <Grid3X3 className="mr-2 h-5 w-5" />
+                    Inpatient Categories
+                  </span>
+                  {isCarouselMode && (
+                    <Button 
+                      size="sm" 
+                      variant="medical-ghost" 
+                      onClick={exitCarousel}
+                      className="h-8 w-8 p-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {!isCarouselMode ? (
+                  // Normal grid mode
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {orderedCategories.map((category) => {
+                      const itemCount = medicalItems.filter((item: MedicalItem) => item.category === category).length;
+                      return (
+                        <Button
+                          key={category}
+                          variant="medical-outline"
+                          className="h-auto p-2 sm:p-3 text-left justify-start min-h-[60px]"
+                          onClick={() => handleCategoryClick(category)}
+                        >
+                          <div className="flex flex-col items-start w-full">
+                            <span className="font-medium text-xs sm:text-sm leading-tight">{category}</span>
+                            <span className="text-xs text-muted-foreground mt-1">{itemCount} items</span>
+                          </div>
+                        </Button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  // Carousel mode
+                  <div className="space-y-4">
+                    {/* Navigation Controls */}
+                    <div className="flex items-center justify-between">
+                      <Button
+                        variant="medical-ghost"
+                        size="sm"
+                        onClick={goToPreviousCategory}
+                        disabled={currentCategoryIndex === 0}
+                        className="flex items-center text-xs"
+                      >
+                        <ChevronLeft className="h-3 w-3 mr-1" />
+                        {currentCategoryIndex > 0 ? orderedCategories[currentCategoryIndex - 1] : 'Previous'}
+                      </Button>
+                      
+                      <Button
+                        variant="medical-ghost"
+                        size="sm"
+                        onClick={goToNextCategory}
+                        disabled={currentCategoryIndex === orderedCategories.length - 1}
+                        className="flex items-center text-xs"
+                      >
+                        {currentCategoryIndex < orderedCategories.length - 1 ? orderedCategories[currentCategoryIndex + 1] : 'Next'}
+                        <ChevronRight className="h-3 w-3 ml-1" />
+                      </Button>
+                    </div>
+
+                    {/* Current Category Display */}
+                    <div className="text-center">
+                      <Button
+                        variant="medical"
+                        className="font-semibold text-sm px-4 py-2"
+                        disabled
+                      >
+                        {orderedCategories[currentCategoryIndex]} ({medicalItems.filter((item: MedicalItem) => item.category === orderedCategories[currentCategoryIndex]).length} items)
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Category Content - Only show in carousel mode */}
+            {isCarouselMode && selectedCategory && (
+              <Card className="glass-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-medical-primary">
+                    <Search className="mr-2 h-5 w-5" />
+                    {selectedCategory} Items
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Category Search */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                    <Input
+                      placeholder={`Search ${selectedCategory} items...`}
+                      value={categorySearchQuery}
+                      onChange={(e) => setCategorySearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+
+                  {/* Category Items */}
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {medicalItems
+                      .filter((item: MedicalItem) => 
+                        !item.isOutpatient && 
+                        item.category === selectedCategory &&
+                        (categorySearchQuery === '' || 
+                         item.name.toLowerCase().includes(categorySearchQuery.toLowerCase()))
+                      )
+                      .map((item: MedicalItem) => (
+                        <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
+                          <div className="flex-1">
+                            <h4 className="font-medium text-sm">{item.name}</h4>
+                            {item.description && (
+                              <p className="text-xs text-muted-foreground">{item.description}</p>
+                            )}
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span className="font-medium text-medical-primary">{format.format(parseFloat(item.price))}</span>
+                            <Button
+                              size="sm"
+                              variant="medical-outline"
+                              onClick={() => {
+                                const newItem: BillItem = {
+                                  id: item.id.toString(),
+                                  name: item.name,
+                                  category: item.category,
+                                  price: parseFloat(item.price),
+                                  quantity: 1
+                                };
+                                setBillItems(prev => [...prev, newItem]);
+                              }}
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Bill Summary Panel */}
