@@ -188,13 +188,13 @@ export default function InpatientFixed() {
       .map((item: MedicalItem) => item.category)
   ));
 
-  // Inpatient category order - removed Dr. Fees and Medic Fee as requested
+  // Inpatient category order - exact specification from user requirements
   const categoryOrder = [
-    'Laboratory', 'X-Ray', 'Registration Fees', 'Medicine', 
-    'Physical Therapy', 'Limb and Brace', 'Seat & Ad. Fee', 
-    'Blood', 'Food', 'Halo, O2, NO2, etc.', 'Surgery, O.R. & Delivery', 
-    'Discharge Medicine', 'Medicine, ORS & Anesthesia, Ket, Spinal',
-    'IV.\'s', 'Plaster/Milk', 'Procedures', 'Lost Laundry', 'Travel', 'Other'
+    'Blood', 'Laboratory', 'Limb and Brace', 'Food', 
+    'Halo, O2, NO2, etc.', 'Orthopedic, S.Roll, etc.', 'Surgery, O.R. & Delivery', 
+    'Registration Fees', 'Discharge Medicine', 'Medicine, ORS & Anesthesia, Ket, Spinal',
+    'Physical Therapy', 'IV.\'s', 'Plaster/Milk', 'Procedures', 
+    'Seat & Ad. Fee', 'X-Ray', 'Lost Laundry', 'Travel', 'Others'
   ];
 
   const orderedCategories = categoryOrder.filter(cat => categories.includes(cat))
