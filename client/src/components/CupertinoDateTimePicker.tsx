@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import './CupertinoDateTimePicker.css';
 
 interface CupertinoDateTimePickerProps {
   isOpen: boolean;
@@ -19,79 +20,149 @@ export const CupertinoDateTimePicker: React.FC<CupertinoDateTimePickerProps> = (
   const [showDatePicker, setShowDatePicker] = useState(true);
   const [showTimePicker, setShowTimePicker] = useState(false);
   
-  // Days of the week
-  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  // Refs for smooth scrolling
+  const monthRef = useRef<HTMLDivElement>(null);
+  const dayRef = useRef<HTMLDivElement>(null);
+  const yearRef = useRef<HTMLDivElement>(null);
+  const hourRef = useRef<HTMLDivElement>(null);
+  const minuteRef = useRef<HTMLDivElement>(null);
+  const periodRef = useRef<HTMLDivElement>(null);
   
-  // Months
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  
-  // Time options
-  const hours = Array.from({ length: 12 }, (_, i) => i + 1);
-  const minutes = Array.from({ length: 60 }, (_, i) => i < 10 ? `0${i}` : `${i}`);
-  const periods = ['AM', 'PM'];
-  
-  // Generate date options for the next 7 days
-  const generateDateOptions = () => {
-    const today = new Date();
-    return Array.from({ length: 7 }, (_, i) => {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      return {
-        date,
-        day: days[date.getDay()],
-        month: months[date.getMonth()],
-        dateNum: date.getDate(),
-        year: date.getFullYear(),
-        isToday: i === 0
-      };
-    });
-  };
-  
-  const dateOptions = generateDateOptions();
-  
-  // Time slots
-  const timeSlots = [
-    { hour: 6, minute: 0, period: 'AM' },
-    { hour: 8, minute: 0, period: 'AM' },
-    { hour: 10, minute: 0, period: 'AM' },
-    { hour: 12, minute: 0, period: 'PM' },
-    { hour: 2, minute: 0, period: 'PM' },
-    { hour: 4, minute: 0, period: 'PM' },
-    { hour: 6, minute: 0, period: 'PM' },
-    { hour: 8, minute: 0, period: 'PM' }
+  // Generate comprehensive date/time data
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
   ];
   
-  const handleDateSelect = (date: Date) => {
-    setSelectedDate(date);
-    setShowDatePicker(false);
-    setShowTimePicker(true);
+  const getDaysInMonth = (month: number, year: number) => {
+    return new Date(year, month + 1, 0).getDate();
   };
   
-  const handleTimeSelect = (time: { hour: number; minute: number; period: string }) => {
+  const years = Array.from({ length: 50 }, (_, i) => new Date().getFullYear() - 25 + i);
+  const hours = Array.from({ length: 12 }, (_, i) => i + 1);
+  const minutes = Array.from({ length: 60 }, (_, i) => i);
+  const periods = ['AM', 'PM'];
+  
+  // Get current selections
+  const currentMonth = selectedDate.getMonth();
+  const currentDay = selectedDate.getDate();
+  const currentYear = selectedDate.getFullYear();
+  const currentHour12 = selectedDate.getHours() % 12 || 12;
+  const currentMinute = selectedDate.getMinutes();
+  const currentPeriod = selectedDate.getHours() >= 12 ? 'PM' : 'AM';
+  
+  // Generate days for current month
+  const daysInMonth = getDaysInMonth(currentMonth, currentYear);
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  
+  // Smooth scroll to selected item
+  const scrollToItem = (containerRef: React.RefObject<HTMLDivElement>, index: number) => {
+    if (containerRef.current) {
+      const itemHeight = 44; // Height of each picker item
+      const containerHeight = containerRef.current.clientHeight;
+      const scrollTop = (index * itemHeight) - (containerHeight / 2) + (itemHeight / 2);
+      
+      containerRef.current.scrollTo({
+        top: scrollTop,
+        behavior: 'smooth'
+      });
+    }
+  };
+  
+  // Initialize scroll positions
+  useEffect(() => {
+    if (isOpen && showTimePicker) {
+      setTimeout(() => {
+        scrollToItem(hourRef, hours.indexOf(currentHour12));
+        scrollToItem(minuteRef, currentMinute);
+        scrollToItem(periodRef, periods.indexOf(currentPeriod));
+      }, 100);
+    }
+  }, [isOpen, showTimePicker, currentHour12, currentMinute, currentPeriod]);
+  
+  useEffect(() => {
+    if (isOpen && showDatePicker) {
+      setTimeout(() => {
+        scrollToItem(monthRef, currentMonth);
+        scrollToItem(dayRef, currentDay - 1);
+        scrollToItem(yearRef, years.indexOf(currentYear));
+      }, 100);
+    }
+  }, [isOpen, showDatePicker, currentMonth, currentDay, currentYear]);
+  
+  // Date selection handlers
+  const handleMonthSelect = (monthIndex: number) => {
     const newDate = new Date(selectedDate);
-    const hour24 = time.period === 'PM' && time.hour !== 12 ? time.hour + 12 : 
-                   time.period === 'AM' && time.hour === 12 ? 0 : time.hour;
-    newDate.setHours(hour24);
-    newDate.setMinutes(time.minute);
+    newDate.setMonth(monthIndex);
+    // Adjust day if it exceeds the new month's days
+    const maxDays = getDaysInMonth(monthIndex, newDate.getFullYear());
+    if (newDate.getDate() > maxDays) {
+      newDate.setDate(maxDays);
+    }
     setSelectedDate(newDate);
-    setShowTimePicker(false);
   };
   
-  const handleCancel = () => {
-    setShowDatePicker(true);
-    setShowTimePicker(false);
-    onClose();
+  const handleDaySelect = (day: number) => {
+    const newDate = new Date(selectedDate);
+    newDate.setDate(day);
+    setSelectedDate(newDate);
   };
   
-  const handleConfirm = () => {
-    onConfirm(selectedDate);
-    setShowDatePicker(true);
-    setShowTimePicker(false);
-    onClose();
+  const handleYearSelect = (year: number) => {
+    const newDate = new Date(selectedDate);
+    newDate.setFullYear(year);
+    // Adjust for leap year if needed
+    const maxDays = getDaysInMonth(newDate.getMonth(), year);
+    if (newDate.getDate() > maxDays) {
+      newDate.setDate(maxDays);
+    }
+    setSelectedDate(newDate);
   };
   
-  const formatDate = (date: Date) => {
-    return `${days[date.getDay()]} ${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+  // Time selection handlers
+  const handleHourSelect = (hour: number) => {
+    const newDate = new Date(selectedDate);
+    const currentHour24 = newDate.getHours();
+    const isPM = currentHour24 >= 12;
+    const hour24 = isPM ? (hour === 12 ? 12 : hour + 12) : (hour === 12 ? 0 : hour);
+    newDate.setHours(hour24);
+    setSelectedDate(newDate);
+  };
+  
+  const handleMinuteSelect = (minute: number) => {
+    const newDate = new Date(selectedDate);
+    newDate.setMinutes(minute);
+    setSelectedDate(newDate);
+  };
+  
+  const handlePeriodSelect = (period: string) => {
+    const newDate = new Date(selectedDate);
+    const currentHour24 = newDate.getHours();
+    const currentHour12 = currentHour24 % 12 || 12;
+    
+    if (period === 'AM') {
+      newDate.setHours(currentHour12 === 12 ? 0 : currentHour12);
+    } else {
+      newDate.setHours(currentHour12 === 12 ? 12 : currentHour12 + 12);
+    }
+    setSelectedDate(newDate);
+  };
+
+  // Format date display
+  const formatDate = (date: Date): string => {
+    const day = date.getDate();
+    const month = date.getMonth() + 1;
+    const year = date.getFullYear().toString().slice(-2);
+    return `${day.toString().padStart(2, '0')}/${month.toString().padStart(2, '0')}/${year}`;
+  };
+
+  // Format time display
+  const formatTime = (date: Date): string => {
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    const hour12 = hours % 12 || 12;
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    return `${hour12}:${minutes.toString().padStart(2, '0')} ${ampm}`;
   };
 
   // Reset state when modal opens
@@ -110,124 +181,145 @@ export const CupertinoDateTimePicker: React.FC<CupertinoDateTimePickerProps> = (
       <div className="cupertino-picker bg-white rounded-xl shadow-2xl overflow-hidden w-full max-w-md">
         <div className="picker-header p-5 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900 mb-2">{title}</h2>
-          <div className="selected-date text-blue-600 font-medium">
-            {formatDate(selectedDate)} at {selectedDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+          <div className="selected-datetime text-blue-600 font-medium">
+            {formatDate(selectedDate)} at {formatTime(selectedDate)}
+          </div>
+          <div className="picker-navigation mt-3">
+            <button
+              className={`nav-button ${showDatePicker ? 'active' : ''}`}
+              onClick={() => {
+                setShowDatePicker(true);
+                setShowTimePicker(false);
+              }}
+            >
+              Date
+            </button>
+            <button
+              className={`nav-button ${showTimePicker ? 'active' : ''}`}
+              onClick={() => {
+                setShowDatePicker(false);
+                setShowTimePicker(true);
+              }}
+            >
+              Time
+            </button>
           </div>
         </div>
         
         {showDatePicker && (
-          <div className="date-picker p-4">
-            <div className="date-options space-y-2">
-              {dateOptions.map((option, index) => (
-                <div 
-                  key={index} 
-                  className={`date-option flex justify-between items-center p-4 rounded-lg cursor-pointer transition-all border ${
-                    selectedDate.getDate() === option.dateNum && selectedDate.getMonth() === option.date.getMonth() 
-                      ? 'bg-blue-50 border-blue-500' 
-                      : 'border-gray-200 hover:bg-gray-50'
-                  }`}
-                  onClick={() => handleDateSelect(option.date)}
-                >
-                  <div className="date-info flex items-center gap-3">
-                    <span className="day font-medium w-8">{option.day}</span>
-                    <span className="month text-gray-500 w-8">{option.month}</span>
-                    <span className="date-num text-xl font-medium w-7">{option.dateNum}</span>
-                  </div>
-                  <div className="year text-gray-500">{option.year}</div>
-                  {option.isToday && (
-                    <div className="today-label absolute top-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full font-medium">
-                      Today
+          <div className="date-time-picker">
+            <div className="picker-columns">
+              {/* Month Column */}
+              <div className="picker-column">
+                <div className="picker-column-header">Month</div>
+                <div className="picker-scroll-container" ref={monthRef}>
+                  {months.map((month, index) => (
+                    <div
+                      key={month}
+                      className={`picker-item ${currentMonth === index ? 'selected' : ''}`}
+                      onClick={() => handleMonthSelect(index)}
+                    >
+                      {month}
                     </div>
-                  )}
+                  ))}
                 </div>
-              ))}
+              </div>
+              
+              {/* Day Column */}
+              <div className="picker-column">
+                <div className="picker-column-header">Day</div>
+                <div className="picker-scroll-container" ref={dayRef}>
+                  {days.map((day) => (
+                    <div
+                      key={day}
+                      className={`picker-item ${currentDay === day ? 'selected' : ''}`}
+                      onClick={() => handleDaySelect(day)}
+                    >
+                      {day.toString().padStart(2, '0')}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Year Column */}
+              <div className="picker-column">
+                <div className="picker-column-header">Year</div>
+                <div className="picker-scroll-container" ref={yearRef}>
+                  {years.map((year) => (
+                    <div
+                      key={year}
+                      className={`picker-item ${currentYear === year ? 'selected' : ''}`}
+                      onClick={() => handleYearSelect(year)}
+                    >
+                      {year}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         )}
-        
+
         {showTimePicker && (
-          <div className="time-picker p-4 space-y-5">
-            <div className="time-slots grid grid-cols-2 gap-2">
-              {timeSlots.map((time, index) => (
-                <div 
-                  key={index} 
-                  className="time-slot p-3 border border-gray-200 rounded-lg cursor-pointer transition-all text-center hover:bg-gray-50"
-                  onClick={() => handleTimeSelect(time)}
-                >
-                  <div className="time-display flex justify-center gap-1 text-lg font-medium">
-                    <span className="hour">{time.hour}</span>
-                    <span>:</span>
-                    <span className="minute">{time.minute < 10 ? `0${time.minute}` : time.minute}</span>
-                    <span className="period ml-1">{time.period}</span>
-                  </div>
+          <div className="date-time-picker">
+            <div className="picker-columns">
+              {/* Hour Column */}
+              <div className="picker-column">
+                <div className="picker-column-header">Hour</div>
+                <div className="picker-scroll-container" ref={hourRef}>
+                  {hours.map((hour) => (
+                    <div
+                      key={hour}
+                      className={`picker-item ${currentHour12 === hour ? 'selected' : ''}`}
+                      onClick={() => handleHourSelect(hour)}
+                    >
+                      {hour.toString().padStart(2, '0')}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            
-            <div className="time-wheel flex justify-center gap-5 h-48 overflow-hidden relative rounded-lg bg-gray-50 py-5">
-              <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-white to-transparent z-10 pointer-events-none"></div>
-              <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white to-transparent z-10 pointer-events-none"></div>
-              
-              <div className="wheel-column flex flex-col items-center overflow-y-auto scroll-smooth w-16 py-16 scrollbar-hide">
-                {hours.map((hour) => (
-                  <div 
-                    key={hour} 
-                    className={`wheel-item h-10 flex items-center justify-center w-full text-xl ${
-                      selectedDate.getHours() % 12 === (hour % 12) || (selectedDate.getHours() === 0 && hour === 12)
-                        ? 'text-blue-600 font-semibold text-2xl' 
-                        : 'text-gray-400'
-                    }`}
-                  >
-                    {hour}
-                  </div>
-                ))}
               </div>
               
-              <div className="wheel-column flex flex-col items-center overflow-y-auto scroll-smooth w-16 py-16 scrollbar-hide">
-                {minutes.map((minute) => (
-                  <div 
-                    key={minute} 
-                    className={`wheel-item h-10 flex items-center justify-center w-full text-xl ${
-                      selectedDate.getMinutes() === parseInt(minute) 
-                        ? 'text-blue-600 font-semibold text-2xl' 
-                        : 'text-gray-400'
-                    }`}
-                  >
-                    {minute}
-                  </div>
-                ))}
+              {/* Minute Column */}
+              <div className="picker-column">
+                <div className="picker-column-header">Minute</div>
+                <div className="picker-scroll-container" ref={minuteRef}>
+                  {minutes.map((minute) => (
+                    <div
+                      key={minute}
+                      className={`picker-item ${currentMinute === minute ? 'selected' : ''}`}
+                      onClick={() => handleMinuteSelect(minute)}
+                    >
+                      {minute.toString().padStart(2, '0')}
+                    </div>
+                  ))}
+                </div>
               </div>
               
-              <div className="wheel-column flex flex-col items-center overflow-y-auto scroll-smooth w-16 py-16 scrollbar-hide">
-                {periods.map((period) => (
-                  <div 
-                    key={period} 
-                    className={`wheel-item h-10 flex items-center justify-center w-full text-xl ${
-                      (selectedDate.getHours() >= 12 ? 'PM' : 'AM') === period
-                        ? 'text-blue-600 font-semibold text-2xl' 
-                        : 'text-gray-400'
-                    }`}
-                  >
-                    {period}
-                  </div>
-                ))}
+              {/* Period Column */}
+              <div className="picker-column">
+                <div className="picker-column-header">Period</div>
+                <div className="picker-scroll-container" ref={periodRef}>
+                  {periods.map((period) => (
+                    <div
+                      key={period}
+                      className={`picker-item ${currentPeriod === period ? 'selected' : ''}`}
+                      onClick={() => handlePeriodSelect(period)}
+                    >
+                      {period}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         )}
         
-        <div className="picker-footer flex p-4 border-t border-gray-200 gap-3">
-          <button 
-            className="cancel-btn flex-1 py-3 rounded-lg border-none text-lg font-medium cursor-pointer transition-all bg-transparent text-blue-600 hover:bg-gray-50"
-            onClick={handleCancel}
-          >
+        <div className="picker-actions">
+          <button className="picker-button cancel" onClick={onClose}>
             Cancel
           </button>
-          <button 
-            className="confirm-btn flex-1 py-3 rounded-lg border-none text-lg font-medium cursor-pointer transition-all bg-blue-600 text-white hover:bg-blue-700"
-            onClick={handleConfirm}
-          >
-            OK
+          <button className="picker-button confirm" onClick={() => onConfirm(selectedDate)}>
+            Confirm
           </button>
         </div>
       </div>

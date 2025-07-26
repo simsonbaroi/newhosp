@@ -1,0 +1,340 @@
+/* Cupertino Date Time Picker Styles */
+.cupertino-picker {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.picker-header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  text-align: center;
+}
+
+.picker-header h2 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.selected-datetime {
+  font-size: 16px;
+  font-weight: 500;
+  color: #007AFF;
+  margin-bottom: 12px;
+}
+
+.picker-navigation {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.nav-button {
+  background: rgba(0, 122, 255, 0.1);
+  border: 1px solid rgba(0, 122, 255, 0.3);
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #007AFF;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nav-button:hover {
+  background: rgba(0, 122, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.nav-button.active {
+  background: #007AFF;
+  color: white;
+}
+
+.date-time-picker {
+  padding: 20px;
+  min-height: 280px;
+}
+
+.picker-columns {
+  display: flex;
+  height: 220px;
+  gap: 8px;
+}
+
+.picker-column {
+  flex: 1;
+  position: relative;
+  background: rgba(247, 247, 247, 0.8);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.picker-column-header {
+  background: rgba(255, 255, 255, 0.9);
+  padding: 8px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.picker-scroll-container {
+  height: 100%;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  padding: 60px 0;
+  position: relative;
+}
+
+/* Custom scrollbar */
+.picker-scroll-container::-webkit-scrollbar {
+  width: 4px;
+}
+
+.picker-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.picker-scroll-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 122, 255, 0.3);
+  border-radius: 2px;
+}
+
+.picker-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 122, 255, 0.5);
+}
+
+.picker-item {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.picker-item:hover {
+  background: rgba(0, 122, 255, 0.08);
+  color: #007AFF;
+}
+
+.picker-item.selected {
+  background: rgba(0, 122, 255, 0.15);
+  color: #007AFF;
+  font-weight: 600;
+}
+
+.picker-item.selected::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(0, 122, 255, 0.1) 0%, rgba(0, 122, 255, 0.05) 100%);
+  border-radius: 8px;
+  z-index: -1;
+}
+
+/* Selection indicator overlay */
+.picker-column::before,
+.picker-column::after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  height: 44px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.picker-column::before {
+  border-top: 1px solid rgba(0, 122, 255, 0.3);
+  border-bottom: 1px solid rgba(0, 122, 255, 0.3);
+}
+
+.picker-actions {
+  background: rgba(248, 249, 250, 0.9);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 16px 20px;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.picker-button {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  outline: none;
+}
+
+.picker-button.cancel {
+  background: rgba(142, 142, 147, 0.12);
+  color: #8E8E93;
+}
+
+.picker-button.cancel:hover {
+  background: rgba(142, 142, 147, 0.2);
+}
+
+.picker-button.confirm {
+  background: #007AFF;
+  color: white;
+}
+
+.picker-button.confirm:hover {
+  background: #0056CC;
+  transform: translateY(-1px);
+}
+
+/* Date picker specific styles */
+.date-picker {
+  padding: 20px;
+}
+
+.date-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.date-option {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 122, 255, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.date-option:hover {
+  background: rgba(0, 122, 255, 0.05);
+  border-color: rgba(0, 122, 255, 0.4);
+  transform: translateY(-1px);
+}
+
+.date-option.selected {
+  background: rgba(0, 122, 255, 0.1);
+  border-color: #007AFF;
+}
+
+.date-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.date-main {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.date-sub {
+  font-size: 14px;
+  color: #666;
+  margin-top: 2px;
+}
+
+.date-indicator {
+  font-size: 12px;
+  font-weight: 600;
+  color: #007AFF;
+  background: rgba(0, 122, 255, 0.1);
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+/* Responsive design */
+@media (max-width: 480px) {
+  .cupertino-picker {
+    width: 100%;
+    margin: 0;
+    border-radius: 16px 16px 0 0;
+  }
+  
+  .picker-columns {
+    gap: 4px;
+  }
+  
+  .picker-item {
+    font-size: 14px;
+  }
+  
+  .picker-header {
+    padding: 16px;
+  }
+}
+
+/* Dark theme support */
+.dark .cupertino-picker {
+  background: rgba(28, 28, 30, 0.95);
+  color: white;
+}
+
+.dark .picker-header {
+  background: linear-gradient(135deg, #1c1c1e 0%, #2c2c2e 100%);
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark .picker-header h2 {
+  color: white;
+}
+
+.dark .picker-column {
+  background: rgba(44, 44, 46, 0.8);
+}
+
+.dark .picker-column-header {
+  background: rgba(28, 28, 30, 0.9);
+  color: #8E8E93;
+  border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.dark .picker-item {
+  color: white;
+}
+
+.dark .picker-actions {
+  background: rgba(28, 28, 30, 0.9);
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark .date-option {
+  background: rgba(44, 44, 46, 0.8);
+  border-color: rgba(0, 122, 255, 0.2);
+}
+
+.dark .date-main {
+  color: white;
+}
+
+.dark .date-sub {
+  color: #8E8E93;
+}
