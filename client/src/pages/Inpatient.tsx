@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { Search, Plus, Minus, Calculator, Grid3X3, Calendar, ChevronLeft, ChevronRight, X, AlertTriangle, ChevronUp, ChevronDown } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Search, Plus, Minus, Calculator, Grid3X3, Calendar, ChevronLeft, ChevronRight, X, AlertTriangle, ChevronDown, ChevronUp, FileText, FileX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,26 +14,35 @@ import { CupertinoDateTimePicker } from '@/components/CupertinoDateTimePicker';
 import type { MedicalItem } from '../../../shared/schema';
 import { calculateMedicineDosage, formatDosageForBill, MEDICINE_RULES } from '../../../shared/medicineCalculations';
 
-interface BillItem extends MedicalItem {
-  quantity: number;
-  billId?: string; // Optional for compatibility with Laboratory functions
+interface BillItem {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  unit?: string;
+  quantity?: number;
+  dailyRate?: boolean;
+  billId?: string;
+  dosageInfo?: string;
 }
 
-const Inpatient = () => {
+export default function Inpatient() {
+  const { format } = useTakaFormat();
+  
   // Get current date and time
   const getCurrentDateTime = () => {
     const now = new Date();
     const day = String(now.getDate()).padStart(2, '0');
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const year = String(now.getFullYear()).slice(-2);
-    const hours = now.getHours();
+    
+    const hours12 = now.getHours() % 12 || 12;
     const minutes = String(now.getMinutes()).padStart(2, '0');
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    const displayHours = hours % 12 || 12;
+    const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
     
     return {
       date: `${day}/${month}/${year}`,
-      time: `${displayHours}:${minutes} ${ampm}`
+      time: `${hours12}:${minutes} ${ampm}`
     };
   };
 
@@ -46,6 +55,11 @@ const Inpatient = () => {
   const [billNumber, setBillNumber] = useState<string>('');
   const [admissionDate, setAdmissionDate] = useState<string>(currentDateTime.date);
   const [dischargeDate, setDischargeDate] = useState<string>(currentDateTime.date);
+  const [totalVisitation, setTotalVisitation] = useState<string>('');
+  
+  // Time state
+  const [admissionTime, setAdmissionTime] = useState<string>(currentDateTime.time);
+  const [dischargeTime, setDischargeTime] = useState<string>(currentDateTime.time);
   
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
@@ -55,210 +69,82 @@ const Inpatient = () => {
   const [isCarouselMode, setIsCarouselMode] = useState<boolean>(false);
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState<number>(0);
   const [duplicateDialog, setDuplicateDialog] = useState<{open: boolean, item: MedicalItem | null}>({open: false, item: null});
+  const [isPatientInfoExpanded, setIsPatientInfoExpanded] = useState<boolean>(true);
+  const [isBillFormHeaderExpanded, setIsBillFormHeaderExpanded] = useState<boolean>(false);
   
-  // Laboratory search and dropdown state - identical to Outpatient
+  // Advanced category functionality states (matching outpatient)
   const [selectedLabItems, setSelectedLabItems] = useState<MedicalItem[]>([]);
   const [dropdownSelectedItems, setDropdownSelectedItems] = useState<MedicalItem[]>([]);
+  const [selectedXRayItems, setSelectedXRayItems] = useState<MedicalItem[]>([]);
+  const [xRayDropdownSelectedItems, setXRayDropdownSelectedItems] = useState<MedicalItem[]>([]);
+  const [selectedRegistrationItems, setSelectedRegistrationItems] = useState<MedicalItem[]>([]);
+  const [registrationDropdownSelectedItems, setRegistrationDropdownSelectedItems] = useState<MedicalItem[]>([]);
   const [dropdownValue, setDropdownValue] = useState<string>('');
   const [highlightedDropdownIndex, setHighlightedDropdownIndex] = useState<number>(-1);
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
   const [dropdownFilterQuery, setDropdownFilterQuery] = useState<string>('');
+  const [xRayDropdownValue, setXRayDropdownValue] = useState<string>('');
+  const [xRayHighlightedDropdownIndex, setXRayHighlightedDropdownIndex] = useState<number>(-1);
+  const [isXRayDropdownOpen, setIsXRayDropdownOpen] = useState<boolean>(false);
+  const [xRayDropdownFilterQuery, setXRayDropdownFilterQuery] = useState<string>('');
+  const [registrationHighlightedDropdownIndex, setRegistrationHighlightedDropdownIndex] = useState<number>(-1);
+  const [isRegistrationDropdownOpen, setIsRegistrationDropdownOpen] = useState<boolean>(false);
+  const [registrationDropdownFilterQuery, setRegistrationDropdownFilterQuery] = useState<string>('');
+  
+  // X-Ray film view selection state
+  const [selectedXRayForViews, setSelectedXRayForViews] = useState<MedicalItem | null>(null);
+  const [xRayViews, setXRayViews] = useState({
+    AP: false,
+    LAT: false,
+    OBLIQUE: false,
+    BOTH: false
+  });
+  const [isOffChargePortable, setIsOffChargePortable] = useState(false);
+  const [showXRayViewSelection, setShowXRayViewSelection] = useState(false);
+  
+  // Refs for advanced functionality
   const dropdownRef = useRef<HTMLDivElement>(null);
   const dropdownButtonRef = useRef<HTMLButtonElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  
-  // Inpatient Medicine dosage selection state
-  const [selectedMedicineForDosage, setSelectedMedicineForDosage] = useState<any>(null);
-  const [showMedicineDosageSelection, setShowMedicineDosageSelection] = useState(false);
-  
-  // Discharge Medicine selection state (copied from outpatient medicine)
-  const [tempSelectedDischargeMedicines, setTempSelectedDischargeMedicines] = useState<Array<MedicalItem & { tempId: string }>>([]);
-  const [selectedDischargeMedicineItems, setSelectedDischargeMedicineItems] = useState<MedicalItem[]>([]);
-  const [dischargeMedicineDropdownSelectedItems, setDischargeMedicineDropdownSelectedItems] = useState<MedicalItem[]>([]);
-  const [dischargeMedicineDropdownValue, setDischargeMedicineDropdownValue] = useState<string>('');
-  const [dischargeMedicineHighlightedDropdownIndex, setDischargeMedicineHighlightedDropdownIndex] = useState<number>(-1);
-  const [isDischargeMedicineDropdownOpen, setIsDischargeMedicineDropdownOpen] = useState<boolean>(false);
-  const [dischargeMedicineDropdownFilterQuery, setDischargeMedicineDropdownFilterQuery] = useState<string>('');
-  const dischargeMedicineDropdownRef = useRef<HTMLDivElement>(null);
-  const dischargeMedicineDropdownButtonRef = useRef<HTMLButtonElement>(null);
-  const dischargeMedicineSearchInputRef = useRef<HTMLInputElement>(null);
-  const dischargeMedicineDoseInputRef = useRef<HTMLInputElement>(null);
+  const xRayDropdownRef = useRef<HTMLDivElement>(null);
+  const xRayDropdownButtonRef = useRef<HTMLButtonElement>(null);
+  const xRaySearchInputRef = useRef<HTMLInputElement>(null);
+  const registrationDropdownRef = useRef<HTMLDivElement>(null);
+  const registrationDropdownButtonRef = useRef<HTMLButtonElement>(null);
+  const registrationSearchInputRef = useRef<HTMLInputElement>(null);
   
   // Cupertino Date picker modal state
   const [showCupertinoDatePicker, setShowCupertinoDatePicker] = useState(false);
   const [cupertinoDatePickerType, setCupertinoDatePickerType] = useState<'admission' | 'discharge'>('admission');
-  
-  // Time state
-  const [admissionTime, setAdmissionTime] = useState<string>(currentDateTime.time);
-  const [dischargeTime, setDischargeTime] = useState<string>(currentDateTime.time);
-  const [dosePrescribed, setDosePrescribed] = useState('');
-  const [medType, setMedType] = useState('');
-  const [doseFrequency, setDoseFrequency] = useState('');
-  const [totalDays, setTotalDays] = useState('');
-  const [isDischargeMedicine, setIsDischargeMedicine] = useState(false);
-  
-  const { format } = useTakaFormat();
 
-  // Convert DD/MM/YY format to ISO date string (YYYY-MM-DD) for date input
-  const convertToISODate = (dateStr: string): string => {
-    const parsedDate = parseCustomDate(dateStr);
-    if (!parsedDate) return '';
-    
-    const year = parsedDate.getFullYear();
-    const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
-    const day = String(parsedDate.getDate()).padStart(2, '0');
-    
-    return `${year}-${month}-${day}`;
-  };
-
-  // Convert ISO date string to DD/MM/YY format
-  const convertFromISODate = (isoDate: string): string => {
-    if (!isoDate) return '';
-    
-    const date = new Date(isoDate);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = String(date.getFullYear()).slice(-2);
-    
-    return `${day}/${month}/${year}`;
-  };
-
-  // Parse DD/MM/YY format into components
-  const parseDateComponents = (dateStr: string): { day: number; month: number; year: number } => {
-    const parts = dateStr.split('/');
-    if (parts.length === 3) {
-      return {
-        day: parseInt(parts[0], 10) || 1,
-        month: parseInt(parts[1], 10) || 1,
-        year: parseInt(parts[2], 10) || 25
-      };
-    }
-    return { day: 1, month: 1, year: 25 };
-  };
-
-  // Format date components back to DD/MM/YY
-  const formatDateComponents = (day: number, month: number, year: number): string => {
-    const paddedDay = String(day).padStart(2, '0');
-    const paddedMonth = String(month).padStart(2, '0');
-    const paddedYear = String(year).padStart(2, '0');
-    return `${paddedDay}/${paddedMonth}/${paddedYear}`;
-  };
-
-  // Adjust date component with validation
-  const adjustDateComponent = (dateStr: string, component: 'day' | 'month' | 'year', delta: number): string => {
-    const { day, month, year } = parseDateComponents(dateStr);
-    
-    let newDay = day;
-    let newMonth = month;
-    let newYear = year;
-    
-    if (component === 'day') {
-      newDay = Math.max(1, Math.min(31, day + delta));
-    } else if (component === 'month') {
-      newMonth = Math.max(1, Math.min(12, month + delta));
-    } else if (component === 'year') {
-      newYear = Math.max(0, Math.min(99, year + delta));
-    }
-    
-    // Validate day for the month
-    const daysInMonth = new Date(2000 + newYear, newMonth, 0).getDate();
-    if (newDay > daysInMonth) {
-      newDay = daysInMonth;
-    }
-    
-    return formatDateComponents(newDay, newMonth, newYear);
-  };
-
-  // Month names for the picker
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  
-  // Generate day and year options
-  const getDayOptions = () => Array.from({ length: 31 }, (_, i) => i + 1);
-  const getYearOptions = () => Array.from({ length: 100 }, (_, i) => i);
-  
-  // Generate time options
-  const getHourOptions = () => Array.from({ length: 12 }, (_, i) => i + 1);
-  const getMinuteOptions = () => Array.from({ length: 60 }, (_, i) => i);
-  const getAmPmOptions = () => ['AM', 'PM'];
-  
-  // Parse time string (12:00 PM)
-  const parseTime = (timeStr: string): { hour: number; minute: number; ampm: string } => {
-    const [time, ampm] = timeStr.split(' ');
-    const [hour, minute] = time.split(':').map(num => parseInt(num, 10));
-    return { hour, minute, ampm };
-  };
-  
-  // Format time components back to string
-  const formatTime = (hour: number, minute: number, ampm: string): string => {
-    const paddedMinute = String(minute).padStart(2, '0');
-    return `${hour}:${paddedMinute} ${ampm}`;
-  };
-
-  // Set specific date component
-  const setDateComponent = (dateStr: string, component: 'day' | 'month' | 'year', value: number): string => {
-    const { day, month, year } = parseDateComponents(dateStr);
-    
-    let newDay = day;
-    let newMonth = month;
-    let newYear = year;
-    
-    if (component === 'day') {
-      newDay = value;
-    } else if (component === 'month') {
-      newMonth = value;
-    } else if (component === 'year') {
-      newYear = value;
-    }
-    
-    // Validate day for the month
-    const daysInMonth = new Date(2000 + newYear, newMonth, 0).getDate();
-    if (newDay > daysInMonth) {
-      newDay = daysInMonth;
-    }
-    
-    return formatDateComponents(newDay, newMonth, newYear);
-  };
-
-  // Parse DD/MM/YY format to Date object
+  // Parse DD/MM/YY date format
   const parseCustomDate = (dateStr: string): Date | null => {
     if (!dateStr) return null;
     
-    // Handle DD/MM/YY format
     const parts = dateStr.split('/');
-    if (parts.length === 3) {
-      const day = parseInt(parts[0], 10);
-      const month = parseInt(parts[1], 10) - 1; // months are 0-indexed
-      let year = parseInt(parts[2], 10);
-      
-      // Convert YY to full year (assuming 20XX for years 00-99)
-      if (year < 100) {
-        year += 2000;
-      }
-      
-      const date = new Date(year, month, day);
-      
-      // Check if the date is valid
-      if (date.getFullYear() === year && date.getMonth() === month && date.getDate() === day) {
-        return date;
-      }
-    }
+    if (parts.length !== 3) return null;
     
-    return null;
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
+    const year = parseInt(parts[2], 10);
+    const fullYear = year < 50 ? 2000 + year : 1900 + year; // Assume 00-49 is 2000-2049, 50-99 is 1950-1999
+    
+    if (isNaN(day) || isNaN(month) || isNaN(year)) return null;
+    
+    return new Date(fullYear, month, day);
   };
 
-  // Calculate total admitted days based on admission and discharge dates
-  const calculateAdmittedDays = (admission: string, discharge: string): number => {
-    if (!admission || !discharge) return 1;
+  // Parse time format HH:MM AM/PM
+  const parseTime = (timeStr: string): { hour: number; minute: number; ampm: 'AM' | 'PM' } => {
+    const parts = timeStr.trim().split(' ');
+    const timePart = parts[0];
+    const ampm = (parts[1] || 'AM') as 'AM' | 'PM';
     
-    const admissionDate = parseCustomDate(admission);
-    const dischargeDate = parseCustomDate(discharge);
+    const [hourStr, minuteStr] = timePart.split(':');
+    const hour = parseInt(hourStr, 10) || 12;
+    const minute = parseInt(minuteStr, 10) || 0;
     
-    if (!admissionDate || !dischargeDate || dischargeDate < admissionDate) return 1;
-    
-    const timeDiff = dischargeDate.getTime() - admissionDate.getTime();
-    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1; // +1 to include both admission and discharge days
-    
-    return daysDiff > 0 ? daysDiff : 1;
+    return { hour, minute, ampm };
   };
 
   // Convert DD/MM/YY string and time string to Date object
@@ -302,637 +188,212 @@ const Inpatient = () => {
       setDischargeDate(dateStr);
       setDischargeTime(timeStr);
     }
+    
+    setShowCupertinoDatePicker(false);
   };
 
-
+  // Calculate total admitted days based on admission and discharge dates
+  const calculateAdmittedDays = (admission: string, discharge: string): number => {
+    if (!admission || !discharge) return 1;
+    
+    const admissionDate = parseCustomDate(admission);
+    const dischargeDate = parseCustomDate(discharge);
+    
+    if (!admissionDate || !dischargeDate || dischargeDate < admissionDate) return 1;
+    
+    const timeDiff = dischargeDate.getTime() - admissionDate.getTime();
+    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+    
+    // If admission and discharge are the same day, count as 1 day
+    // Otherwise, don't count the discharge day
+    if (daysDiff === 0) {
+      return 1; // Same day admission and discharge
+    } else {
+      return daysDiff; // Don't count discharge day
+    }
+  };
 
   // Update days admitted when dates change
   useEffect(() => {
-    if (admissionDate && dischargeDate) {
-      const calculatedDays = calculateAdmittedDays(admissionDate, dischargeDate);
-      setDaysAdmitted(calculatedDays);
-    }
+    const days = calculateAdmittedDays(admissionDate, dischargeDate);
+    setDaysAdmitted(days);
   }, [admissionDate, dischargeDate]);
 
-  // Get inpatient medical items
-  const { data: medicalItems = [] } = useQuery<MedicalItem[]>({
-    queryKey: ['/api/medical-items', { isOutpatient: false }],
-  });
+  // Add item to bill function
+  const addItemToBill = (item: MedicalItem) => {
+    const existingItem = billItems.find(billItem => billItem.id === item.id.toString());
+    if (existingItem) {
+      setDuplicateDialog({ open: true, item });
+    } else {
+      const billItem = {
+        ...item,
+        id: item.id.toString(),
+        price: parseFloat(item.price),
+        billId: `${item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      };
+      setBillItems(prev => [...prev, billItem]);
+    }
+  };
 
-  // Get unique categories
-  const categories = Array.from(new Set(medicalItems.map((item: MedicalItem) => item.category))).sort();
+  // Handle click outside dropdown to close it
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+        setHighlightedDropdownIndex(-1);
+        setDropdownFilterQuery('');
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
+
+  // Ensure dropdown button stays focused for continuous keyboard input
+  useEffect(() => {
+    if (isDropdownOpen && dropdownButtonRef.current) {
+      dropdownButtonRef.current.focus();
+    }
+  }, [dropdownFilterQuery, dropdownSelectedItems.length]);
+
+  // Auto-focus search input when Laboratory category is selected
+  useEffect(() => {
+    if (selectedCategory === 'Laboratory' && isCarouselMode && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [selectedCategory, isCarouselMode]);
+
+  // Handle click outside X-Ray dropdown to close it
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (xRayDropdownRef.current && !xRayDropdownRef.current.contains(event.target as Node)) {
+        setIsXRayDropdownOpen(false);
+        setXRayHighlightedDropdownIndex(-1);
+        setXRayDropdownFilterQuery('');
+      }
+    };
+
+    if (isXRayDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isXRayDropdownOpen]);
+
+  // Fetch medical items
+  const { data: medicalItems = [] } = useQuery<MedicalItem[]>({
+    queryKey: ['/api/medical-items'],
+  });
 
   // Filter items by category
   const categoryItems = selectedCategory 
     ? medicalItems.filter((item: MedicalItem) => item.category === selectedCategory)
     : [];
 
-  // Filter category items by search
-  const filteredCategoryItems = categorySearchQuery
-    ? categoryItems.filter((item: MedicalItem) => 
-        item.name.toLowerCase().includes(categorySearchQuery.toLowerCase())
-      )
-    : categoryItems;
+  // Get inpatient categories from the database, excluding Dr. Fees, Medic Fee, and Medicine
+  const excludedCategories = ['Dr. Fees', 'Medic Fee', 'Medicine'];
+  const categories = Array.from(new Set(
+    medicalItems
+      .filter((item: MedicalItem) => !item.isOutpatient && !excludedCategories.includes(item.category))
+      .map((item: MedicalItem) => item.category)
+  ));
 
-  // Global search results
-  const globalSearchResults = globalSearchQuery
-    ? medicalItems.filter((item: MedicalItem) =>
-        item.name.toLowerCase().includes(globalSearchQuery.toLowerCase()) ||
-        item.category.toLowerCase().includes(globalSearchQuery.toLowerCase())
-      )
-    : [];
-
-  // Save bill mutation
-  const saveBillMutation = useMutation({
-    mutationFn: async (billData: any) => {
-      const response = await fetch('/api/bills', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'inpatient',
-          sessionId: 'browser-session',
-          billData: JSON.stringify(billData),
-          total: calculateTotal().toString(),
-          daysAdmitted,
-          currency: 'BDT',
-          patientInfo: {
-            patientName,
-            opdNumber,
-            hospitalNumber,
-            billNumber,
-            admissionDate,
-            dischargeDate,
-            admissionTime,
-            dischargeTime,
-          },
-        }),
-      });
-      if (!response.ok) throw new Error('Failed to save bill');
-      return response.json();
-    },
-  });
-
-  // Load saved bill on mount
-  useEffect(() => {
-    const loadSavedBill = async () => {
-      try {
-        const response = await fetch('/api/bills?sessionId=browser-session&type=inpatient');
-        if (response.ok) {
-          const bill = await response.json();
-          if (bill && bill.billData) {
-            setBillItems(JSON.parse(bill.billData));
-            setDaysAdmitted(bill.daysAdmitted || 1);
-            
-            // Load patient information if available
-            if (bill.patientInfo) {
-              setPatientName(bill.patientInfo.patientName || '');
-              setOpdNumber(bill.patientInfo.opdNumber || '');
-              setHospitalNumber(bill.patientInfo.hospitalNumber || '');
-              setBillNumber(bill.patientInfo.billNumber || '');
-              setAdmissionDate(bill.patientInfo.admissionDate || '');
-              setDischargeDate(bill.patientInfo.dischargeDate || '');
-              setAdmissionTime(bill.patientInfo.admissionTime || '12:00 PM');
-              setDischargeTime(bill.patientInfo.dischargeTime || '12:00 PM');
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Failed to load saved bill:', error);
-      }
-    };
-    loadSavedBill();
-  }, []);
-
-  // Auto-save bill when items or patient info change
-  useEffect(() => {
-    if (billItems.length > 0 || daysAdmitted > 1 || patientName || opdNumber || hospitalNumber || billNumber || admissionDate || dischargeDate || admissionTime !== '12:00 PM' || dischargeTime !== '12:00 PM') {
-      saveBillMutation.mutate(billItems);
-    }
-  }, [billItems, daysAdmitted, patientName, opdNumber, hospitalNumber, billNumber, admissionDate, dischargeDate, admissionTime, dischargeTime]);
-
-  const addToBill = (item: MedicalItem, quantity: number = 1) => {
-    const existingItem = billItems.find(billItem => billItem.id === item.id);
-    
-    if (existingItem) {
-      // Show duplicate confirmation dialog
-      setDuplicateDialog({ open: true, item });
-    } else {
-      setBillItems([...billItems, { ...item, quantity }]);
-    }
-  };
-
-  // Handle duplicate dialog actions
-  const handleDuplicateAction = (action: 'add' | 'skip' | 'remove') => {
-    const item = duplicateDialog.item;
-    if (!item) return;
-
-    switch (action) {
-      case 'add':
-        // Add the item again (allow duplicate)
-        setBillItems([...billItems, { ...item, quantity: 1 }]);
-        break;
-      case 'skip':
-        // Do nothing, just close dialog
-        break;
-      case 'remove':
-        // Remove existing item from bill
-        setBillItems(billItems.filter(billItem => billItem.id !== item.id));
-        break;
-    }
-    
-    setDuplicateDialog({ open: false, item: null });
-  };
-
-  // Removed updateQuantity function - no longer needed without quantity controls
-
-  const removeFromBill = (id: number) => {
-    setBillItems(billItems.filter(item => item.id !== id));
-  };
-
-  const calculateTotal = () => {
-    const itemsTotal = billItems.reduce((total, item) => {
-      const price = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
-      const itemTotal = price * item.quantity;
-      // Apply daily rate for items that need it (like room charges, food, etc.)
-      const isDailyItem = item.category.includes('Food') || 
-                         item.category.includes('Seat') || 
-                         item.category.includes('O2') ||
-                         item.name.toLowerCase().includes('per day');
-      return total + (isDailyItem ? itemTotal * daysAdmitted : itemTotal);
-    }, 0);
-    
-    return itemsTotal;
-  };
-
-  // Group bill items by category for categorized display
-  const getBillItemsByCategory = () => {
-    const grouped = billItems.reduce((acc, item) => {
-      const category = item.category;
-      if (!acc[category]) {
-        acc[category] = [];
-      }
-      acc[category].push(item);
-      return acc;
-    }, {} as Record<string, BillItem[]>);
-
-    return grouped;
-  };
-
-  // Calculate category total
-  const calculateCategoryTotal = (items: BillItem[]) => {
-    return items.reduce((total, item) => {
-      const price = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
-      const itemTotal = price * item.quantity;
-      // Apply daily rate for items that need it (like room charges, food, etc.)
-      const isDailyItem = item.category.includes('Food') || 
-                         item.category.includes('Seat') || 
-                         item.category.includes('O2') ||
-                         item.name.toLowerCase().includes('per day');
-      return total + (isDailyItem ? itemTotal * daysAdmitted : itemTotal);
-    }, 0);
-  };
-
-  const clearBill = () => {
-    setBillItems([]);
-    setDaysAdmitted(1);
-  };
-
-  // Inpatient Medicine dosage calculation functions
-  const medTypeOptions = Object.keys(MEDICINE_RULES);
-
-  const doseFrequencyOptions = [
-    { value: 'QD', label: 'QD (Once daily)' },
-    { value: 'BID', label: 'BID (Twice daily)' },
-    { value: 'TID', label: 'TID (Three times daily)' },
-    { value: 'QID', label: 'QID (Four times daily)' },
-    { value: 'QOD', label: 'QOD (Every other day)' },
-    { value: 'QWEEK', label: 'QWEEK (Weekly)' }
+  // Inpatient category order - updated per user request (removed Dr. Fees, Medic Fee, Medicine)
+  const categoryOrder = [
+    'Blood', 'Laboratory', 'Limb and Brace', 'Food', 
+    'Halo, O2, NO2, etc.', 'Orthopedic, S.Roll, etc.', 'Surgery, O.R. & Delivery', 
+    'Registration Fees', 'Discharge Medicine', 'Medicine, ORS & Anesthesia, Ket, Spinal',
+    'Physical Therapy', 'IV.\'s', 'Plaster/Milk', 'Procedures', 
+    'Seat & Ad. Fee', 'X-Ray', 'Lost Laundry', 'Travel', 'Others'
   ];
 
-  const isDosageSelectionComplete = () => {
-    return dosePrescribed.trim() && medType && doseFrequency && totalDays.trim() && parseInt(totalDays) > 0;
-  };
+  const orderedCategories = categoryOrder.filter(cat => categories.includes(cat))
+    .concat(categories.filter(cat => !categoryOrder.includes(cat)));
 
-  const calculateInpatientMedicineDosage = () => {
-    if (!selectedMedicineForDosage || !isDosageSelectionComplete()) return { totalQuantity: 0, totalPrice: 0, calculationDetails: '' };
-
-    try {
-      const result = calculateMedicineDosage({
-        dosePrescribed,
-        medType,
-        doseFrequency,
-        totalDays: parseInt(totalDays),
-        basePrice: parseFloat(selectedMedicineForDosage.price),
-        isInpatient: true, // Inpatient logic
-        isDischargeMedicine: isDischargeMedicine
-      });
-
-      return {
-        totalQuantity: result.totalQuantity,
-        totalPrice: result.totalPrice,
-        calculationDetails: result.calculationDetails,
-        quantityUnit: result.quantityUnit
-      };
-    } catch (error) {
-      console.error('Medicine calculation error:', error);
-      return { totalQuantity: 0, totalPrice: 0, calculationDetails: 'Calculation error', quantityUnit: '' };
-    }
-  };
-
-  const handleMedicineItemSelect = (item: MedicalItem) => {
-    setSelectedMedicineForDosage(item);
-    setShowMedicineDosageSelection(true);
-    // Reset dosage fields when selecting new medicine
-    setDosePrescribed('');
-    setMedType('');
-    setDoseFrequency('');
-    setTotalDays('');
-    // Auto-set discharge medicine flag based on category
-    setIsDischargeMedicine(item.category === 'Discharge Medicine');
-  };
-
-  const addMedicineToBill = () => {
-    if (!selectedMedicineForDosage || !isDosageSelectionComplete()) return;
-
-    const calculationResult = calculateInpatientMedicineDosage();
-    
-    if (calculationResult.totalQuantity === 0) {
-      console.error('Failed to calculate medicine dosage');
-      return;
-    }
-
-    // Use the shared formatting function
-    const medicineTypeLabel = isDischargeMedicine ? 'Discharge Medicine' : 'Ward Medicine';
-    const formattedName = `${formatDosageForBill(
-      selectedMedicineForDosage.name,
-      dosePrescribed,
-      medType,
-      doseFrequency,
-      parseInt(totalDays),
-      {
-        totalQuantity: calculationResult.totalQuantity,
-        totalPrice: calculationResult.totalPrice,
-        quantityUnit: calculationResult.quantityUnit || medType,
-        pricePerUnit: parseFloat(selectedMedicineForDosage.price),
-        isPartialAllowed: false,
-        calculationDetails: calculationResult.calculationDetails
-      }
-    )} - ${medicineTypeLabel}`;
-    
-    // Create medicine item with dosage information
-    const medicineItem = {
-      ...selectedMedicineForDosage,
-      name: formattedName,
-      price: calculationResult.totalPrice.toString(),
-      quantity: 1 // For inpatient, we use quantity 1 and include total in price
-    };
-
-    // Add to bill
-    setBillItems(prev => [...prev, medicineItem]);
-
-    // Reset medicine dosage selection
-    setSelectedMedicineForDosage(null);
-    setShowMedicineDosageSelection(false);
-    setDosePrescribed('');
-    setMedType('');
-    setDoseFrequency('');
-    setTotalDays('');
-    setIsDischargeMedicine(false);
-  };
-
-  const cancelMedicineDosageSelection = () => {
-    setSelectedMedicineForDosage(null);
-    setShowMedicineDosageSelection(false);
-    setDosePrescribed('');
-    setMedType('');
-    setDoseFrequency('');
-    setTotalDays('');
-    setIsDischargeMedicine(false);
-  };
-
-  // Discharge Medicine functions (copied from outpatient Medicine)
-  const addDischargeMedicineToTempList = () => {
-    if (!selectedMedicineForDosage || !isDosageSelectionComplete()) return;
-
-    const calculation = calculateInpatientMedicineDosage();
-    
-    const tempMedicine = {
-      ...selectedMedicineForDosage,
-      tempId: `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      price: calculation.totalPrice.toString(),
-      dosageInfo: {
-        dosePrescribed,
-        medType,
-        doseFrequency,
-        totalDays,
-        calculationDetails: calculation.calculationDetails,
-        totalQuantity: calculation.totalQuantity,
-        quantityUnit: calculation.quantityUnit
-      }
-    };
-
-    setTempSelectedDischargeMedicines(prev => [...prev, tempMedicine]);
-    
-    // Reset dosage selection
-    cancelMedicineDosageSelection();
-  };
-
-  const addAllDischargeMedicinesToBill = () => {
-    if (tempSelectedDischargeMedicines.length === 0) return;
-
-    const billItemsToAdd = tempSelectedDischargeMedicines.map(medicine => ({
-      ...medicine,
-      billId: `discharge-medicine-${medicine.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-    }));
-
-    setBillItems(prevBillItems => [...prevBillItems, ...billItemsToAdd]);
-    setTempSelectedDischargeMedicines([]);
-  };
-
-  const removeTempDischargeMedicine = (tempId: string) => {
-    setTempSelectedDischargeMedicines(prev => prev.filter(medicine => medicine.tempId !== tempId));
-  };
-
-  const editTempDischargeMedicine = (medicine: any) => {
-    // Pre-fill the dosage calculator with existing values
-    if (medicine.dosageInfo) {
-      setSelectedMedicineForDosage(medicine);
-      setDosePrescribed(medicine.dosageInfo.dosePrescribed);
-      setMedType(medicine.dosageInfo.medType);
-      setDoseFrequency(medicine.dosageInfo.doseFrequency);
-      setTotalDays(medicine.dosageInfo.totalDays);
-      setShowMedicineDosageSelection(true);
-      
-      // Remove the medicine from temp list since it will be re-added after editing
-      removeTempDischargeMedicine(medicine.tempId);
-      
-      // Focus on dose input for immediate editing
-      setTimeout(() => {
-        if (dischargeMedicineDoseInputRef.current) {
-          dischargeMedicineDoseInputRef.current.focus();
-        }
-      }, 100);
-    }
-  };
-
-  // Get discharge medicine search items
-  const getDischargeMedicineSearchItems = () => {
-    return selectedCategory === 'Discharge Medicine' ? categoryItems : [];
-  };
-
-  const getDischargeMedicineDropdownItems = () => {
-    return selectedCategory === 'Discharge Medicine' ? categoryItems : [];
-  };
-
-  // Discharge Medicine tag-based search functions (copied from outpatient)
-  const handleDischargeMedicineTagKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' || e.key === ',') {
-      e.preventDefault();
-      addDischargeMedicineTagFromSearch();
-    }
-  };
-
-  const addDischargeMedicineTagFromSearch = () => {
-    if (!categorySearchQuery.trim()) return;
-    
-    const query = categorySearchQuery.toLowerCase();
-    const matchingItem = getDischargeMedicineSearchItems().find(item => 
-      item.name.toLowerCase().includes(query)
-    );
-    
-    if (matchingItem) {
-      const alreadySelected = selectedDischargeMedicineItems.find(selected => selected.id === matchingItem.id);
-      const alreadyInBill = billItems.find(billItem => billItem.id === matchingItem.id);
-      
-      if (!alreadySelected && !alreadyInBill) {
-        setSelectedDischargeMedicineItems(prev => [...prev, matchingItem]);
-      }
-    }
-    
+  // Category navigation functions
+  const handleCategoryClick = (category: string) => {
+    setSelectedCategory(category);
+    setCurrentCategoryIndex(orderedCategories.indexOf(category));
+    setIsCarouselMode(true);
     setCategorySearchQuery('');
-    if (dischargeMedicineSearchInputRef.current) {
-      dischargeMedicineSearchInputRef.current.focus();
+  };
+
+  const navigateCarousel = (direction: 'prev' | 'next') => {
+    const newIndex = direction === 'prev' 
+      ? (currentCategoryIndex - 1 + orderedCategories.length) % orderedCategories.length
+      : (currentCategoryIndex + 1) % orderedCategories.length;
+    
+    setCurrentCategoryIndex(newIndex);
+    setSelectedCategory(orderedCategories[newIndex]);
+    setCategorySearchQuery(''); // Reset search when switching categories
+  };
+
+  const exitCarousel = () => {
+    setIsCarouselMode(false);
+    setSelectedCategory('');
+    setCategorySearchQuery('');
+  };
+
+  const goToPreviousCategory = () => {
+    if (currentCategoryIndex > 0) {
+      const newIndex = currentCategoryIndex - 1;
+      setCurrentCategoryIndex(newIndex);
+      setSelectedCategory(orderedCategories[newIndex]);
+      setCategorySearchQuery('');
     }
   };
 
-  const removeDischargeMedicineTagItem = (itemId: number) => {
-    setSelectedDischargeMedicineItems(prev => prev.filter(item => item.id !== itemId));
-  };
-
-  const addDischargeMedicineTagItemsToBill = () => {
-    if (selectedDischargeMedicineItems.length === 0) return;
-
-    const billItemsToAdd = selectedDischargeMedicineItems.map(item => ({
-      ...item,
-      billId: `discharge-medicine-tag-${item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-    }));
-
-    setBillItems(prevBillItems => [...prevBillItems, ...billItemsToAdd]);
-    setSelectedDischargeMedicineItems([]);
-  };
-
-  // Discharge Medicine dropdown functions (copied from outpatient)
-  const handleDischargeMedicineDropdownSelect = (itemId: string) => {
-    const item = getDischargeMedicineDropdownItems().find(item => item.id.toString() === itemId);
-    if (item) {
-      const alreadySelected = dischargeMedicineDropdownSelectedItems.find(selected => selected.id === item.id);
-      const alreadyInBill = billItems.find(billItem => billItem.id === item.id);
-      
-      if (!alreadySelected && !alreadyInBill) {
-        setDischargeMedicineDropdownSelectedItems(prev => [...prev, item]);
-      }
-    }
-    setDischargeMedicineDropdownFilterQuery('');
-    setDischargeMedicineHighlightedDropdownIndex(-1);
-  };
-
-  const removeDischargeMedicineDropdownItem = (itemId: number) => {
-    setDischargeMedicineDropdownSelectedItems(prev => prev.filter(item => item.id !== itemId));
-  };
-
-  const addDischargeMedicineDropdownSelectedItemsToBill = () => {
-    if (dischargeMedicineDropdownSelectedItems.length === 0) return;
-
-    const billItemsToAdd = dischargeMedicineDropdownSelectedItems.map(item => ({
-      ...item,
-      billId: `discharge-medicine-dropdown-${item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-    }));
-
-    setBillItems(prevBillItems => [...prevBillItems, ...billItemsToAdd]);
-    setDischargeMedicineDropdownSelectedItems([]);
-    setIsDischargeMedicineDropdownOpen(false);
-    setDischargeMedicineDropdownFilterQuery('');
-    setDischargeMedicineHighlightedDropdownIndex(-1);
-  };
-
-  const getDischargeMedicineFilteredDropdownItems = () => {
-    if (!dischargeMedicineDropdownFilterQuery.trim()) return getDischargeMedicineDropdownItems();
-    
-    const query = dischargeMedicineDropdownFilterQuery.toLowerCase();
-    return getDischargeMedicineDropdownItems()
-      .filter(item => item.name.toLowerCase().includes(query))
-      .sort((a, b) => {
-        const aName = a.name.toLowerCase();
-        const bName = b.name.toLowerCase();
-        
-        if (aName === query) return -1;
-        if (bName === query) return 1;
-        
-        if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
-        if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
-        
-        return aName.localeCompare(bName);
-      });
-  };
-
-  const handleDischargeMedicineDropdownKeyDown = (e: React.KeyboardEvent) => {
-    if (!isDischargeMedicineDropdownOpen) return;
-    
-    const filteredItems = getDischargeMedicineFilteredDropdownItems();
-    
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setDischargeMedicineHighlightedDropdownIndex(prev => 
-        prev < filteredItems.length - 1 ? prev + 1 : 0
-      );
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setDischargeMedicineHighlightedDropdownIndex(prev => 
-        prev > 0 ? prev - 1 : filteredItems.length - 1
-      );
-    } else if (e.key === 'Enter' && dischargeMedicineHighlightedDropdownIndex >= 0) {
-      e.preventDefault();
-      const selectedItem = filteredItems[dischargeMedicineHighlightedDropdownIndex];
-      handleDischargeMedicineDropdownSelect(selectedItem.id.toString());
-    } else if (e.key === 'Escape') {
-      e.preventDefault();
-      setIsDischargeMedicineDropdownOpen(false);
-      setDischargeMedicineHighlightedDropdownIndex(-1);
-    } else if (e.key.length === 1) {
-      setDischargeMedicineDropdownFilterQuery(prev => prev + e.key);
-      setDischargeMedicineHighlightedDropdownIndex(0);
-    } else if (e.key === 'Backspace') {
-      setDischargeMedicineDropdownFilterQuery(prev => prev.slice(0, -1));
-      setDischargeMedicineHighlightedDropdownIndex(0);
+  const goToNextCategory = () => {
+    if (currentCategoryIndex < orderedCategories.length - 1) {
+      const newIndex = currentCategoryIndex + 1;
+      setCurrentCategoryIndex(newIndex);
+      setSelectedCategory(orderedCategories[newIndex]);
+      setCategorySearchQuery('');
     }
   };
 
-  // Laboratory functions - identical to Outpatient
-  const getSearchItems = () => {
-    return categoryItems; // Use all items for search
-  };
-
-  const getDropdownItems = () => {
-    return categoryItems; // Use all items for dropdown
-  };
-
-  const searchItems = getSearchItems();
-  const dropdownItems = getDropdownItems();
-
-  // Get sorted Laboratory suggestions with closest match first
+  // Laboratory search functionality
   const getLabSuggestions = () => {
-    if (!categorySearchQuery) return [];
-    
-    const query = categorySearchQuery.toLowerCase();
-    const suggestions = filteredCategoryItems.filter(item => 
-      item.name.toLowerCase().includes(query)
-    );
-    
-    // Sort by relevance: exact matches first, then starts with, then contains
-    return suggestions.sort((a, b) => {
-      const aName = a.name.toLowerCase();
-      const bName = b.name.toLowerCase();
-      
-      // Exact match gets highest priority
-      if (aName === query) return -1;
-      if (bName === query) return 1;
-      
-      // Starts with query gets second priority
-      if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
-      if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
-      
-      // Both start with or both contain - sort alphabetically
-      return aName.localeCompare(bName);
-    });
+    if (!categorySearchQuery || selectedCategory !== 'Laboratory') return [];
+    return categoryItems
+      .filter((item: MedicalItem) => 
+        item.name.toLowerCase().includes(categorySearchQuery.toLowerCase()) &&
+        !selectedLabItems.find(selected => selected.id === item.id) &&
+        !billItems.find(billItem => billItem.id === item.id.toString())
+      )
+      .slice(0, 5);
   };
 
-  // Get sorted Discharge Medicine suggestions with closest match first
-  const getDischargeMedicineSuggestions = () => {
-    if (!categorySearchQuery) return [];
-    
-    const query = categorySearchQuery.toLowerCase();
-    const suggestions = filteredCategoryItems.filter(item => 
-      item.name.toLowerCase().includes(query)
-    );
-    
-    // Sort by relevance: exact matches first, then starts with, then contains
-    return suggestions.sort((a, b) => {
-      const aName = a.name.toLowerCase();
-      const bName = b.name.toLowerCase();
-      
-      // Exact match gets highest priority
-      if (aName === query) return -1;
-      if (bName === query) return 1;
-      
-      // Starts with query gets second priority
-      if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
-      if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
-      
-      // Both start with or both contain - sort alphabetically
-      return aName.localeCompare(bName);
-    });
-  };
-
-  // Handle comma-separated Laboratory item selection
-  const handleLabSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleLabSearchKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === ',' || e.key === 'Enter') {
       e.preventDefault();
-      const query = categorySearchQuery.trim();
-      if (query) {
-        // Get the top suggestion (closest match)
-        const suggestions = getLabSuggestions();
-        if (suggestions.length > 0) {
-          const topMatch = suggestions[0];
-          // Check if item is already selected in search OR already in the bill
-          const alreadyInSearch = selectedLabItems.find(selected => selected.id === topMatch.id);
-          const alreadyInBill = billItems.find(billItem => billItem.id === topMatch.id);
-          
-          if (!alreadyInSearch && !alreadyInBill) {
-            setSelectedLabItems(prev => [...prev, topMatch]);
-            // Clear dropdown selections when switching to search
-            setDropdownSelectedItems([]);
-          }
-          // If item is already selected or in bill, we ignore the selection
-        }
+      const suggestions = getLabSuggestions();
+      if (suggestions.length > 0) {
+        const item = suggestions[0];
+        setSelectedLabItems(prev => [...prev, item]);
         setCategorySearchQuery('');
-        // Refocus search input for continuous typing
-        setTimeout(() => {
-          if (searchInputRef.current) {
-            searchInputRef.current.focus();
-          }
-        }, 0);
+        setDropdownSelectedItems([]);
       }
     }
   };
 
-  // Remove Laboratory item from selection
   const removeLabItem = (itemId: number) => {
     setSelectedLabItems(prev => prev.filter(item => item.id !== itemId));
-    // Refocus search input after removing item
-    setTimeout(() => {
-      if (searchInputRef.current) {
-        searchInputRef.current.focus();
-      }
-    }, 0);
   };
 
-  // Add all selected Laboratory items to bill
   const addSelectedLabItemsToBill = () => {
     const newItems: MedicalItem[] = [];
     const duplicateItems: MedicalItem[] = [];
     
     selectedLabItems.forEach(item => {
-      const existingItem = billItems.find(billItem => billItem.id === item.id);
+      const existingItem = billItems.find(billItem => billItem.id === item.id.toString());
       if (existingItem) {
         duplicateItems.push(item);
       } else {
@@ -940,26 +401,21 @@ const Inpatient = () => {
       }
     });
     
-    // Add new items immediately
     if (newItems.length > 0) {
       const billItemsToAdd = newItems.map(item => ({ 
         ...item, 
-        quantity: 1,
+        id: item.id.toString(),
+        price: parseFloat(item.price),
         billId: `${item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` 
       }));
       setBillItems(prevBillItems => [...prevBillItems, ...billItemsToAdd]);
     }
     
-    // Handle duplicates - for now, skip them and show a message
     if (duplicateItems.length > 0) {
-      // Show duplicate dialog for the first duplicate item
       setDuplicateDialog({ open: true, item: duplicateItems[0] });
     }
     
     setSelectedLabItems([]);
-    setCategorySearchQuery('');
-    
-    // Refocus search input after adding items
     setTimeout(() => {
       if (searchInputRef.current) {
         searchInputRef.current.focus();
@@ -967,36 +423,68 @@ const Inpatient = () => {
     }, 0);
   };
 
-  // Laboratory dropdown functionality
+  // Dropdown functionality for Laboratory
   const handleDropdownSelect = (value: string) => {
     const selectedItem = categoryItems.find(item => item.id.toString() === value);
     
-    // Check if item is already selected in dropdown OR already in the bill
     const alreadyInDropdown = dropdownSelectedItems.find(item => item.id === selectedItem?.id);
-    const alreadyInBill = billItems.find(billItem => billItem.id === selectedItem?.id);
+    const alreadyInBill = billItems.find(billItem => billItem.id === selectedItem?.id.toString());
     
     if (selectedItem && !alreadyInDropdown && !alreadyInBill) {
       setDropdownSelectedItems(prev => [...prev, selectedItem]);
-      // Clear search selections when using dropdown
       setSelectedLabItems([]);
       setCategorySearchQuery('');
     }
-    // If item is already selected, we just ignore the selection (no error message needed)
     
-    setDropdownValue(''); // Reset dropdown after selection
-    setHighlightedDropdownIndex(-1); // Reset highlighted index
-    setDropdownFilterQuery(''); // Reset filter text for fresh start
+    setDropdownValue('');
+    setHighlightedDropdownIndex(-1);
+    setDropdownFilterQuery('');
     
-    // Refocus the dropdown button to continue keyboard input
     setTimeout(() => {
       if (dropdownButtonRef.current) {
         dropdownButtonRef.current.focus();
       }
     }, 0);
-    // Keep dropdown open for multiple selections
   };
 
-  // Handle keyboard navigation for Laboratory dropdown
+  const removeDropdownItem = (itemId: number) => {
+    setDropdownSelectedItems(prev => prev.filter(item => item.id !== itemId));
+  };
+
+  const addDropdownSelectedItemsToBill = () => {
+    const newItems: MedicalItem[] = [];
+    const duplicateItems: MedicalItem[] = [];
+    
+    dropdownSelectedItems.forEach(item => {
+      const existingItem = billItems.find(billItem => billItem.id === item.id.toString());
+      if (existingItem) {
+        duplicateItems.push(item);
+      } else {
+        newItems.push(item);
+      }
+    });
+    
+    if (newItems.length > 0) {
+      const billItemsToAdd = newItems.map(item => ({ 
+        ...item, 
+        id: item.id.toString(),
+        price: parseFloat(item.price),
+        billId: `${item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` 
+      }));
+      setBillItems(prevBillItems => [...prevBillItems, ...billItemsToAdd]);
+    }
+    
+    if (duplicateItems.length > 0) {
+      setDuplicateDialog({ open: true, item: duplicateItems[0] });
+    }
+    
+    setDropdownSelectedItems([]);
+    setIsDropdownOpen(false);
+    setHighlightedDropdownIndex(-1);
+    setDropdownFilterQuery('');
+  };
+
+  // Handle keyboard navigation for dropdown
   const handleDropdownKeyDown = (e: React.KeyboardEvent) => {
     const orderedItems = getFilteredDropdownItems();
     
@@ -1017,7 +505,6 @@ const Inpatient = () => {
       const selectedItem = orderedItems[highlightedDropdownIndex];
       if (selectedItem) {
         handleDropdownSelect(selectedItem.id.toString());
-        // Dropdown stays open and focused for more selections
       }
     } else if (e.key === 'Escape') {
       e.preventDefault();
@@ -1025,11 +512,10 @@ const Inpatient = () => {
       setHighlightedDropdownIndex(-1);
       setDropdownFilterQuery('');
     } else if (e.key.length === 1 && e.key.match(/[a-zA-Z0-9\s]/)) {
-      // Handle typing to filter dropdown items
       e.preventDefault();
       const newQuery = dropdownFilterQuery + e.key.toLowerCase();
       setDropdownFilterQuery(newQuery);
-      setHighlightedDropdownIndex(0); // Highlight first filtered result
+      setHighlightedDropdownIndex(0);
       if (!isDropdownOpen) setIsDropdownOpen(true);
     } else if (e.key === 'Backspace') {
       e.preventDefault();
@@ -1038,436 +524,468 @@ const Inpatient = () => {
     }
   };
 
-  // Remove item from Laboratory dropdown selection
-  const removeDropdownItem = (itemId: number) => {
-    setDropdownSelectedItems(prev => prev.filter(item => item.id !== itemId));
-  };
-
-  // Add all Laboratory dropdown selected items to bill
-  const addDropdownSelectedItemsToBill = () => {
-    const newItems: MedicalItem[] = [];
-    const duplicateItems: MedicalItem[] = [];
+  // Get filtered dropdown items
+  const getFilteredDropdownItems = () => {
+    if (!categoryItems) return [];
     
-    dropdownSelectedItems.forEach(item => {
-      const existingItem = billItems.find(billItem => billItem.id === item.id);
-      if (existingItem) {
-        duplicateItems.push(item);
-      } else {
-        newItems.push(item);
-      }
-    });
+    const filtered = categoryItems.filter(item => 
+      !dropdownFilterQuery || 
+      item.name.toLowerCase().includes(dropdownFilterQuery.toLowerCase())
+    );
     
-    // Add new items immediately
-    if (newItems.length > 0) {
-      const billItemsToAdd = newItems.map(item => ({ 
-        ...item, 
-        quantity: 1,
-        billId: `${item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` 
-      }));
-      setBillItems(prevBillItems => [...prevBillItems, ...billItemsToAdd]);
-    }
+    if (!dropdownFilterQuery) return filtered.sort((a, b) => a.name.localeCompare(b.name));
     
-    // Handle duplicates - for now, skip them and show a message
-    if (duplicateItems.length > 0) {
-      // Show duplicate dialog for the first duplicate item
-      setDuplicateDialog({ open: true, item: duplicateItems[0] });
-    }
-    
-    setDropdownSelectedItems([]);
-    // Close dropdown when adding to bill
-    setIsDropdownOpen(false);
-    setHighlightedDropdownIndex(-1);
-    setDropdownFilterQuery('');
-  };
-
-  // Get dropdown items sorted by relevance when user is typing in search
-  const getOrderedDropdownItems = () => {
-    if (!categorySearchQuery.trim()) return categoryItems;
-    
-    const query = categorySearchQuery.toLowerCase();
-    
-    // Sort items by relevance to the search query
-    return [...categoryItems].sort((a, b) => {
+    // Sort by relevance: exact matches first, then starts with, then contains
+    return filtered.sort((a, b) => {
       const aName = a.name.toLowerCase();
       const bName = b.name.toLowerCase();
-      const aIncludes = aName.includes(query);
-      const bIncludes = bName.includes(query);
+      const query = dropdownFilterQuery.toLowerCase();
       
-      // Items matching the search query come first
-      if (aIncludes && !bIncludes) return -1;
-      if (bIncludes && !aIncludes) return 1;
+      if (aName === query && bName !== query) return -1;
+      if (bName === query && aName !== query) return 1;
+      if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
+      if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
       
-      // Among matching items, sort by relevance
-      if (aIncludes && bIncludes) {
-        // Exact match gets highest priority
-        if (aName === query) return -1;
-        if (bName === query) return 1;
-        
-        // Starts with query gets second priority
-        if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
-        if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
-      }
-      
-      // Default alphabetical sort
       return aName.localeCompare(bName);
     });
   };
 
-  // Get dropdown items filtered by direct typing in dropdown
-  const getFilteredDropdownItems = () => {
-    if (!dropdownFilterQuery.trim()) return getOrderedDropdownItems();
-    
-    const query = dropdownFilterQuery.toLowerCase();
-    
-    // Filter and sort by relevance
-    return categoryItems
-      .filter(item => item.name.toLowerCase().includes(query))
-      .sort((a, b) => {
-        const aName = a.name.toLowerCase();
-        const bName = b.name.toLowerCase();
-        
-        // Exact match gets highest priority
-        if (aName === query) return -1;
-        if (bName === query) return 1;
-        
-        // Starts with gets second priority
-        if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
-        if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
-        
-        // Contains gets third priority - already filtered above
-        return aName.localeCompare(bName);
-      });
-  };
-
-  // Auto-focus search input when Laboratory category is selected
-  useEffect(() => {
-    if (selectedCategory === 'Laboratory' && isCarouselMode && searchInputRef.current) {
-      setTimeout(() => {
-        if (searchInputRef.current) {
-          searchInputRef.current.focus();
-        }
-      }, 100);
-    }
-  }, [selectedCategory, isCarouselMode]);
-
-  // Auto-focus search input when Discharge Medicine category is selected
-  useEffect(() => {
-    if (selectedCategory === 'Discharge Medicine' && isCarouselMode && dischargeMedicineSearchInputRef.current) {
-      setTimeout(() => {
-        if (dischargeMedicineSearchInputRef.current) {
-          dischargeMedicineSearchInputRef.current.focus();
-        }
-      }, 100);
-    }
-  }, [selectedCategory, isCarouselMode]);
-
-  // Click outside to close Discharge Medicine dropdown
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dischargeMedicineDropdownRef.current && !dischargeMedicineDropdownRef.current.contains(event.target as Node)) {
-        setIsDischargeMedicineDropdownOpen(false);
-        setDischargeMedicineHighlightedDropdownIndex(-1);
-      }
-    };
-    
-    if (isDischargeMedicineDropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isDischargeMedicineDropdownOpen]);
-
-  // Click outside to close Laboratory dropdown
+  // Handle click outside dropdown to close it
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
         setHighlightedDropdownIndex(-1);
+        setDropdownFilterQuery('');
       }
     };
-    
+
     if (isDropdownOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
-    
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isDropdownOpen]);
 
-  // Inpatient category order - outpatient categories first, then inpatient-specific
-  const categoryOrder = [
-    'Laboratory', 'X-Ray', 'Registration Fees', 'Dr. Fees', 
-    'Medic Fee', 'Medicine', 'Physical Therapy', 'Limb and Brace',
-    'Seat & Ad. Fee', 'Blood', 'Food', 'Halo, O2, NO2, etc.', 
-    'Surgery, O.R. & Delivery', 'Discharge Medicine', 'Medicine, ORS & Anesthesia, Ket, Spinal',
-    'IV.\'s', 'Plaster/Milk', 'Procedures', 'Lost Laundry', 'Travel', 'Other'
-  ];
+  // Ensure dropdown button stays focused for continuous keyboard input
+  useEffect(() => {
+    if (isDropdownOpen && dropdownButtonRef.current) {
+      dropdownButtonRef.current.focus();
+    }
+  }, [dropdownFilterQuery, dropdownSelectedItems.length]);
 
-  const orderedCategories = categoryOrder.filter(cat => categories.includes(cat))
-    .concat(categories.filter(cat => !categoryOrder.includes(cat)));
+  // Auto-focus search input when Laboratory category is selected
+  useEffect(() => {
+    if (selectedCategory === 'Laboratory' && isCarouselMode && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [selectedCategory, isCarouselMode]);
 
-  // Carousel navigation functions
-  const handleCategoryClick = (category: string) => {
-    if (isCarouselMode && category === selectedCategory) {
-      // If already in carousel mode and same category clicked, exit carousel
-      setIsCarouselMode(false);
-      setSelectedCategory('');
-    } else {
-      setSelectedCategory(category);
-      setIsCarouselMode(true);
-      setCurrentCategoryIndex(orderedCategories.indexOf(category));
-      setCategorySearchQuery(''); // Reset search when switching categories
+  // X-Ray specific functions (same as Laboratory)
+  
+  // Get sorted X-Ray suggestions with closest match first
+  const getXRaySuggestions = () => {
+    if (!categorySearchQuery) return [];
+    
+    const query = categorySearchQuery.toLowerCase();
+    const suggestions = categoryItems.filter((item: MedicalItem) => 
+      item.name.toLowerCase().includes(query)
+    );
+    
+    // Sort by relevance: exact matches first, then starts with, then contains
+    return suggestions.sort((a: MedicalItem, b: MedicalItem) => {
+      const aName = a.name.toLowerCase();
+      const bName = b.name.toLowerCase();
+      
+      // Exact match gets highest priority
+      if (aName === query) return -1;
+      if (bName === query) return 1;
+      
+      // Starts with query gets second priority
+      if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
+      if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
+      
+      // Both start with or both contain - sort alphabetically
+      return aName.localeCompare(bName);
+    });
+  };
+
+  // Handle comma-separated X-Ray item selection
+  const handleXRaySearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === ',' || e.key === 'Enter') {
+      e.preventDefault();
+      const query = categorySearchQuery.trim();
+      if (query) {
+        // Get the top suggestion (closest match)
+        const suggestions = getXRaySuggestions();
+        if (suggestions.length > 0) {
+          const topMatch = suggestions[0];
+          // Check if item is already in the bill
+          const alreadyInBill = billItems.find(billItem => billItem.id === topMatch.id.toString());
+          
+          if (!alreadyInBill) {
+            handleXRayItemSelect(topMatch);
+          }
+        }
+        setCategorySearchQuery('');
+      }
+      // Refocus search input
+      setTimeout(() => {
+        if (xRaySearchInputRef.current) {
+          xRaySearchInputRef.current.focus();
+        }
+      }, 0);
     }
   };
 
-  const navigateCarousel = (direction: 'prev' | 'next') => {
-    const newIndex = direction === 'prev' 
-      ? (currentCategoryIndex - 1 + orderedCategories.length) % orderedCategories.length
-      : (currentCategoryIndex + 1) % orderedCategories.length;
+  const removeXRayItem = (itemId: number) => {
+    setSelectedXRayItems(prev => prev.filter(item => item.id !== itemId));
+    // Refocus search input
+    setTimeout(() => {
+      if (xRaySearchInputRef.current) {
+        xRaySearchInputRef.current.focus();
+      }
+    }, 0);
+  };
+
+  const addSelectedXRayItemsToBill = () => {
+    selectedXRayItems.forEach(item => {
+      const existingItem = billItems.find(billItem => billItem.id === item.id.toString());
+      if (!existingItem) {
+        handleXRayItemSelect(item);
+      }
+    });
+    setSelectedXRayItems([]);
+  };
+
+  const handleXRayItemSelect = (item: MedicalItem) => {
+    setSelectedXRayForViews(item);
+    setXRayViews({ AP: false, LAT: false, OBLIQUE: false, BOTH: false });
+    setIsOffChargePortable(false);
+    setShowXRayViewSelection(true);
+  };
+
+
+
+  const addXRayToBill = () => {
+    if (!selectedXRayForViews) return;
     
-    setCurrentCategoryIndex(newIndex);
-    setSelectedCategory(orderedCategories[newIndex]);
-    setCategorySearchQuery(''); // Reset search when switching categories
+    const selectedViews = Object.entries(xRayViews)
+      .filter(([_, checked]) => checked)
+      .map(([view, _]) => view);
+    
+    if (selectedViews.length === 0) return;
+    
+    const viewText = selectedViews.includes('BOTH') ? 'AP and LAT' : selectedViews.join(', ');
+    const displayName = `${selectedXRayForViews.name} (${viewText}${isOffChargePortable ? ', Off-Charge/Portable' : ''})`;
+    
+    // Check for exact duplicate (same X-ray with same views)
+    const existingItem = billItems.find(billItem => 
+      billItem.id === selectedXRayForViews.id.toString() && 
+      billItem.name === displayName
+    );
+    
+    if (existingItem) {
+      setDuplicateDialog({ open: true, item: selectedXRayForViews });
+    } else {
+      const newBillItem = {
+        ...selectedXRayForViews,
+        id: selectedXRayForViews.id.toString(),
+        name: displayName,
+        price: parseFloat(selectedXRayForViews.price),
+        billId: `${selectedXRayForViews.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      };
+      setBillItems(prev => [...prev, newBillItem]);
+    }
+    
+    setShowXRayViewSelection(false);
+    setSelectedXRayForViews(null);
+    setXRayViews({ AP: false, LAT: false, OBLIQUE: false, BOTH: false });
+    setIsOffChargePortable(false);
   };
 
-  // Swipe gesture support for carousel navigation
-  const swipeRef = useSwipeGesture({
-    onSwipeLeft: () => {
-      if (isCarouselMode) {
-        navigateCarousel('next');
-      }
-    },
-    onSwipeRight: () => {
-      if (isCarouselMode) {
-        navigateCarousel('prev');
-      }
-    },
-    threshold: 75, // Minimum swipe distance
-    preventDefaultEvents: false
-  });
-
-  const exitCarousel = () => {
-    setIsCarouselMode(false);
-    setSelectedCategory('');
-    setCategorySearchQuery('');
-    setGlobalSearchQuery(''); // Clear global search when exiting carousel
+  const removeXRayDropdownItem = (itemId: number) => {
+    setXRayDropdownSelectedItems(prev => prev.filter(item => item.id !== itemId));
   };
+
+  // X-Ray dropdown functionality
+  const handleXRayDropdownKeyDown = (e: React.KeyboardEvent) => {
+    const orderedItems = getXRayFilteredDropdownItems();
+    
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setXRayHighlightedDropdownIndex(prev => 
+        prev < orderedItems.length - 1 ? prev + 1 : 0
+      );
+      if (!isXRayDropdownOpen) setIsXRayDropdownOpen(true);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setXRayHighlightedDropdownIndex(prev => 
+        prev > 0 ? prev - 1 : orderedItems.length - 1
+      );
+      if (!isXRayDropdownOpen) setIsXRayDropdownOpen(true);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (isXRayDropdownOpen && xRayHighlightedDropdownIndex >= 0 && orderedItems[xRayHighlightedDropdownIndex]) {
+        const selectedItem = orderedItems[xRayHighlightedDropdownIndex];
+        const alreadyInDropdown = xRayDropdownSelectedItems.find(item => item.id === selectedItem.id);
+        const alreadyInBill = billItems.find(billItem => billItem.id === selectedItem.id.toString());
+        
+        if (!alreadyInDropdown && !alreadyInBill) {
+          handleXRayDropdownSelect(selectedItem.id.toString());
+        }
+      } else {
+        setIsXRayDropdownOpen(!isXRayDropdownOpen);
+      }
+    } else if (e.key === 'Escape') {
+      setIsXRayDropdownOpen(false);
+      setXRayHighlightedDropdownIndex(-1);
+      setXRayDropdownFilterQuery('');
+    } else if (e.key.length === 1 && e.key.match(/[a-zA-Z0-9\s]/)) {
+      // Filter as user types
+      const newFilter = xRayDropdownFilterQuery + e.key.toLowerCase();
+      setXRayDropdownFilterQuery(newFilter);
+      setXRayHighlightedDropdownIndex(0);
+      setIsXRayDropdownOpen(true);
+    } else if (e.key === 'Backspace') {
+      if (xRayDropdownFilterQuery.length > 0) {
+        setXRayDropdownFilterQuery(prev => prev.slice(0, -1));
+        setXRayHighlightedDropdownIndex(0);
+      }
+    }
+  };
+
+  const getXRayFilteredDropdownItems = () => {
+    if (!xRayDropdownFilterQuery) return categoryItems;
+    
+    const query = xRayDropdownFilterQuery.toLowerCase();
+    const filtered = categoryItems.filter((item: MedicalItem) => 
+      item.name.toLowerCase().includes(query)
+    );
+    
+    // Sort by relevance: exact matches first, then starts with, then contains
+    return filtered.sort((a: MedicalItem, b: MedicalItem) => {
+      const aName = a.name.toLowerCase();
+      const bName = b.name.toLowerCase();
+      
+      // Exact match comes first
+      if (aName === query) return -1;
+      if (bName === query) return 1;
+      
+      // Starts with query comes second
+      if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
+      if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
+      
+      // Both start with or both contain - sort alphabetically
+      return aName.localeCompare(bName);
+    });
+  };
+
+  const handleXRayDropdownSelect = (itemId: string) => {
+    const selectedItem = categoryItems.find(item => item.id.toString() === itemId);
+    if (!selectedItem) return;
+    
+    const alreadyInDropdown = xRayDropdownSelectedItems.find(item => item.id === selectedItem.id);
+    const alreadyInBill = billItems.find(billItem => billItem.id === selectedItem.id.toString());
+    
+    if (!alreadyInDropdown && !alreadyInBill) {
+      setXRayDropdownSelectedItems(prev => [...prev, selectedItem]);
+      // Reset filter after selection for fresh search
+      setXRayDropdownFilterQuery('');
+      setXRayHighlightedDropdownIndex(-1);
+      
+      // Keep dropdown open and maintain focus for multiple selections
+      setTimeout(() => {
+        if (xRayDropdownButtonRef.current) {
+          xRayDropdownButtonRef.current.focus();
+        }
+      }, 0);
+    }
+  };
+
+  const addXRayDropdownSelectedItemsToBill = () => {
+    if (xRayDropdownSelectedItems.length === 0) return;
+
+    // For each selected X-Ray item, trigger view selection
+    if (xRayDropdownSelectedItems.length === 1) {
+      const item = xRayDropdownSelectedItems[0];
+      setSelectedXRayForViews(item);
+      setShowXRayViewSelection(true);
+      setXRayDropdownSelectedItems([]);
+      setIsXRayDropdownOpen(false);
+    } else {
+      // Handle multiple X-Ray selections - add first one for view selection
+      const firstItem = xRayDropdownSelectedItems[0];
+      setSelectedXRayForViews(firstItem);
+      setShowXRayViewSelection(true);
+      // Keep the rest for later processing
+      setXRayDropdownSelectedItems(prev => prev.slice(1));
+    }
+  };
+
+  // X-Ray functionality
+  const handleXRayItemSelection = (item: MedicalItem) => {
+    setSelectedXRayForViews(item);
+    setXRayViews({ AP: false, LAT: false, OBLIQUE: false, BOTH: false });
+    setIsOffChargePortable(false);
+    setShowXRayViewSelection(true);
+  };
+
+  const handleXRayViewChange = (view: string, checked: boolean) => {
+    if (view === 'BOTH') {
+      setXRayViews({
+        AP: false,
+        LAT: false,
+        OBLIQUE: false,
+        BOTH: checked
+      });
+    } else {
+      setXRayViews(prev => ({
+        ...prev,
+        [view]: checked,
+        BOTH: false
+      }));
+    }
+  };
+
+
 
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-8 space-y-8">
-        {/* Header */}
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Inpatient Calculator</h1>
-          <p className="text-muted-foreground">Calculate bills for inpatient services with daily rates and extended stay management</p>
+      <div className="container mx-auto px-4 py-6 space-y-6">
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl font-bold text-foreground">Inpatient Bill Calculator</h1>
+          <p className="text-muted-foreground">Calculate comprehensive inpatient medical bills with daily rates</p>
         </div>
 
-        {/* Patient Information Card */}
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle className="flex items-center text-medical-primary">
-              <Calendar className="mr-2 h-5 w-5" />
-              Patient Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="patientName" className="text-foreground font-medium">Patient Name</Label>
-                <Input
-                  id="patientName"
-                  type="text"
-                  value={patientName}
-                  onChange={(e) => setPatientName(e.target.value)}
-                  placeholder="Enter patient name"
-                  className="w-full"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="opdNumber" className="text-foreground font-medium">OPD Number</Label>
-                <Input
-                  id="opdNumber"
-                  type="text"
-                  value={opdNumber}
-                  onChange={(e) => setOpdNumber(e.target.value)}
-                  placeholder="Enter OPD number"
-                  className="w-full"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="hospitalNumber" className="text-foreground font-medium">Hospital Number</Label>
-                <Input
-                  id="hospitalNumber"
-                  type="text"
-                  value={hospitalNumber}
-                  onChange={(e) => setHospitalNumber(e.target.value)}
-                  placeholder="Enter hospital number"
-                  className="w-full"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="billNumber" className="text-foreground font-medium">Bill Number</Label>
-                <Input
-                  id="billNumber"
-                  type="text"
-                  value={billNumber}
-                  onChange={(e) => setBillNumber(e.target.value)}
-                  placeholder="Enter bill number"
-                  className="w-full"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="admissionDate" className="text-foreground font-medium">Admission Date</Label>
-                <Button
-                  variant="outline"
-                  className="w-full p-4 h-auto text-left justify-start"
-                  onClick={() => {
-                    setCupertinoDatePickerType('admission');
-                    setShowCupertinoDatePicker(true);
-                  }}
-                >
-                  <Calendar className="mr-2 h-4 w-4" />
-                  <div className="flex flex-col">
-                    <span className="font-medium">{admissionDate} at {admissionTime}</span>
-
-                  </div>
-                </Button>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="dischargeDate" className="text-foreground font-medium">Discharge Date</Label>
-                <Button
-                  variant="outline"
-                  className="w-full p-4 h-auto text-left justify-start"
-                  onClick={() => {
-                    setCupertinoDatePickerType('discharge');
-                    setShowCupertinoDatePicker(true);
-                  }}
-                >
-                  <Calendar className="mr-2 h-4 w-4" />
-                  <div className="flex flex-col">
-                    <span className="font-medium">{dischargeDate} at {dischargeTime}</span>
-
-                  </div>
-                </Button>
-              </div>
-            </div>
-            
-            {/* Total Admitted Days Counter */}
-            {admissionDate && dischargeDate && parseCustomDate(admissionDate) && parseCustomDate(dischargeDate) && (
-              <div className="mt-4 p-3 bg-medical-muted/20 rounded-lg border border-medical-secondary/30">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-foreground">Total Admitted Days:</span>
-                  <span className="text-lg font-bold text-medical-primary">{daysAdmitted} {daysAdmitted === 1 ? 'day' : 'days'}</span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Calculated from {admissionDate} to {dischargeDate}
-                </p>
-              </div>
-            )}
-            
-            {/* Date Format Help */}
-            <div className="mt-2 text-xs text-muted-foreground">
-              <p>Click the date & time buttons to select admission and discharge dates with specific times.</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Left Column - Categories and Items */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Days Admitted Card */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Patient Information Panel */}
+          <div className="space-y-6">
             <Card className="glass-card">
-              <CardHeader>
-                <CardTitle className="flex items-center text-medical-primary">
-                  <Calendar className="mr-2 h-5 w-5" />
-                  Patient Admission Details
+              <CardHeader className="pb-2">
+                <CardTitle 
+                  className="flex items-center justify-between text-medical-primary cursor-pointer"
+                  onClick={() => setIsPatientInfoExpanded(!isPatientInfoExpanded)}
+                >
+                  <div className="flex items-center">
+                    <Calculator className="mr-2 h-5 w-5" />
+                    Patient Information
+                  </div>
+                  <div className="flex items-center">
+                    {isPatientInfoExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </div>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="flex items-center space-x-4">
-                  <Label htmlFor="days" className="text-foreground font-medium">Days Admitted:</Label>
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      size="sm"
-                      variant="medical-outline"
-                      onClick={() => setDaysAdmitted(Math.max(1, daysAdmitted - 1))}
-                      disabled={daysAdmitted <= 1}
-                    >
-                      <Minus className="h-4 w-4" />
-                    </Button>
-                    <Input
-                      id="days"
-                      type="number"
-                      min="1"
-                      value={daysAdmitted}
-                      onChange={(e) => setDaysAdmitted(Math.max(1, parseInt(e.target.value) || 1))}
-                      className="w-20 text-center font-semibold"
-                    />
-                    <Button
-                      size="sm"
-                      variant="medical-outline"
-                      onClick={() => setDaysAdmitted(daysAdmitted + 1)}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
+              {isPatientInfoExpanded && (
+                <CardContent className="space-y-3 pt-0">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="patientName" className="text-xs text-foreground font-medium">Patient Name</Label>
+                      <Input
+                        id="patientName"
+                        type="text"
+                        value={patientName}
+                        onChange={(e) => setPatientName(e.target.value)}
+                        placeholder="Enter patient name"
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <Label htmlFor="opdNumber" className="text-xs text-foreground font-medium">OPD Number</Label>
+                      <Input
+                        id="opdNumber"
+                        type="text"
+                        value={opdNumber}
+                        onChange={(e) => setOpdNumber(e.target.value)}
+                        placeholder="Enter OPD number"
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <Label htmlFor="hospitalNumber" className="text-xs text-foreground font-medium">Hospital Number</Label>
+                      <Input
+                        id="hospitalNumber"
+                        type="text"
+                        value={hospitalNumber}
+                        onChange={(e) => setHospitalNumber(e.target.value)}
+                        placeholder="Enter hospital number"
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <Label htmlFor="billNumber" className="text-xs text-foreground font-medium">Bill Number</Label>
+                      <Input
+                        id="billNumber"
+                        type="text"
+                        value={billNumber}
+                        onChange={(e) => setBillNumber(e.target.value)}
+                        placeholder="Enter bill number"
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <Label htmlFor="admissionDate" className="text-xs text-foreground font-medium">Admission Date</Label>
+                      <Button
+                        variant="outline"
+                        className="w-full h-8 text-left justify-start p-2"
+                        onClick={() => {
+                          setCupertinoDatePickerType('admission');
+                          setShowCupertinoDatePicker(true);
+                        }}
+                      >
+                        <Calendar className="mr-1 h-3 w-3" />
+                        <span className="text-xs">{admissionDate} at {admissionTime}</span>
+                      </Button>
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <Label htmlFor="dischargeDate" className="text-xs text-foreground font-medium">Discharge Date</Label>
+                      <Button
+                        variant="outline"
+                        className="w-full h-8 text-left justify-start p-2"
+                        onClick={() => {
+                          setCupertinoDatePickerType('discharge');
+                          setShowCupertinoDatePicker(true);
+                        }}
+                      >
+                        <Calendar className="mr-1 h-3 w-3" />
+                        <span className="text-xs">{dischargeDate} at {dischargeTime}</span>
+                      </Button>
+                    </div>
                   </div>
-                  <span className="text-muted-foreground">
-                    {daysAdmitted === 1 ? 'day' : 'days'}
-                  </span>
-                </div>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Daily items (room charges, food, oxygen) will be multiplied by the number of days.
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Global Search - Hidden in carousel mode */}
-            {!isCarouselMode && (
-              <Card className="glass-card">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-medical-primary">
-                    <Search className="mr-2 h-5 w-5" />
-                    Search All Items
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Input
-                    placeholder="Search for medical items..."
-                    value={globalSearchQuery}
-                  onChange={(e) => setGlobalSearchQuery(e.target.value)}
-                  className="w-full"
-                />
-                {globalSearchResults.length > 0 && (
-                  <div className="mt-4 space-y-2 max-h-60 overflow-y-auto">
-                    {globalSearchResults.map((item: MedicalItem) => (
-                      <div key={item.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                        <div>
-                          <div className="font-medium text-foreground">{item.name}</div>
-                          <div className="text-sm text-muted-foreground">{item.category}</div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <span className="font-semibold text-medical-primary">
-                            {format(item.price)}
-                          </span>
-                          <Button size="sm" onClick={() => (item.category === 'Medicine' || item.category === 'Discharge Medicine') ? handleMedicineItemSelect(item) : addToBill(item)} variant="medical">
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </div>
+                  
+                  {/* Total Visitation Row */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="totalVisitation" className="text-xs text-foreground font-medium">Total Visitation:</Label>
+                      <Input
+                        id="totalVisitation"
+                        type="text"
+                        value={totalVisitation}
+                        onChange={(e) => setTotalVisitation(e.target.value)}
+                        placeholder="Enter total visitation"
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <Label className="text-xs text-foreground font-medium">Total Days Admitted</Label>
+                      <div className="h-8 px-3 py-2 bg-muted/50 border border-border rounded-md flex items-center">
+                        <span className="text-sm font-semibold text-medical-primary">
+                          {daysAdmitted} {daysAdmitted === 1 ? 'day' : 'days'}
+                        </span>
                       </div>
-                    ))}
+                    </div>
                   </div>
-                )}
-              </CardContent>
-              </Card>
-            )}
+                </CardContent>
+              )}
+            </Card>
 
             {/* Category Buttons */}
             <Card className="glass-card">
@@ -1478,14 +996,20 @@ const Inpatient = () => {
                     Inpatient Categories
                   </span>
                   {isCarouselMode && (
-                    <Button 
-                      size="sm" 
-                      variant="medical-ghost" 
-                      onClick={exitCarousel}
-                      className="h-8 w-8 p-0"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center space-x-2">
+                      <div className="text-xs text-muted-foreground hidden sm:block">
+                        Use ← → keys to navigate
+                      </div>
+                      <Button 
+                        size="sm" 
+                        variant="medical-ghost" 
+                        onClick={exitCarousel}
+                        className="h-8 w-8 p-0"
+                        title="Exit carousel (Esc key)"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
                   )}
                 </CardTitle>
               </CardHeader>
@@ -1499,12 +1023,12 @@ const Inpatient = () => {
                         <Button
                           key={category}
                           variant="medical-outline"
-                          className="h-auto p-2 sm:p-3 text-left justify-start min-h-[60px]"
+                          className="h-auto p-2 sm:p-3 text-left justify-start min-h-[60px] max-w-full"
                           onClick={() => handleCategoryClick(category)}
                         >
-                          <div className="w-full">
-                            <div className="font-semibold text-xs sm:text-sm truncate leading-tight">{category}</div>
-                            <div className="text-xs opacity-75 mt-1">{itemCount} items</div>
+                          <div className="flex flex-col items-start w-full overflow-hidden">
+                            <span className="font-medium text-xs leading-tight w-full break-words hyphens-auto line-clamp-2">{category}</span>
+                            <span className="text-xs text-muted-foreground mt-1 flex-shrink-0">{itemCount} items</span>
                           </div>
                         </Button>
                       );
@@ -1513,7 +1037,6 @@ const Inpatient = () => {
                 ) : (
                   // Carousel mode with preview buttons - mobile-optimized layout
                   <div 
-                    ref={swipeRef}
                     className="w-full px-2 sm:px-0 relative touch-pan-y user-select-none"
                     style={{ touchAction: 'pan-y' }}
                   >
@@ -1537,14 +1060,15 @@ const Inpatient = () => {
                         size="sm"
                         onClick={() => navigateCarousel('prev')}
                         className="h-8 w-8 sm:h-10 sm:w-10 p-0 flex-shrink-0"
+                        title="Previous category (← key)"
                       >
                         <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
                       </Button>
                       
                       {/* Current selected category - centered and responsive */}
                       <Button
-                        variant="medical"
-                        className="h-auto p-2 sm:p-3 text-center flex-1 min-w-0 max-w-[160px] sm:max-w-[200px]"
+                        variant="outline"
+                        className="h-auto p-2 sm:p-3 text-center flex-1 min-w-0 max-w-[160px] sm:max-w-[200px] border-medical-primary/20 text-medical-primary hover:bg-medical-primary/10"
                         onClick={() => handleCategoryClick(selectedCategory)}
                       >
                         <div className="w-full min-w-0">
@@ -1561,6 +1085,7 @@ const Inpatient = () => {
                         size="sm"
                         onClick={() => navigateCarousel('next')}
                         className="h-8 w-8 sm:h-10 sm:w-10 p-0 flex-shrink-0"
+                        title="Next category (→ key)"
                       >
                         <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
                       </Button>
@@ -1583,47 +1108,16 @@ const Inpatient = () => {
               </CardContent>
             </Card>
 
-            {/* Category Items */}
-            {selectedCategory && isCarouselMode && (
+            {/* Category Content - Only show in carousel mode */}
+            {isCarouselMode && selectedCategory && (
               <Card className="glass-card">
                 <CardHeader>
-                  <CardTitle className="text-medical-primary">{selectedCategory}</CardTitle>
-                  {/* Search input with category-specific functionality */}
-                  {selectedCategory === 'Laboratory' ? (
-                    <Input
-                      ref={searchInputRef}
-                      placeholder="Type lab test name and press comma or enter to add..."
-                      value={categorySearchQuery}
-                      onChange={(e) => {
-                        setCategorySearchQuery(e.target.value);
-                        // Clear dropdown selections when switching to search
-                        if (e.target.value.trim()) {
-                          setDropdownSelectedItems([]);
-                        }
-                      }}
-                      onKeyDown={handleLabSearchKeyDown}
-                      className="w-full"
-                    />
-                  ) : selectedCategory === 'Discharge Medicine' ? (
-                    <Input
-                      ref={dischargeMedicineSearchInputRef}
-                      placeholder="Type discharge medicine names, press comma/enter to add as tags..."
-                      value={categorySearchQuery}
-                      onChange={(e) => setCategorySearchQuery(e.target.value)}
-                      onKeyDown={handleDischargeMedicineTagKeyPress}
-                      className="w-full"
-                    />
-                  ) : (
-                    <Input
-                      placeholder={`Search in ${selectedCategory}...`}
-                      value={categorySearchQuery}
-                      onChange={(e) => setCategorySearchQuery(e.target.value)}
-                      className="w-full"
-                    />
-                  )}
+                  <CardTitle className="flex items-center text-medical-primary">
+                    <Search className="mr-2 h-5 w-5" />
+                    {selectedCategory} Items
+                  </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  {/* Show Laboratory interface */}
+                <CardContent className="space-y-4">
                   {selectedCategory === 'Laboratory' ? (
                     <div className="space-y-4">
                       {/* Selected items, price counter and Add to Bill button above search */}
@@ -1665,7 +1159,22 @@ const Inpatient = () => {
                         </div>
                       )}
 
-                      <div className="space-y-2">                        
+                      <div className="space-y-2">
+                        <Input
+                          ref={searchInputRef}
+                          placeholder="Type lab test name and press comma or enter to add..."
+                          value={categorySearchQuery}
+                          onChange={(e) => {
+                            setCategorySearchQuery(e.target.value);
+                            // Clear dropdown selections when switching to search
+                            if (e.target.value.trim()) {
+                              setDropdownSelectedItems([]);
+                            }
+                          }}
+                          onKeyDown={handleLabSearchKeyDown}
+                          className="w-full"
+                        />
+                        
                         {/* Search suggestions appear right below search input */}
                         {categorySearchQuery && getLabSuggestions().length > 0 && (
                           <div className="space-y-1 max-h-40 overflow-y-auto border border-border rounded-md p-2 bg-muted/10">
@@ -1674,7 +1183,7 @@ const Inpatient = () => {
                             </div>
                             {getLabSuggestions().slice(0, 5).map((item: MedicalItem, index) => {
                               const alreadyInSearch = selectedLabItems.find(selected => selected.id === item.id);
-                              const alreadyInBill = billItems.find(billItem => billItem.id === item.id);
+                              const alreadyInBill = billItems.find(billItem => billItem.id === item.id.toString());
                               
                               return (
                               <div key={item.id} className={`text-xs p-2 rounded ${
@@ -1689,7 +1198,7 @@ const Inpatient = () => {
                                    onClick={() => {
                                      // Check if item is already selected in search OR already in the bill
                                      const alreadyInSearch = selectedLabItems.find(selected => selected.id === item.id);
-                                     const alreadyInBill = billItems.find(billItem => billItem.id === item.id);
+                                     const alreadyInBill = billItems.find(billItem => billItem.id === item.id.toString());
                                      
                                      if (!alreadyInSearch && !alreadyInBill) {
                                        setSelectedLabItems(prev => [...prev, item]);
@@ -1796,7 +1305,7 @@ const Inpatient = () => {
                                   } ${
                                     dropdownSelectedItems.find(selected => selected.id === item.id)
                                       ? 'bg-blue-500/10 text-blue-600'
-                                      : billItems.find(billItem => billItem.id === item.id)
+                                      : billItems.find(billItem => billItem.id === item.id.toString())
                                         ? 'bg-red-100 text-red-600 cursor-not-allowed'
                                         : 'cursor-pointer hover:bg-muted/50'
                                   }`}
@@ -1806,7 +1315,7 @@ const Inpatient = () => {
                                     {dropdownSelectedItems.find(selected => selected.id === item.id) && (
                                       <span className="ml-2 text-blue-600 text-xs">✓ Selected</span>
                                     )}
-                                    {billItems.find(billItem => billItem.id === item.id) && !dropdownSelectedItems.find(selected => selected.id === item.id) && (
+                                    {billItems.find(billItem => billItem.id === item.id.toString()) && !dropdownSelectedItems.find(selected => selected.id === item.id) && (
                                       <span className="ml-2 text-red-600 text-xs">● Already in Bill</span>
                                     )}
                                     {index === highlightedDropdownIndex && (
@@ -1837,216 +1346,71 @@ const Inpatient = () => {
                         • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
                       </div>
                     </div>
-                  ) : selectedCategory === 'Discharge Medicine' ? (
+                  ) : selectedCategory === 'X-Ray' ? (
                     <div className="space-y-4">
-                      {/* Compact Selected Discharge Medicines Display - positioned below Discharge Medicine label */}
-                      {tempSelectedDischargeMedicines.length > 0 && (
-                        <div className="medicine-dosage-card p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <span className="text-sm font-semibold text-medical-primary flex items-center">
-                              <Calculator className="h-4 w-4 mr-2" />
-                              Selected: {tempSelectedDischargeMedicines.length} medicines
-                            </span>
-                            <span className="text-sm font-bold text-medical-primary bg-medical-primary/10 px-2 py-1 rounded-md">
-                              {format(tempSelectedDischargeMedicines.reduce((sum, medicine) => sum + parseFloat(medicine.price), 0))}
-                            </span>
-                          </div>
-                          <div className="space-y-1">
-                            {tempSelectedDischargeMedicines.map((medicine, index) => (
-                              <div key={medicine.tempId} className="medicine-item-card flex items-center justify-between text-sm p-2 rounded-lg">
-                                <div className="flex items-center space-x-3 flex-1 min-w-0">
-                                  <span className="text-xs font-bold text-medical-primary bg-medical-primary/10 px-2 py-1 rounded-md flex-shrink-0">
-                                    #{index + 1}
-                                  </span>
-                                  <span className="font-medium text-foreground truncate">
-                                    {medicine.name.length > 25 ? `${medicine.name.substring(0, 25)}...` : medicine.name}
-                                  </span>
-                                </div>
-                                <div className="flex items-center space-x-2 flex-shrink-0">
-                                  <span className="text-medical-primary font-semibold bg-medical-primary/10 px-2 py-1 rounded">
-                                    {format(parseFloat(medicine.price))}
-                                  </span>
-                                  <button
-                                    onClick={() => editTempDischargeMedicine(medicine)}
-                                    className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 p-1 rounded transition-colors"
-                                    title="Edit medicine dosage"
-                                  >
-                                    <Calculator className="h-3 w-3" />
-                                  </button>
-                                  <button
-                                    onClick={() => removeTempDischargeMedicine(medicine.tempId)}
-                                    className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 p-1 rounded transition-colors"
-                                    title="Remove medicine"
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </button>
-                                </div>
+                      {/* Selected X-Ray items, price counter and Add to Bill button above search */}
+                      {selectedXRayItems.length > 0 && (
+                        <div className="space-y-2">
+                          {/* Selected items tags */}
+                          <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md">
+                            {selectedXRayItems.map((item) => (
+                              <div key={item.id} className="inline-flex items-center bg-medical-primary/10 text-medical-primary px-2 py-1 rounded text-xs">
+                                <span className="mr-1">{item.name}</span>
+                                <button
+                                  onClick={() => removeXRayItem(item.id)}
+                                  className="hover:bg-medical-primary/20 rounded-full p-0.5"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
                               </div>
                             ))}
                           </div>
-                          <div className="mt-4 pt-3 border-t border-medical-primary/20 flex justify-end">
-                            <Button
-                              onClick={addAllDischargeMedicinesToBill}
-                              variant="medical"
-                              size="sm"
-                              className="text-xs font-medium shadow-md hover:shadow-lg transition-shadow px-3 py-1"
+
+                          {/* Price counter on left, Add to Bill button on right */}
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-4 p-2 bg-medical-primary/5 rounded-md border border-medical-primary/20">
+                              <span className="text-sm font-medium text-medical-primary">
+                                Total Price: {format(selectedXRayItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {selectedXRayItems.length} item{selectedXRayItems.length !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+                            <Button 
+                              onClick={addSelectedXRayItemsToBill} 
+                              variant="outline"
+                              className="border-medical-primary/20 text-medical-primary hover:bg-medical-primary/10"
                             >
-                              <Plus className="h-3 w-3 mr-1" />
-                              Add to Bill
+                              Add {selectedXRayItems.length} X-Ray{selectedXRayItems.length !== 1 ? 's' : ''} to Bill
                             </Button>
                           </div>
                         </div>
                       )}
 
-                      {/* Medicine Dosage Selection Interface */}
-                      {showMedicineDosageSelection && selectedMedicineForDosage && selectedMedicineForDosage.category === 'Discharge Medicine' && (
-                        <div className="medicine-dosage-card mt-6 p-6">
-                          <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-lg font-semibold text-medical-primary flex items-center">
-                              <Calculator className="h-5 w-5 mr-2" />
-                              Set Dosage for: {selectedMedicineForDosage.name}
-                            </h3>
-                            <Button
-                              onClick={cancelMedicineDosageSelection}
-                              variant="medical-ghost"
-                              size="sm"
-                              className="text-muted-foreground hover:text-medical-primary"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-
-                          <div className="space-y-4">
-                            {/* First Line: Dose Prescribed, Med Type, Dose Frequency */}
-                            <div className="grid grid-cols-3 gap-4">
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">Dose Prescribed</label>
-                                <Input
-                                  ref={dischargeMedicineDoseInputRef}
-                                  placeholder="e.g., 500, 1, 2.5"
-                                  value={dosePrescribed}
-                                  onChange={(e) => setDosePrescribed(e.target.value)}
-                                  className="w-full"
-                                />
-                              </div>
-                              
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">Med Type</label>
-                                <Select value={medType} onValueChange={setMedType}>
-                                  <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Select type" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {medTypeOptions.map((type) => (
-                                      <SelectItem key={type} value={type}>
-                                        {type}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">Dose Frequency</label>
-                                <Select value={doseFrequency} onValueChange={setDoseFrequency}>
-                                  <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Select frequency" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {doseFrequencyOptions.map((freq) => (
-                                      <SelectItem key={freq.value} value={freq.value}>
-                                        {freq.label}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-
-                            {/* Second Line: Duration, Total Price, Add to Bill */}
-                            <div className="grid grid-cols-3 gap-4 items-end">
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">Duration (Days)</label>
-                                <Input
-                                  type="number"
-                                  placeholder="e.g., 7, 10"
-                                  value={totalDays}
-                                  onChange={(e) => setTotalDays(e.target.value)}
-                                  className="w-full"
-                                  min="1"
-                                />
-                              </div>
-
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">Total Price</label>
-                                <div className="h-10 p-2 bg-medical-primary/10 rounded-md border border-medical-primary/20 flex items-center justify-center">
-                                  <span className="text-lg font-semibold text-medical-primary">
-                                    {isDosageSelectionComplete() ? format(calculateInpatientMedicineDosage().totalPrice) : '---'}
-                                  </span>
-                                </div>
-                              </div>
-
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground invisible">Add Medicine</label>
-                                <Button
-                                  onClick={addDischargeMedicineToTempList}
-                                  disabled={!isDosageSelectionComplete()}
-                                  variant="medical"
-                                  className="w-full flex items-center justify-center space-x-2"
-                                >
-                                  <Plus className="h-4 w-4" />
-                                  <span>Add</span>
-                                </Button>
-                              </div>
-                            </div>
-
-                            {/* Calculation Details (Optional) */}
-                            {isDosageSelectionComplete() && (
-                              <div className="medicine-dosage-card p-4 rounded-lg">
-                                <div className="text-sm font-medium text-medical-primary mb-3 flex items-center">
-                                  <Calculator className="h-4 w-4 mr-2" />
-                                  Calculation Preview - Discharge Medicine (Full Bottles)
-                                </div>
-                                <div className="grid grid-cols-2 gap-4 text-xs text-muted-foreground">
-                                  <div className="flex justify-between">
-                                    <span>Base price:</span>
-                                    <span className="font-medium text-medical-primary">{format(selectedMedicineForDosage.price)}</span>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <span>Frequency:</span>
-                                    <span className="font-medium">{doseFrequencyOptions.find(f => f.value === doseFrequency)?.label}</span>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <span>Duration:</span>
-                                    <span className="font-medium">{totalDays} days</span>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <span>Total quantity:</span>
-                                    <span className="font-medium">{calculateInpatientMedicineDosage().totalQuantity} {calculateInpatientMedicineDosage().quantityUnit}</span>
-                                  </div>
-                                </div>
-                                <div className="mt-3 pt-3 border-t border-medical-primary/10">
-                                  <div className="text-xs text-muted-foreground">
-                                    <strong>Calculation:</strong> {calculateInpatientMedicineDosage().calculationDetails}
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Medicine search suggestions appear below header search */}
                       <div className="space-y-2">
+                        <Input
+                          ref={xRaySearchInputRef}
+                          placeholder="Type X-ray name and press comma or enter to add..."
+                          value={categorySearchQuery}
+                          onChange={(e) => {
+                            setCategorySearchQuery(e.target.value);
+                            if (e.target.value.trim()) {
+                              setXRayDropdownSelectedItems([]);
+                            }
+                          }}
+                          onKeyDown={handleXRaySearchKeyDown}
+                          className="w-full"
+                        />
+                        
                         {/* Search suggestions appear right below search input */}
-                        {categorySearchQuery && getDischargeMedicineSuggestions().length > 0 && (
+                        {categorySearchQuery && getXRaySuggestions().length > 0 && (
                           <div className="space-y-1 max-h-40 overflow-y-auto border border-border rounded-md p-2 bg-muted/10">
                             <div className="text-sm font-medium text-muted-foreground mb-2">
-                              Matching medicines (press comma to add):
+                              Matching X-rays (press comma to add):
                             </div>
-                            {getDischargeMedicineSuggestions().slice(0, 5).map((item: MedicalItem, index) => {
-                              const alreadyInSearch = selectedDischargeMedicineItems.find(selected => selected.id === item.id);
-                              const alreadyInBill = billItems.find(billItem => billItem.id === item.id);
+                            {getXRaySuggestions().slice(0, 5).map((item: MedicalItem, index) => {
+                              const alreadyInSearch = selectedXRayItems.find(selected => selected.id === item.id);
+                              const alreadyInBill = billItems.find(billItem => billItem.id === item.id.toString());
                               
                               return (
                               <div key={item.id} className={`text-xs p-2 rounded ${
@@ -2055,22 +1419,20 @@ const Inpatient = () => {
                                   : alreadyInSearch
                                     ? 'bg-green-100 text-green-600 cursor-not-allowed border border-green-200'
                                     : index === 0 
-                                      ? 'bg-green-500/10 border border-green-500/20 cursor-pointer hover:bg-muted/40' 
+                                      ? 'bg-medical-primary/10 border border-medical-primary/20 cursor-pointer hover:bg-muted/40' 
                                       : 'bg-muted/20 cursor-pointer hover:bg-muted/40'
                               }`}
                                    onClick={() => {
-                                     // Check if item is already selected in search OR already in the bill
-                                     const alreadyInSearch = selectedDischargeMedicineItems.find(selected => selected.id === item.id);
-                                     const alreadyInBill = billItems.find(billItem => billItem.id === item.id);
+                                     const alreadyInSearch = selectedXRayItems.find(selected => selected.id === item.id);
+                                     const alreadyInBill = billItems.find(billItem => billItem.id === item.id.toString());
                                      
                                      if (!alreadyInSearch && !alreadyInBill) {
-                                       setSelectedDischargeMedicineItems(prev => [...prev, item]);
+                                       handleXRayItemSelect(item);
                                      }
                                      setCategorySearchQuery('');
-                                     // Refocus search input after clicking suggestion
                                      setTimeout(() => {
-                                       if (dischargeMedicineSearchInputRef.current) {
-                                         dischargeMedicineSearchInputRef.current.focus();
+                                       if (xRaySearchInputRef.current) {
+                                         xRaySearchInputRef.current.focus();
                                        }
                                      }, 0);
                                    }}>
@@ -2081,60 +1443,62 @@ const Inpatient = () => {
                                 {alreadyInSearch && !alreadyInBill && (
                                   <span className="ml-2 text-green-600 text-xs">✓ Selected</span>
                                 )}
+                                {index === 0 && !alreadyInBill && !alreadyInSearch && (
+                                  <span className="ml-2 text-medical-primary text-xs">← Will be added</span>
+                                )}
                               </div>
                               );
                             })}
                           </div>
                         )}
-
-                        {/* Selected items as tags */}
-                        {selectedDischargeMedicineItems.length > 0 && (
-                          <div className="space-y-2">
-                            <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md">
-                              {selectedDischargeMedicineItems.map((item) => (
-                                <div key={item.id} className="inline-flex items-center bg-green-500/10 text-green-600 px-2 py-1 rounded text-xs">
-                                  <span className="mr-1">{item.name}</span>
-                                  <button
-                                    onClick={() => removeDischargeMedicineTagItem(item.id)}
-                                    className="hover:bg-green-500/20 rounded-full p-0.5"
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-
-                            {/* Price counter on left, Add to Bill button on right */}
-                            <div className="flex justify-between items-center">
-                              <div className="flex items-center gap-4 p-2 bg-green-500/5 rounded-md border border-green-500/20">
-                                <span className="text-sm font-medium text-green-600">
-                                  Total Price: {format(selectedDischargeMedicineItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                  {selectedDischargeMedicineItems.length} medicine{selectedDischargeMedicineItems.length !== 1 ? 's' : ''}
-                                </span>
-                              </div>
-                              <Button 
-                                onClick={addDischargeMedicineTagItemsToBill} 
-                                variant="outline"
-                                className="border-green-500/20 text-green-600 hover:bg-green-500/10"
-                              >
-                                Add {selectedDischargeMedicineItems.length} Medicine{selectedDischargeMedicineItems.length !== 1 ? 's' : ''} to Bill
-                              </Button>
-                            </div>
-                          </div>
-                        )}
                       </div>
 
+                      {/* X-Ray View Selection Modal */}
+                      {showXRayViewSelection && selectedXRayForViews && (
+                        <div className="space-y-4 p-4 bg-muted/20 rounded-md border">
+                          <div className="font-medium">Select views for {selectedXRayForViews.name}</div>
+                          <div className="grid grid-cols-2 gap-2">
+                            {['AP', 'LAT', 'OBLIQUE', 'BOTH'].map((view) => (
+                              <label key={view} className="flex items-center space-x-2">
+                                <input
+                                  type="checkbox"
+                                  checked={xRayViews[view as keyof typeof xRayViews]}
+                                  onChange={(e) => handleXRayViewChange(view, e.target.checked)}
+                                />
+                                <span className="text-sm">{view === 'BOTH' ? 'AP and LAT' : view}</span>
+                              </label>
+                            ))}
+                          </div>
+                          {Object.values(xRayViews).some(checked => checked) && (
+                            <label className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                checked={isOffChargePortable}
+                                onChange={(e) => setIsOffChargePortable(e.target.checked)}
+                              />
+                              <span className="text-sm">Off-Charge/Portable</span>
+                            </label>
+                          )}
+                          <div className="flex space-x-2">
+                            <Button onClick={addXRayToBill} size="sm" variant="medical">
+                              Add to Bill
+                            </Button>
+                            <Button onClick={() => setShowXRayViewSelection(false)} size="sm" variant="outline">
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Dropdown selected items as tags */}
-                      {dischargeMedicineDropdownSelectedItems.length > 0 && (
+                      {xRayDropdownSelectedItems.length > 0 && (
                         <div className="space-y-2">
                           <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md">
-                            {dischargeMedicineDropdownSelectedItems.map((item) => (
+                            {xRayDropdownSelectedItems.map((item) => (
                               <div key={item.id} className="inline-flex items-center bg-blue-500/10 text-blue-600 px-2 py-1 rounded text-xs">
                                 <span className="mr-1">{item.name}</span>
                                 <button
-                                  onClick={() => removeDischargeMedicineDropdownItem(item.id)}
+                                  onClick={() => removeXRayDropdownItem(item.id)}
                                   className="hover:bg-blue-500/20 rounded-full p-0.5"
                                 >
                                   <X className="h-3 w-3" />
@@ -2146,46 +1510,47 @@ const Inpatient = () => {
                           <div className="flex justify-between items-center">
                             <div className="flex items-center gap-4 p-2 bg-blue-500/5 rounded-md border border-blue-500/20">
                               <span className="text-sm font-medium text-blue-600">
-                                Total Price: {format(dischargeMedicineDropdownSelectedItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
+                                Total Price: {format(xRayDropdownSelectedItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
                               </span>
                               <span className="text-xs text-muted-foreground">
-                                {dischargeMedicineDropdownSelectedItems.length} medicine{dischargeMedicineDropdownSelectedItems.length !== 1 ? 's' : ''}
+                                {xRayDropdownSelectedItems.length} item{xRayDropdownSelectedItems.length !== 1 ? 's' : ''}
                               </span>
                             </div>
                             <Button 
-                              onClick={addDischargeMedicineDropdownSelectedItemsToBill} 
+                              onClick={addXRayDropdownSelectedItemsToBill} 
                               variant="outline"
                               className="border-blue-500/20 text-blue-600 hover:bg-blue-500/10"
                             >
-                              Add {dischargeMedicineDropdownSelectedItems.length} Medicine{dischargeMedicineDropdownSelectedItems.length !== 1 ? 's' : ''} to Bill
+                              Add {xRayDropdownSelectedItems.length} X-Ray{xRayDropdownSelectedItems.length !== 1 ? 's' : ''} to Bill
                             </Button>
                           </div>
                         </div>
                       )}
 
                       <div className="space-y-2">
-                        <div ref={dischargeMedicineDropdownRef} className="relative">
+                        <div ref={xRayDropdownRef} className="relative">
                           <button
-                            ref={dischargeMedicineDropdownButtonRef}
-                            onClick={() => setIsDischargeMedicineDropdownOpen(!isDischargeMedicineDropdownOpen)}
-                            onKeyDown={handleDischargeMedicineDropdownKeyDown}
+                            ref={xRayDropdownButtonRef}
+                            onClick={() => setIsXRayDropdownOpen(!isXRayDropdownOpen)}
+                            onKeyDown={handleXRayDropdownKeyDown}
                             className="w-full flex items-center justify-between px-3 py-2 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-medical-primary/20 hover:bg-muted/50"
                           >
                             <span className="text-sm text-muted-foreground">
-                              {dischargeMedicineDropdownFilterQuery 
-                                ? `Filter: "${dischargeMedicineDropdownFilterQuery}" (${getDischargeMedicineFilteredDropdownItems().length} matches)`
-                                : 'Discharge Medicine Dropdown - Type to filter, arrows to navigate'
+                              {xRayDropdownFilterQuery 
+                                ? `Filter: "${xRayDropdownFilterQuery}" (${getXRayFilteredDropdownItems().length} matches)`
+                                : 'X-Ray Dropdown - Type to filter, arrows to navigate'
                               }
                             </span>
-                            <ChevronRight className={`h-4 w-4 transition-transform ${isDischargeMedicineDropdownOpen ? 'rotate-90' : ''}`} />
+                            <ChevronRight className={`h-4 w-4 transition-transform ${isXRayDropdownOpen ? 'rotate-90' : ''}`} />
                           </button>
                           
-                          {isDischargeMedicineDropdownOpen && (
+                          {/* Dropdown content */}
+                          {isXRayDropdownOpen && (
                             <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-y-auto">
-                              {getDischargeMedicineFilteredDropdownItems().map((item: MedicalItem, index) => {
-                                const alreadyInDropdown = dischargeMedicineDropdownSelectedItems.find(selected => selected.id === item.id);
-                                const alreadyInBill = billItems.find(billItem => billItem.id === item.id);
-                                const isHighlighted = index === dischargeMedicineHighlightedDropdownIndex;
+                              {getXRayFilteredDropdownItems().map((item: MedicalItem, index) => {
+                                const alreadyInDropdown = xRayDropdownSelectedItems.find(selected => selected.id === item.id);
+                                const alreadyInBill = billItems.find(billItem => billItem.id === item.id.toString());
+                                const isHighlighted = index === xRayHighlightedDropdownIndex;
                                 
                                 return (
                                 <div
@@ -2199,7 +1564,7 @@ const Inpatient = () => {
                                   }`}
                                   onClick={() => {
                                     if (!alreadyInDropdown && !alreadyInBill) {
-                                      handleDischargeMedicineDropdownSelect(item.id.toString());
+                                      handleXRayDropdownSelect(item.id.toString());
                                     }
                                   }}
                                 >
@@ -2221,9 +1586,9 @@ const Inpatient = () => {
                                 </div>
                                 );
                               })}
-                              {getDischargeMedicineFilteredDropdownItems().length === 0 && (
+                              {getXRayFilteredDropdownItems().length === 0 && (
                                 <div className="px-3 py-2 text-sm text-muted-foreground">
-                                  No Discharge Medicine items available
+                                  No X-Ray items available
                                 </div>
                               )}
                             </div>
@@ -2237,306 +1602,69 @@ const Inpatient = () => {
                         • Arrow keys to navigate, Enter to select (filter resets after each selection)<br/>
                         • Click "Add to Bill" or outside dropdown to close • Escape to close without adding<br/>
                         • Both methods access same database but work independently<br/>
-                        • Discharge medicines automatically calculate for full bottles only<br/>
                         • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
                       </div>
                     </div>
                   ) : (
-                    /* Regular item list for other categories */
-                    <div className="space-y-2 max-h-96 overflow-y-auto">
-                      {filteredCategoryItems.length > 0 ? (
-                        filteredCategoryItems.map((item: MedicalItem) => {
-                          const isDailyItem = item.category.includes('Food') || 
-                                             item.category.includes('Seat') || 
-                                             item.category.includes('O2') ||
-                                             item.name.toLowerCase().includes('per day');
-                          return (
-                            <div key={item.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
-                              <div className="flex-1">
-                                <div className="font-medium text-foreground">{item.name}</div>
-                                {item.description && (
-                                  <div className="text-sm text-muted-foreground">{item.description}</div>
-                                )}
-                                {isDailyItem && (
-                                  <div className="text-xs text-medical-accent font-medium">Daily rate × {daysAdmitted} days</div>
-                                )}
+                    // Standard interface for other categories
+                    <div className="space-y-4">
+                      {/* Category Search */}
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                        <Input
+                          placeholder={`Search ${selectedCategory} items...`}
+                          value={categorySearchQuery}
+                          onChange={(e) => setCategorySearchQuery(e.target.value)}
+                          className="pl-10"
+                        />
+                      </div>
+
+                      {/* Filtered Results */}
+                      <div className="grid grid-cols-1 gap-2">
+                        {categoryItems
+                          .filter((item: MedicalItem) => 
+                            item.name.toLowerCase().includes(categorySearchQuery.toLowerCase())
+                          )
+                          .map((item: MedicalItem) => (
+                            <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
+                              <div>
+                                <div className="font-medium">{item.name}</div>
+                                <div className="text-sm text-muted-foreground">{format(parseFloat(item.price))}</div>
                               </div>
-                              <div className="flex items-center space-x-2">
-                                <div className="text-right">
-                                  <div className="font-semibold text-medical-primary">
-                                    {format(item.price)}
-                                  </div>
-                                  {isDailyItem && (
-                                    <div className="text-xs text-muted-foreground">
-                                      Total: {format(parseFloat(item.price.toString()) * daysAdmitted)}
-                                    </div>
-                                  )}
-                                </div>
-                                <Button size="sm" onClick={() => (item.category === 'Medicine' || item.category === 'Discharge Medicine') ? handleMedicineItemSelect(item) : addToBill(item)} variant="medical">
-                                  <Plus className="h-4 w-4" />
-                                </Button>
-                              </div>
+                              <Button
+                                size="sm"
+                                onClick={() => addItemToBill(item)}
+                                variant="medical-outline"
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
                             </div>
-                          );
-                        })
-                      ) : (
-                        <div className="text-center text-muted-foreground py-8">
-                          {categorySearchQuery ? 'No items found matching your search.' : 'No items in this category.'}
-                        </div>
-                      )}
+                          ))
+                        }
+                      </div>
                     </div>
                   )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Medicine Dosage Selection Interface */}
-            {showMedicineDosageSelection && selectedMedicineForDosage && (
-              <Card className="glass-card">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-medical-primary">
-                      Set Dosage for: {selectedMedicineForDosage.name}
-                    </CardTitle>
-                    <Button
-                      onClick={cancelMedicineDosageSelection}
-                      variant="ghost"
-                      size="sm"
-                      className="text-muted-foreground hover:text-foreground"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {/* Dose Prescribed (Manual Entry) */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Dose Prescribed</label>
-                      <Input
-                        placeholder="Enter dose amount (e.g., 500, 1, 2.5)"
-                        value={dosePrescribed}
-                        onChange={(e) => setDosePrescribed(e.target.value)}
-                        className="w-full"
-                      />
-                    </div>
-
-                    {/* Med Type Dropdown */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Med Type</label>
-                      <Select value={medType} onValueChange={setMedType}>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select medication type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {medTypeOptions.map((type) => (
-                            <SelectItem key={type} value={type}>
-                              {type}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Dose Frequency Dropdown */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Dose Frequency</label>
-                      <Select value={doseFrequency} onValueChange={setDoseFrequency}>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select dosing frequency" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {doseFrequencyOptions.map((freq) => (
-                            <SelectItem key={freq.value} value={freq.value}>
-                              {freq.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Total Days */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Total Days</label>
-                      <Input
-                        type="number"
-                        placeholder="Enter number of days"
-                        value={totalDays}
-                        onChange={(e) => setTotalDays(e.target.value)}
-                        className="w-full"
-                        min="1"
-                      />
-                    </div>
-
-                    {/* Inpatient Medicine Type Selection */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Medicine Type</label>
-                      {selectedMedicineForDosage?.category === 'Discharge Medicine' ? (
-                        <div className="p-3 bg-medical-secondary/10 rounded-lg border border-medical-secondary/20">
-                          <div className="flex items-center space-x-2">
-                            <input
-                              type="radio"
-                              name="medicineType"
-                              checked={true}
-                              disabled={true}
-                              className="text-medical-primary"
-                            />
-                            <span className="text-sm font-medium text-medical-primary">Discharge Medicine (full bottles) - Auto-selected</span>
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            Items from "Discharge Medicine" category automatically use discharge medicine rules
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center space-x-4">
-                          <label className="flex items-center space-x-2">
-                            <input
-                              type="radio"
-                              name="medicineType"
-                              checked={!isDischargeMedicine}
-                              onChange={() => setIsDischargeMedicine(false)}
-                              className="text-medical-primary"
-                            />
-                            <span className="text-sm">Ward Medicine (can be partial)</span>
-                          </label>
-                          <label className="flex items-center space-x-2">
-                            <input
-                              type="radio"
-                              name="medicineType"
-                              checked={isDischargeMedicine}
-                              onChange={() => setIsDischargeMedicine(true)}
-                              className="text-medical-primary"
-                            />
-                            <span className="text-sm">Discharge Medicine (full bottles)</span>
-                          </label>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Calculation Preview */}
-                    {isDosageSelectionComplete() && (
-                      <div className="p-3 bg-muted/30 rounded-lg">
-                        <div className="text-sm font-medium text-foreground mb-2">Inpatient Calculation:</div>
-                        <div className="text-xs text-muted-foreground space-y-1">
-                          <div>• Base price per unit: {format(selectedMedicineForDosage.price)}</div>
-                          <div>• Frequency: {doseFrequencyOptions.find(f => f.value === doseFrequency)?.label}</div>
-                          <div>• Duration: {totalDays} days</div>
-                          <div>• Type: {isDischargeMedicine ? 'Discharge Medicine (full bottles)' : 'Ward Medicine (partial allowed)'}</div>
-                          <div>• Calculation: {calculateInpatientMedicineDosage().calculationDetails}</div>
-                          <div className="font-semibold text-medical-primary">
-                            • Total cost: {format(calculateInpatientMedicineDosage().totalPrice)}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Add to Bill Button */}
-                    <div className="flex justify-end pt-2 border-t border-medical-primary/10">
-                      <Button
-                        onClick={selectedMedicineForDosage?.category === 'Discharge Medicine' ? addDischargeMedicineToTempList : addMedicineToBill}
-                        disabled={!isDosageSelectionComplete()}
-                        variant="medical"
-                        className="flex items-center space-x-2"
-                      >
-                        <Plus className="h-4 w-4" />
-                        <span>{selectedMedicineForDosage?.category === 'Discharge Medicine' ? 'Add' : 'Add to Bill'}</span>
-                      </Button>
-                    </div>
-
-                    <div className="text-xs text-muted-foreground">
-                      • Fill all fields to calculate dosage<br/>
-                      • Ward medicines can be given in partial quantities<br/>
-                      • Discharge medicines follow outpatient rules (full bottles)<br/>
-                      • Syrup/Solution bottles: 100ml standard size
-                    </div>
-                  </div>
                 </CardContent>
               </Card>
             )}
           </div>
 
-          {/* Right Column - Bill Summary */}
-          <div>
-            <Card className="glass-card sticky top-24">
+          {/* Bill Summary Panel */}
+          <div className="space-y-6">
+            <Card className="glass-card">
               <CardHeader>
-                <CardTitle className="flex items-center justify-between text-medical-primary">
-                  <span className="flex items-center">
-                    <Calculator className="mr-2 h-5 w-5" />
-                    Inpatient Bill Summary
-                  </span>
-                  {(billItems.length > 0 || daysAdmitted > 1) && (
-                    <Button size="sm" variant="medical-ghost" onClick={clearBill}>
-                      Clear All
-                    </Button>
-                  )}
+                <CardTitle className="flex items-center text-medical-primary">
+                  <Calculator className="mr-2 h-5 w-5" />
+                  Bill Summary
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="mb-4 p-3 bg-medical-secondary/10 rounded-lg border border-medical-secondary/20">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Patient Stay:</span>
-                    <span className="font-semibold text-medical-primary">
-                      {daysAdmitted} {daysAdmitted === 1 ? 'day' : 'days'}
-                    </span>
-                  </div>
-                </div>
-
                 {billItems.length > 0 ? (
                   <div className="space-y-4">
-                    <div className="space-y-4 max-h-80 overflow-y-auto">
-                      {Object.entries(getBillItemsByCategory()).map(([category, items]) => (
-                        <div key={category} className="border-l-4 border-medical-primary/30 pl-3">
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="font-semibold text-medical-primary text-sm">{category}</h4>
-                            <span className="text-sm font-medium text-medical-primary">
-                              {format(calculateCategoryTotal(items))}
-                            </span>
-                          </div>
-                          <div className="space-y-2">
-                            {items.map((item) => {
-                              const price = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
-                              const isDailyItem = item.category.includes('Food') || 
-                                                 item.category.includes('Seat') || 
-                                                 item.category.includes('O2') ||
-                                                 item.name.toLowerCase().includes('per day');
-                              const subtotal = isDailyItem ? price * item.quantity * daysAdmitted : price * item.quantity;
-                              return (
-                                <div key={item.id} className="flex items-center justify-between p-2 bg-muted/20 rounded-md">
-                                  <div className="flex-1">
-                                    <div className="font-medium text-sm text-foreground">{item.name}</div>
-                                    {isDailyItem && (
-                                      <div className="text-xs text-medical-accent">Daily rate × {daysAdmitted} days</div>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <span className="text-sm text-medical-primary font-medium">
-                                      {format(subtotal)}
-                                    </span>
-                                    <Button
-                                      size="sm"
-                                      variant="medical-ghost"
-                                      onClick={() => removeFromBill(item.id)}
-                                      className="h-6 w-6 p-0"
-                                    >
-                                      <X className="h-3 w-3" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <div className="border-t border-medical-secondary/20 pt-4">
-                      <div className="flex items-center justify-between text-lg font-bold">
-                        <span className="text-foreground">Grand Total:</span>
-                        <span className="text-medical-primary">{format(calculateTotal())}</span>
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {daysAdmitted > 1 && 'Daily rates included for multi-day stay'}
-                      </div>
+                    <div className="text-center text-muted-foreground py-8">
+                      <Calculator className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>Bill calculation will be implemented here.</p>
+                      <p className="text-sm">Total items: {billItems.length}</p>
                     </div>
                   </div>
                 ) : (
@@ -2548,56 +1676,153 @@ const Inpatient = () => {
                 )}
               </CardContent>
             </Card>
+
+            {/* Hospital Bill Form */}
+            <Card className="glass-card">
+              <CardHeader className="pb-2">
+                <CardTitle 
+                  className="flex items-center justify-between text-medical-primary cursor-pointer"
+                  onClick={() => setIsBillFormHeaderExpanded(!isBillFormHeaderExpanded)}
+                >
+                  <div className="flex items-center">
+                    <FileText className="mr-2 h-5 w-5" />
+                    Hospital Bill Form
+                  </div>
+                  <div className="flex items-center">
+                    {isBillFormHeaderExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              {isBillFormHeaderExpanded && (
+                <CardContent className="space-y-4 pt-0">
+                  {/* Hospital Header */}
+                  <div className="text-center space-y-1 border-b border-border pb-4">
+                    <h2 className="text-xl font-bold text-foreground">Memorial Christian Hospital</h2>
+                    <p className="text-base font-semibold text-muted-foreground">P.O. Malumghat Hospital</p>
+                    <p className="text-sm text-muted-foreground">District Cox's Bazar</p>
+                  </div>
+
+                  {/* Patient Information Row */}
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="flex">
+                      <span className="font-medium">Patient's Name:</span>
+                      <div className="flex-1 border-b border-dotted border-muted-foreground/50 ml-1"></div>
+                    </div>
+                    <div className="flex">
+                      <span className="font-medium">O.D. No:</span>
+                      <div className="flex-1 border-b border-dotted border-muted-foreground/50 ml-1"></div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="flex">
+                      <span className="font-medium">Hospital No:</span>
+                      <div className="flex-1 border-b border-dotted border-muted-foreground/50 ml-1"></div>
+                    </div>
+                    <div className="flex">
+                      <span className="font-medium">Bill Date:</span>
+                      <div className="flex-1 border-b border-dotted border-muted-foreground/50 ml-1"></div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="flex">
+                      <span className="font-medium">Bill No:</span>
+                      <div className="flex-1 border-b border-dotted border-muted-foreground/50 ml-1"></div>
+                    </div>
+                    <div className="flex">
+                      <span className="font-medium">Date Discharged:</span>
+                      <div className="flex-1 border-b border-dotted border-muted-foreground/50 ml-1"></div>
+                    </div>
+                  </div>
+
+                  <div className="flex text-sm">
+                    <span className="font-medium">Date Admitted:</span>
+                    <div className="flex-1 border-b border-dotted border-muted-foreground/50 ml-1"></div>
+                  </div>
+                </CardContent>
+              )}
+              
+              <CardContent className={`${isBillFormHeaderExpanded ? 'pt-0' : ''}`}>
+
+                {/* Bill Categories Table */}
+                <div className="border border-border rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <tbody>
+                      {[
+                        { category: 'Blood', code: '50303' },
+                        { category: 'Laboratory', code: '50303' },
+                        { category: 'Limb and Brace', code: '50304' },
+                        { category: 'Food', code: '50319' },
+                        { category: 'Halo, O2, NO2, etc.', code: '50319' },
+                        { category: 'Orthopedic, S. Roll, etc.', code: '50306' },
+                        { category: 'Surgery, O.R. & Delivery', code: '50306' },
+                        { category: 'Registration fees', code: '50307' },
+                        { category: 'Discharge Medicine', code: '50308' },
+                        { category: 'Medicine, ORS & Anesthesia, Ket, Spinal', code: '50308' },
+                        { category: 'Physical Therapy', code: '50309' },
+                        { category: 'IV.\'s', code: '50310' },
+                        { category: 'Plaster/Milk', code: '50310' },
+                        { category: 'Procedures', code: '50310' },
+                        { category: 'Seat & Ad. Fee', code: '50313' },
+                        { category: 'X-Ray', code: '50315' },
+                        { category: 'Lost Laundry', code: '50310' },
+                        { category: 'Travel', code: '20901' },
+                        { category: 'Other', code: '50317' },
+                        { category: '', code: '' },
+                        { category: '', code: '' }
+                      ].map((row, index) => (
+                        <tr key={index} className="border-b border-border">
+                          <td className="border-r border-border p-2 w-1/2 font-medium bg-muted/20">
+                            {row.category}
+                          </td>
+                          <td className="border-r border-border p-2 w-1/4"></td>
+                          <td className="p-2 w-1/4 text-center text-xs text-muted-foreground">
+                            {row.code}
+                          </td>
+                        </tr>
+                      ))}
+                      
+                      {/* Sub Total Bill Row */}
+                      <tr className="border-b border-border">
+                        <td className="border-r border-border p-2 w-1/2 font-bold bg-muted/30">
+                          Sub. Total Bill
+                        </td>
+                        <td className="border-r border-border p-2 w-1/4"></td>
+                        <td className="p-2 w-1/4 text-center text-xs text-muted-foreground">
+                          50311
+                        </td>
+                      </tr>
+                      
+                      {/* Ancillary Row */}
+                      <tr className="border-b border-border">
+                        <td className="border-r border-border p-2 w-1/2 font-medium bg-muted/20">
+                          Ancillary
+                        </td>
+                        <td className="border-r border-border p-2 w-1/4"></td>
+                        <td className="p-2 w-1/4 text-center text-xs text-muted-foreground">
+                          
+                        </td>
+                      </tr>
+                      
+                      {/* Total Bill Row */}
+                      <tr className="border-b border-border">
+                        <td className="border-r border-border p-2 w-1/2 font-bold bg-muted/30">
+                          Total Bill
+                        </td>
+                        <td className="border-r border-border p-2 w-1/4"></td>
+                        <td className="p-2 w-1/4 text-center text-xs text-muted-foreground">
+                          
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
-
-      {/* Duplicate Item Confirmation Dialog */}
-      <Dialog open={duplicateDialog.open} onOpenChange={(open) => setDuplicateDialog({ open, item: duplicateDialog.item })}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center text-amber-600">
-              <AlertTriangle className="mr-2 h-5 w-5" />
-              Item Already in Bill
-            </DialogTitle>
-            <DialogDescription>
-              The item "{duplicateDialog.item?.name}" is already in your bill. What would you like to do?
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <div className="p-3 bg-muted/30 rounded-lg">
-              <div className="font-medium text-sm">{duplicateDialog.item?.name}</div>
-              <div className="text-xs text-muted-foreground">{duplicateDialog.item?.category}</div>
-              <div className="text-sm font-semibold text-medical-primary">
-                {duplicateDialog.item && format(duplicateDialog.item.price)}
-              </div>
-            </div>
-          </div>
-          <DialogFooter className="flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
-            <Button 
-              variant="default" 
-              onClick={() => handleDuplicateAction('add')}
-              className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
-            >
-              Add Again
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => handleDuplicateAction('skip')}
-              className="w-full sm:w-auto"
-            >
-              Skip
-            </Button>
-            <Button 
-              variant="destructive" 
-              onClick={() => handleDuplicateAction('remove')}
-              className="w-full sm:w-auto"
-            >
-              Remove Existing
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Cupertino Date Picker Modal */}
       <CupertinoDateTimePicker
@@ -2610,8 +1835,170 @@ const Inpatient = () => {
         )}
         title={`Select ${cupertinoDatePickerType === 'admission' ? 'Admission' : 'Discharge'} Date`}
       />
+
+      {/* X-Ray View Selection Dialog */}
+      {showXRayViewSelection && selectedXRayForViews && (
+        <Dialog open={showXRayViewSelection} onOpenChange={setShowXRayViewSelection}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Select X-Ray Views</DialogTitle>
+              <DialogDescription>
+                Choose the film views for: {selectedXRayForViews.name}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <div className="text-sm font-medium">Film Views:</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={xRayViews.AP}
+                      onChange={(e) => handleXRayViewChange('AP', e.target.checked)}
+                      className="rounded"
+                    />
+                    <span>AP (Antero-Posterior)</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={xRayViews.LAT}
+                      onChange={(e) => handleXRayViewChange('LAT', e.target.checked)}
+                      className="rounded"
+                    />
+                    <span>LAT (Lateral)</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={xRayViews.OBLIQUE}
+                      onChange={(e) => handleXRayViewChange('OBLIQUE', e.target.checked)}
+                      className="rounded"
+                    />
+                    <span>OBLIQUE</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={xRayViews.BOTH}
+                      onChange={(e) => handleXRayViewChange('BOTH', e.target.checked)}
+                      className="rounded"
+                    />
+                    <span>BOTH (AP & LAT)</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Off-Charge/Portable option */}
+              {Object.values(xRayViews).some(v => v) && (
+                <div className="space-y-2">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={isOffChargePortable}
+                      onChange={(e) => setIsOffChargePortable(e.target.checked)}
+                      className="rounded"
+                    />
+                    <span className="text-sm">Off-Charge/Portable</span>
+                  </label>
+                </div>
+              )}
+
+              <div className="text-sm text-muted-foreground">
+                Price per film: {format(parseFloat(selectedXRayForViews.price))}
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowXRayViewSelection(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={addXRayToBill}
+                disabled={!Object.values(xRayViews).some(v => v)}
+                variant="medical"
+              >
+                Add to Bill
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Duplicate Item Dialog */}
+      {duplicateDialog.open && duplicateDialog.item && (
+        <Dialog open={duplicateDialog.open} onOpenChange={(open) => setDuplicateDialog({open, item: null})}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center text-amber-600">
+                <AlertTriangle className="mr-2 h-5 w-5" />
+                Duplicate Item
+              </DialogTitle>
+              <DialogDescription>
+                "{duplicateDialog.item.name}" is already in the bill.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
+                <div className="text-sm">
+                  <div className="font-medium">{duplicateDialog.item.name}</div>
+                  <div className="text-muted-foreground">{duplicateDialog.item.category}</div>
+                  <div className="font-medium text-medical-primary">{format(parseFloat(duplicateDialog.item.price))}</div>
+                </div>
+              </div>
+              
+              <div className="text-sm text-muted-foreground">
+                What would you like to do?
+              </div>
+            </div>
+
+            <DialogFooter className="flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const billItem = {
+                    ...duplicateDialog.item!,
+                    id: duplicateDialog.item!.id.toString(),
+                    price: parseFloat(duplicateDialog.item!.price),
+                    billId: `${duplicateDialog.item!.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+                  };
+                  setBillItems(prev => [...prev, billItem]);
+                  setDuplicateDialog({open: false, item: null});
+                }}
+                className="w-full sm:w-auto"
+              >
+                Add Again
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setDuplicateDialog({open: false, item: null})}
+                className="w-full sm:w-auto"
+              >
+                Skip
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  setBillItems(prev => prev.filter(item => item.id !== duplicateDialog.item!.id.toString()));
+                  const billItem = {
+                    ...duplicateDialog.item!,
+                    id: duplicateDialog.item!.id.toString(),
+                    price: parseFloat(duplicateDialog.item!.price),
+                    billId: `${duplicateDialog.item!.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+                  };
+                  setBillItems(prev => [...prev, billItem]);
+                  setDuplicateDialog({open: false, item: null});
+                }}
+                className="w-full sm:w-auto"
+              >
+                Replace Existing
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </Layout>
   );
-};
-
-export default Inpatient;
+}
