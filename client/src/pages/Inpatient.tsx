@@ -121,6 +121,9 @@ export default function Inpatient() {
   const [isMedicineDropdownOpen, setIsMedicineDropdownOpen] = useState<boolean>(false);
   const [medicineDropdownFilterQuery, setMedicineDropdownFilterQuery] = useState<string>('');
 
+  // Manual entry state for Physical Therapy, Limb and Brace, and Blood
+  const [manualEntryPrice, setManualEntryPrice] = useState<string>('');
+
   // Refs for advanced functionality
   const dropdownRef = useRef<HTMLDivElement>(null);
   const dropdownButtonRef = useRef<HTMLButtonElement>(null);
@@ -551,6 +554,32 @@ export default function Inpatient() {
       };
       setBillItems(prev => [...prev, billItem]);
     }
+  };
+
+  // Handle manual entry for Physical Therapy, Limb and Brace, and Blood
+  const addManualEntryToBill = () => {
+    if (!categorySearchQuery.trim() || !manualEntryPrice.trim()) {
+      return; // Don't add if name or price is empty
+    }
+
+    const price = parseFloat(manualEntryPrice);
+    if (isNaN(price) || price <= 0) {
+      return; // Don't add if price is invalid
+    }
+
+    const manualItem = {
+      id: `manual-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      name: categorySearchQuery.trim(),
+      category: selectedCategory,
+      price: price,
+      billId: `manual-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    };
+
+    setBillItems(prev => [...prev, manualItem]);
+    
+    // Clear the inputs after adding
+    setCategorySearchQuery('');
+    setManualEntryPrice('');
   };
 
   // Handle click outside dropdown to close it
@@ -2258,8 +2287,8 @@ export default function Inpatient() {
                         </div>
                       </div>
                     </div>
-                  ) : ['Physical Therapy', 'Limb and Brace'].includes(selectedCategory) ? (
-                    /* Manual entry interface for Physical Therapy and Limb and Brace matching outpatient */
+                  ) : ['Physical Therapy', 'Limb and Brace', 'Blood'].includes(selectedCategory) ? (
+                    /* Manual entry interface for Physical Therapy, Limb and Brace, and Blood matching outpatient */
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-foreground">Service Name</label>
@@ -2276,6 +2305,8 @@ export default function Inpatient() {
                         <Input
                           type="number"
                           placeholder="Enter price..."
+                          value={manualEntryPrice}
+                          onChange={(e) => setManualEntryPrice(e.target.value)}
                           className="w-full"
                           min="0"
                           step="0.01"
@@ -2284,9 +2315,11 @@ export default function Inpatient() {
 
                       <div className="flex justify-end">
                         <Button
+                          onClick={addManualEntryToBill}
                           variant="medical"
                           size="sm"
                           className="text-xs font-medium shadow-md hover:shadow-lg transition-shadow px-3 py-1"
+                          disabled={!categorySearchQuery.trim() || !manualEntryPrice.trim() || isNaN(parseFloat(manualEntryPrice)) || parseFloat(manualEntryPrice) <= 0}
                         >
                           <Plus className="h-3 w-3 mr-1" />
                           Add to Bill
