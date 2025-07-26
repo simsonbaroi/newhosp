@@ -181,18 +181,19 @@ export default function InpatientFixed() {
     queryKey: ['/api/medical-items'],
   });
 
-  // Get inpatient categories from the database
+  // Get inpatient categories from the database, excluding Dr. Fees, Medic Fee, and Medicine
+  const excludedCategories = ['Dr. Fees', 'Medic Fee', 'Medicine'];
   const categories = Array.from(new Set(
     medicalItems
-      .filter((item: MedicalItem) => !item.isOutpatient)
+      .filter((item: MedicalItem) => !item.isOutpatient && !excludedCategories.includes(item.category))
       .map((item: MedicalItem) => item.category)
   ));
 
-  // Inpatient category order - exact specification from user requirements
+  // Inpatient category order - updated per user request (removed Dr. Fees, Medic Fee, Medicine)
   const categoryOrder = [
     'Blood', 'Laboratory', 'Limb and Brace', 'Food', 
     'Halo, O2, NO2, etc.', 'Orthopedic, S.Roll, etc.', 'Surgery, O.R. & Delivery', 
-    'Registration Fees', 'Discharge Medicine', 'Medicine, ORS & Anesthesia, Ket, Spinal',
+    'Registration Fees', 'Discharge Medicine',
     'Physical Therapy', 'IV.\'s', 'Plaster/Milk', 'Procedures', 
     'Seat & Ad. Fee', 'X-Ray', 'Lost Laundry', 'Travel', 'Others'
   ];

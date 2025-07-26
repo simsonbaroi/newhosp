@@ -33,9 +33,6 @@ const INPATIENT_CATEGORIES = [
   'Blood Bank',
   'Pathology',
   'Radiology',
-  'Dr. Fees',
-  'Medic Fee',
-  'Medicine',
 ];
 
 const InpatientScreen: React.FC<Props> = ({navigation}) => {
