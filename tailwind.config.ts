@@ -73,6 +73,8 @@ export default {
           primary: "hsl(var(--medical-primary))",
           secondary: "hsl(var(--medical-secondary))",
           accent: "hsl(var(--medical-accent))",
+          "gradient-start": "hsl(var(--medical-gradient-start))",
+          "gradient-end": "hsl(var(--medical-gradient-end))",
         },
       },
       backgroundImage: {
