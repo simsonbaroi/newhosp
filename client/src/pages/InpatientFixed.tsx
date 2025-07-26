@@ -243,7 +243,7 @@ export default function InpatientFixed() {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="admissionDate" className="text-foreground font-medium">Admission Date & Time</Label>
+                    <Label htmlFor="admissionDate" className="text-foreground font-medium">Admission Date</Label>
                     <Button
                       variant="outline"
                       className="w-full p-4 h-auto text-left justify-start"
@@ -255,13 +255,13 @@ export default function InpatientFixed() {
                       <Calendar className="mr-2 h-4 w-4" />
                       <div className="flex flex-col">
                         <span className="font-medium">{admissionDate} at {admissionTime}</span>
-                        <span className="text-sm text-muted-foreground">Click to change admission date & time</span>
+
                       </div>
                     </Button>
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="dischargeDate" className="text-foreground font-medium">Discharge Date & Time</Label>
+                    <Label htmlFor="dischargeDate" className="text-foreground font-medium">Discharge Date</Label>
                     <Button
                       variant="outline"
                       className="w-full p-4 h-auto text-left justify-start"
@@ -273,7 +273,7 @@ export default function InpatientFixed() {
                       <Calendar className="mr-2 h-4 w-4" />
                       <div className="flex flex-col">
                         <span className="font-medium">{dischargeDate} at {dischargeTime}</span>
-                        <span className="text-sm text-muted-foreground">Click to change discharge date & time</span>
+
                       </div>
                     </Button>
                   </div>
@@ -329,7 +329,7 @@ export default function InpatientFixed() {
           cupertinoDatePickerType === 'admission' ? admissionDate : dischargeDate,
           cupertinoDatePickerType === 'admission' ? admissionTime : dischargeTime
         )}
-        title={`Select ${cupertinoDatePickerType === 'admission' ? 'Admission' : 'Discharge'} Date & Time`}
+        title={`Select ${cupertinoDatePickerType === 'admission' ? 'Admission' : 'Discharge'} Date`}
       />
     </Layout>
   );
