@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Search, Plus, Minus, Calculator, Grid3X3, Calendar, ChevronLeft, ChevronRight, X, AlertTriangle, ChevronDown, ChevronUp, FileText } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Search, Plus, Minus, Calculator, Grid3X3, Calendar, ChevronLeft, ChevronRight, X, AlertTriangle, ChevronDown, ChevronUp, FileText, FileX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -27,7 +27,7 @@ interface BillItem {
 }
 
 export default function InpatientFixed() {
-  const format = useTakaFormat();
+  const { format } = useTakaFormat();
   
   // Get current date and time
   const getCurrentDateTime = () => {
@@ -71,6 +71,39 @@ export default function InpatientFixed() {
   const [duplicateDialog, setDuplicateDialog] = useState<{open: boolean, item: MedicalItem | null}>({open: false, item: null});
   const [isPatientInfoExpanded, setIsPatientInfoExpanded] = useState<boolean>(true);
   const [isBillFormHeaderExpanded, setIsBillFormHeaderExpanded] = useState<boolean>(false);
+  
+  // Advanced category functionality states (matching outpatient)
+  const [selectedLabItems, setSelectedLabItems] = useState<MedicalItem[]>([]);
+  const [dropdownSelectedItems, setDropdownSelectedItems] = useState<MedicalItem[]>([]);
+  const [selectedXRayItems, setSelectedXRayItems] = useState<MedicalItem[]>([]);
+  const [xRayDropdownSelectedItems, setXRayDropdownSelectedItems] = useState<MedicalItem[]>([]);
+  const [dropdownValue, setDropdownValue] = useState<string>('');
+  const [highlightedDropdownIndex, setHighlightedDropdownIndex] = useState<number>(-1);
+  const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
+  const [dropdownFilterQuery, setDropdownFilterQuery] = useState<string>('');
+  const [xRayDropdownValue, setXRayDropdownValue] = useState<string>('');
+  const [xRayHighlightedDropdownIndex, setXRayHighlightedDropdownIndex] = useState<number>(-1);
+  const [isXRayDropdownOpen, setIsXRayDropdownOpen] = useState<boolean>(false);
+  const [xRayDropdownFilterQuery, setXRayDropdownFilterQuery] = useState<string>('');
+  
+  // X-Ray film view selection state
+  const [selectedXRayForViews, setSelectedXRayForViews] = useState<MedicalItem | null>(null);
+  const [xRayViews, setXRayViews] = useState({
+    AP: false,
+    LAT: false,
+    OBLIQUE: false,
+    BOTH: false
+  });
+  const [isOffChargePortable, setIsOffChargePortable] = useState(false);
+  const [showXRayViewSelection, setShowXRayViewSelection] = useState(false);
+  
+  // Refs for advanced functionality
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const dropdownButtonRef = useRef<HTMLButtonElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const xRayDropdownRef = useRef<HTMLDivElement>(null);
+  const xRayDropdownButtonRef = useRef<HTMLButtonElement>(null);
+  const xRaySearchInputRef = useRef<HTMLInputElement>(null);
   
   // Cupertino Date picker modal state
   const [showCupertinoDatePicker, setShowCupertinoDatePicker] = useState(false);
@@ -178,10 +211,82 @@ export default function InpatientFixed() {
     setDaysAdmitted(days);
   }, [admissionDate, dischargeDate]);
 
+  // Add item to bill function
+  const addItemToBill = (item: MedicalItem) => {
+    const existingItem = billItems.find(billItem => billItem.id === item.id.toString());
+    if (existingItem) {
+      setDuplicateDialog({ open: true, item });
+    } else {
+      const billItem = {
+        ...item,
+        id: item.id.toString(),
+        billId: `${item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      };
+      setBillItems(prev => [...prev, billItem]);
+    }
+  };
+
+  // Handle click outside dropdown to close it
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+        setHighlightedDropdownIndex(-1);
+        setDropdownFilterQuery('');
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
+
+  // Ensure dropdown button stays focused for continuous keyboard input
+  useEffect(() => {
+    if (isDropdownOpen && dropdownButtonRef.current) {
+      dropdownButtonRef.current.focus();
+    }
+  }, [dropdownFilterQuery, dropdownSelectedItems.length]);
+
+  // Auto-focus search input when Laboratory category is selected
+  useEffect(() => {
+    if (selectedCategory === 'Laboratory' && isCarouselMode && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [selectedCategory, isCarouselMode]);
+
+  // Handle click outside X-Ray dropdown to close it
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (xRayDropdownRef.current && !xRayDropdownRef.current.contains(event.target as Node)) {
+        setIsXRayDropdownOpen(false);
+        setXRayHighlightedDropdownIndex(-1);
+        setXRayDropdownFilterQuery('');
+      }
+    };
+
+    if (isXRayDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isXRayDropdownOpen]);
+
   // Fetch medical items
   const { data: medicalItems = [] } = useQuery<MedicalItem[]>({
     queryKey: ['/api/medical-items'],
   });
+
+  // Filter items by category
+  const categoryItems = selectedCategory 
+    ? medicalItems.filter((item: MedicalItem) => item.category === selectedCategory)
+    : [];
 
   // Get inpatient categories from the database, excluding Dr. Fees, Medic Fee, and Medicine
   const excludedCategories = ['Dr. Fees', 'Medic Fee', 'Medicine'];
@@ -233,6 +338,185 @@ export default function InpatientFixed() {
       setSelectedCategory(orderedCategories[newIndex]);
       setCategorySearchQuery('');
     }
+  };
+
+  // Laboratory search functionality
+  const getLabSuggestions = () => {
+    if (!categorySearchQuery || selectedCategory !== 'Laboratory') return [];
+    return categoryItems
+      .filter((item: MedicalItem) => 
+        item.name.toLowerCase().includes(categorySearchQuery.toLowerCase()) &&
+        !selectedLabItems.find(selected => selected.id === item.id) &&
+        !billItems.find(billItem => billItem.id === item.id.toString())
+      )
+      .slice(0, 5);
+  };
+
+  const handleLabSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === ',' || e.key === 'Enter') {
+      e.preventDefault();
+      const suggestions = getLabSuggestions();
+      if (suggestions.length > 0) {
+        const item = suggestions[0];
+        setSelectedLabItems(prev => [...prev, item]);
+        setCategorySearchQuery('');
+        setDropdownSelectedItems([]);
+      }
+    }
+  };
+
+  const removeLabItem = (itemId: number) => {
+    setSelectedLabItems(prev => prev.filter(item => item.id !== itemId));
+  };
+
+  const addSelectedLabItemsToBill = () => {
+    const newItems: MedicalItem[] = [];
+    const duplicateItems: MedicalItem[] = [];
+    
+    selectedLabItems.forEach(item => {
+      const existingItem = billItems.find(billItem => billItem.id === item.id.toString());
+      if (existingItem) {
+        duplicateItems.push(item);
+      } else {
+        newItems.push(item);
+      }
+    });
+    
+    if (newItems.length > 0) {
+      const billItemsToAdd = newItems.map(item => ({ 
+        ...item, 
+        id: item.id.toString(),
+        billId: `${item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` 
+      }));
+      setBillItems(prevBillItems => [...prevBillItems, ...billItemsToAdd]);
+    }
+    
+    if (duplicateItems.length > 0) {
+      setDuplicateDialog({ open: true, item: duplicateItems[0] });
+    }
+    
+    setSelectedLabItems([]);
+    setTimeout(() => {
+      if (searchInputRef.current) {
+        searchInputRef.current.focus();
+      }
+    }, 0);
+  };
+
+  // Dropdown functionality for Laboratory
+  const handleDropdownSelect = (value: string) => {
+    const selectedItem = categoryItems.find(item => item.id.toString() === value);
+    
+    const alreadyInDropdown = dropdownSelectedItems.find(item => item.id === selectedItem?.id);
+    const alreadyInBill = billItems.find(billItem => billItem.id === selectedItem?.id.toString());
+    
+    if (selectedItem && !alreadyInDropdown && !alreadyInBill) {
+      setDropdownSelectedItems(prev => [...prev, selectedItem]);
+      setSelectedLabItems([]);
+      setCategorySearchQuery('');
+    }
+    
+    setDropdownValue('');
+    setHighlightedDropdownIndex(-1);
+    setDropdownFilterQuery('');
+    
+    setTimeout(() => {
+      if (dropdownButtonRef.current) {
+        dropdownButtonRef.current.focus();
+      }
+    }, 0);
+  };
+
+  const removeDropdownItem = (itemId: number) => {
+    setDropdownSelectedItems(prev => prev.filter(item => item.id !== itemId));
+  };
+
+  const addDropdownSelectedItemsToBill = () => {
+    const newItems: MedicalItem[] = [];
+    const duplicateItems: MedicalItem[] = [];
+    
+    dropdownSelectedItems.forEach(item => {
+      const existingItem = billItems.find(billItem => billItem.id === item.id.toString());
+      if (existingItem) {
+        duplicateItems.push(item);
+      } else {
+        newItems.push(item);
+      }
+    });
+    
+    if (newItems.length > 0) {
+      const billItemsToAdd = newItems.map(item => ({ 
+        ...item, 
+        id: item.id.toString(),
+        billId: `${item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` 
+      }));
+      setBillItems(prevBillItems => [...prevBillItems, ...billItemsToAdd]);
+    }
+    
+    if (duplicateItems.length > 0) {
+      setDuplicateDialog({ open: true, item: duplicateItems[0] });
+    }
+    
+    setDropdownSelectedItems([]);
+    setIsDropdownOpen(false);
+    setHighlightedDropdownIndex(-1);
+    setDropdownFilterQuery('');
+  };
+
+  // X-Ray functionality
+  const handleXRayItemSelection = (item: MedicalItem) => {
+    setSelectedXRayForViews(item);
+    setXRayViews({ AP: false, LAT: false, OBLIQUE: false, BOTH: false });
+    setIsOffChargePortable(false);
+    setShowXRayViewSelection(true);
+  };
+
+  const handleXRayViewChange = (view: string, checked: boolean) => {
+    if (view === 'BOTH') {
+      setXRayViews({
+        AP: false,
+        LAT: false,
+        OBLIQUE: false,
+        BOTH: checked
+      });
+    } else {
+      setXRayViews(prev => ({
+        ...prev,
+        [view]: checked,
+        BOTH: false
+      }));
+    }
+  };
+
+  const addXRayToBill = () => {
+    if (!selectedXRayForViews) return;
+    
+    const selectedViews = Object.entries(xRayViews)
+      .filter(([_, isSelected]) => isSelected)
+      .map(([view, _]) => view);
+    
+    if (selectedViews.length === 0) return;
+    
+    const filmCount = selectedViews.length;
+    const basePrice = parseFloat(selectedXRayForViews.price);
+    const totalPrice = basePrice * filmCount;
+    
+    const viewDisplay = selectedViews.includes('BOTH') ? 'AP and LAT' : selectedViews.join(', ');
+    const xRayName = `${selectedXRayForViews.name} (${viewDisplay}${filmCount > 1 ? ` - ${filmCount} films` : ''})${isOffChargePortable ? ' - Off-Charge/Portable' : ''}`;
+    
+    const billItem = {
+      ...selectedXRayForViews,
+      id: selectedXRayForViews.id.toString(),
+      name: xRayName,
+      price: totalPrice.toString(),
+      billId: `${selectedXRayForViews.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    };
+    
+    setBillItems(prev => [...prev, billItem]);
+    setShowXRayViewSelection(false);
+    setSelectedXRayForViews(null);
+    setXRayViews({ AP: false, LAT: false, OBLIQUE: false, BOTH: false });
+    setIsOffChargePortable(false);
   };
 
   return (
@@ -464,56 +748,280 @@ export default function InpatientFixed() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {/* Category Search */}
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                    <Input
-                      placeholder={`Search ${selectedCategory} items...`}
-                      value={categorySearchQuery}
-                      onChange={(e) => setCategorySearchQuery(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-
-                  {/* Category Items */}
-                  <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {medicalItems
-                      .filter((item: MedicalItem) => 
-                        !item.isOutpatient && 
-                        item.category === selectedCategory &&
-                        (categorySearchQuery === '' || 
-                         item.name.toLowerCase().includes(categorySearchQuery.toLowerCase()))
-                      )
-                      .map((item: MedicalItem) => (
-                        <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
-                          <div className="flex-1">
-                            <h4 className="font-medium text-sm">{item.name}</h4>
-                            {item.description && (
-                              <p className="text-xs text-muted-foreground">{item.description}</p>
-                            )}
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <span className="font-medium text-medical-primary">{format.format(parseFloat(item.price))}</span>
-                            <Button
-                              size="sm"
-                              variant="medical-outline"
-                              onClick={() => {
-                                const newItem: BillItem = {
-                                  id: item.id.toString(),
-                                  name: item.name,
-                                  category: item.category,
-                                  price: parseFloat(item.price),
-                                  quantity: 1
-                                };
-                                setBillItems(prev => [...prev, newItem]);
-                              }}
-                            >
-                              <Plus className="h-3 w-3" />
-                            </Button>
+                  {selectedCategory === 'Laboratory' ? (
+                    // Advanced Laboratory interface
+                    <div className="space-y-4">
+                      {/* Selected items display */}
+                      {selectedLabItems.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap gap-2">
+                            {selectedLabItems.map((item) => (
+                              <span
+                                key={item.id}
+                                className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800 border border-green-200"
+                              >
+                                {item.name} - {format(parseFloat(item.price))}
+                                <button
+                                  onClick={() => removeLabItem(item.id)}
+                                  className="ml-1 text-green-600 hover:text-green-800"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </span>
+                            ))}
                           </div>
                         </div>
-                      ))}
-                  </div>
+                      )}
+
+                      {/* Selected dropdown items display */}
+                      {dropdownSelectedItems.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap gap-2">
+                            {dropdownSelectedItems.map((item) => (
+                              <span
+                                key={item.id}
+                                className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800 border border-blue-200"
+                              >
+                                {item.name} - {format(parseFloat(item.price))}
+                                <button
+                                  onClick={() => removeDropdownItem(item.id)}
+                                  className="ml-1 text-blue-600 hover:text-blue-800"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Price counters and Add buttons */}
+                      {(selectedLabItems.length > 0 || dropdownSelectedItems.length > 0) && (
+                        <div className="flex justify-between items-center">
+                          {selectedLabItems.length > 0 && (
+                            <div className="flex items-center space-x-3">
+                              <span className="text-sm font-medium">
+                                Total: {format(selectedLabItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
+                              </span>
+                              <Button
+                                size="sm"
+                                variant="medical-outline"
+                                onClick={addSelectedLabItemsToBill}
+                                className="h-8"
+                              >
+                                Add to Bill
+                              </Button>
+                            </div>
+                          )}
+                          {dropdownSelectedItems.length > 0 && (
+                            <div className="flex items-center space-x-3">
+                              <span className="text-sm font-medium">
+                                Total: {format(dropdownSelectedItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
+                              </span>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={addDropdownSelectedItemsToBill}
+                                className="h-8 border-blue-200 text-blue-700 hover:bg-blue-50"
+                              >
+                                Add to Bill
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Search input */}
+                      <div className="space-y-2">
+                        <Input
+                          ref={searchInputRef}
+                          placeholder="Type lab test name and press comma or enter to add..."
+                          value={categorySearchQuery}
+                          onChange={(e) => {
+                            setCategorySearchQuery(e.target.value);
+                            if (e.target.value.trim()) {
+                              setDropdownSelectedItems([]);
+                            }
+                          }}
+                          onKeyDown={handleLabSearchKeyDown}
+                          className="w-full"
+                        />
+                        
+                        {/* Search suggestions */}
+                        {categorySearchQuery && getLabSuggestions().length > 0 && (
+                          <div className="space-y-1 max-h-40 overflow-y-auto border border-border rounded-md p-2 bg-muted/10">
+                            <div className="text-sm font-medium text-muted-foreground mb-2">
+                              Matching tests (press comma to add):
+                            </div>
+                            {getLabSuggestions().slice(0, 5).map((item: MedicalItem) => (
+                              <div
+                                key={item.id}
+                                className="p-2 rounded cursor-pointer hover:bg-muted/20 text-sm"
+                                onClick={() => {
+                                  setSelectedLabItems(prev => [...prev, item]);
+                                  setCategorySearchQuery('');
+                                  setDropdownSelectedItems([]);
+                                }}
+                              >
+                                <div className="font-medium">{item.name}</div>
+                                <div className="text-xs text-muted-foreground">{format(parseFloat(item.price))}</div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* OR separator */}
+                      <div className="flex items-center space-x-4">
+                        <div className="flex-1 border-b border-muted"></div>
+                        <span className="text-sm text-muted-foreground">OR</span>
+                        <div className="flex-1 border-b border-muted"></div>
+                      </div>
+
+                      {/* Dropdown selection */}
+                      <div className="relative" ref={dropdownRef}>
+                        <Button
+                          ref={dropdownButtonRef}
+                          variant="outline"
+                          className="w-full justify-between"
+                          onClick={() => {
+                            setIsDropdownOpen(!isDropdownOpen);
+                            setSelectedLabItems([]);
+                            setCategorySearchQuery('');
+                          }}
+                        >
+                          <span>
+                            {dropdownFilterQuery 
+                              ? `Filter: "${dropdownFilterQuery}" (${categoryItems.filter(item => 
+                                  item.name.toLowerCase().includes(dropdownFilterQuery.toLowerCase())
+                                ).length} matches)`
+                              : 'Select from dropdown'
+                            }
+                          </span>
+                          <ChevronDown className="h-4 w-4" />
+                        </Button>
+                        
+                        {isDropdownOpen && (
+                          <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto bg-white border border-border rounded-md shadow-lg">
+                            {categoryItems
+                              .filter(item => 
+                                !dropdownFilterQuery || 
+                                item.name.toLowerCase().includes(dropdownFilterQuery.toLowerCase())
+                              )
+                              .sort((a, b) => {
+                                if (!dropdownFilterQuery) return a.name.localeCompare(b.name);
+                                
+                                const aName = a.name.toLowerCase();
+                                const bName = b.name.toLowerCase();
+                                const query = dropdownFilterQuery.toLowerCase();
+                                
+                                if (aName === query && bName !== query) return -1;
+                                if (bName === query && aName !== query) return 1;
+                                if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
+                                if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
+                                
+                                return aName.localeCompare(bName);
+                              })
+                              .map((item, index) => {
+                                const alreadySelected = dropdownSelectedItems.find(selected => selected.id === item.id);
+                                const alreadyInBill = billItems.find(billItem => billItem.id === item.id.toString());
+                                const isHighlighted = index === highlightedDropdownIndex;
+                                
+                                return (
+                                  <div
+                                    key={item.id}
+                                    className={`p-2 cursor-pointer hover:bg-gray-100 text-sm ${
+                                      isHighlighted ? 'bg-blue-100 border-l-4 border-blue-500' : ''
+                                    } ${
+                                      alreadyInBill ? 'bg-red-50 text-red-600' : ''
+                                    }`}
+                                    onClick={() => handleDropdownSelect(item.id.toString())}
+                                  >
+                                    <div className="flex justify-between items-center">
+                                      <div>
+                                        <div className="font-medium">{item.name}</div>
+                                        <div className="text-xs text-muted-foreground">{format(parseFloat(item.price))}</div>
+                                      </div>
+                                      <div className="flex items-center space-x-1">
+                                        {alreadySelected && (
+                                          <span className="text-xs text-blue-600 font-medium">✓ Selected</span>
+                                        )}
+                                        {alreadyInBill && (
+                                          <span className="text-xs text-red-600 font-medium">● Already in Bill</span>
+                                        )}
+                                        {isHighlighted && (
+                                          <span className="text-xs text-blue-600">← Highlighted</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : selectedCategory === 'X-Ray' ? (
+                    // Advanced X-Ray interface
+                    <div className="space-y-4">
+                      {/* X-Ray selection interface */}
+                      <div className="grid grid-cols-1 gap-2">
+                        {categoryItems.map((item: MedicalItem) => (
+                          <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div>
+                              <div className="font-medium">{item.name}</div>
+                              <div className="text-sm text-muted-foreground">{format(parseFloat(item.price))}</div>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="medical"
+                              onClick={() => handleXRayItemSelection(item)}
+                            >
+                              Select Views
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    // Standard interface for other categories
+                    <div className="space-y-4">
+                      {/* Category Search */}
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                        <Input
+                          placeholder={`Search ${selectedCategory} items...`}
+                          value={categorySearchQuery}
+                          onChange={(e) => setCategorySearchQuery(e.target.value)}
+                          className="pl-10"
+                        />
+                      </div>
+
+                      {/* Filtered Results */}
+                      <div className="grid grid-cols-1 gap-2">
+                        {categoryItems
+                          .filter((item: MedicalItem) => 
+                            item.name.toLowerCase().includes(categorySearchQuery.toLowerCase())
+                          )
+                          .map((item: MedicalItem) => (
+                            <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
+                              <div>
+                                <div className="font-medium">{item.name}</div>
+                                <div className="text-sm text-muted-foreground">{format(parseFloat(item.price))}</div>
+                              </div>
+                              <Button
+                                size="sm"
+                                onClick={() => addItemToBill(item)}
+                                variant="medical-outline"
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))
+                        }
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -705,6 +1213,168 @@ export default function InpatientFixed() {
         )}
         title={`Select ${cupertinoDatePickerType === 'admission' ? 'Admission' : 'Discharge'} Date`}
       />
+
+      {/* X-Ray View Selection Dialog */}
+      {showXRayViewSelection && selectedXRayForViews && (
+        <Dialog open={showXRayViewSelection} onOpenChange={setShowXRayViewSelection}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Select X-Ray Views</DialogTitle>
+              <DialogDescription>
+                Choose the film views for: {selectedXRayForViews.name}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <div className="text-sm font-medium">Film Views:</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={xRayViews.AP}
+                      onChange={(e) => handleXRayViewChange('AP', e.target.checked)}
+                      className="rounded"
+                    />
+                    <span>AP (Antero-Posterior)</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={xRayViews.LAT}
+                      onChange={(e) => handleXRayViewChange('LAT', e.target.checked)}
+                      className="rounded"
+                    />
+                    <span>LAT (Lateral)</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={xRayViews.OBLIQUE}
+                      onChange={(e) => handleXRayViewChange('OBLIQUE', e.target.checked)}
+                      className="rounded"
+                    />
+                    <span>OBLIQUE</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={xRayViews.BOTH}
+                      onChange={(e) => handleXRayViewChange('BOTH', e.target.checked)}
+                      className="rounded"
+                    />
+                    <span>BOTH (AP & LAT)</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Off-Charge/Portable option */}
+              {Object.values(xRayViews).some(v => v) && (
+                <div className="space-y-2">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={isOffChargePortable}
+                      onChange={(e) => setIsOffChargePortable(e.target.checked)}
+                      className="rounded"
+                    />
+                    <span className="text-sm">Off-Charge/Portable</span>
+                  </label>
+                </div>
+              )}
+
+              <div className="text-sm text-muted-foreground">
+                Price per film: {format(parseFloat(selectedXRayForViews.price))}
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowXRayViewSelection(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={addXRayToBill}
+                disabled={!Object.values(xRayViews).some(v => v)}
+                variant="medical"
+              >
+                Add to Bill
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Duplicate Item Dialog */}
+      {duplicateDialog.open && duplicateDialog.item && (
+        <Dialog open={duplicateDialog.open} onOpenChange={(open) => setDuplicateDialog({open, item: null})}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center text-amber-600">
+                <AlertTriangle className="mr-2 h-5 w-5" />
+                Duplicate Item
+              </DialogTitle>
+              <DialogDescription>
+                "{duplicateDialog.item.name}" is already in the bill.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
+                <div className="text-sm">
+                  <div className="font-medium">{duplicateDialog.item.name}</div>
+                  <div className="text-muted-foreground">{duplicateDialog.item.category}</div>
+                  <div className="font-medium text-medical-primary">{format(parseFloat(duplicateDialog.item.price))}</div>
+                </div>
+              </div>
+              
+              <div className="text-sm text-muted-foreground">
+                What would you like to do?
+              </div>
+            </div>
+
+            <DialogFooter className="flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const billItem = {
+                    ...duplicateDialog.item!,
+                    id: duplicateDialog.item!.id.toString(),
+                    billId: `${duplicateDialog.item!.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+                  };
+                  setBillItems(prev => [...prev, billItem]);
+                  setDuplicateDialog({open: false, item: null});
+                }}
+                className="w-full sm:w-auto"
+              >
+                Add Again
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setDuplicateDialog({open: false, item: null})}
+                className="w-full sm:w-auto"
+              >
+                Skip
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  setBillItems(prev => prev.filter(item => item.id !== duplicateDialog.item!.id.toString()));
+                  const billItem = {
+                    ...duplicateDialog.item!,
+                    id: duplicateDialog.item!.id.toString(),
+                    billId: `${duplicateDialog.item!.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+                  };
+                  setBillItems(prev => [...prev, billItem]);
+                  setDuplicateDialog({open: false, item: null});
+                }}
+                className="w-full sm:w-auto"
+              >
+                Replace Existing
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </Layout>
   );
 }
