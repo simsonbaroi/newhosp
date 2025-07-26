@@ -193,6 +193,7 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-26**: READY: Application fully deployed and ready for production use in Replit environment
 - **2025-01-26**: CORRECTED: Fixed patient information labels in InpatientFixed.tsx component (the actual component in use)
 - **2025-01-26**: CONFIRMED: User verified changes applied successfully - labels now show "Admission Date" and "Discharge Date"
+- **2025-01-26**: UPDATED: Total admitted days calculation - discharge day not counted, except same-day admission/discharge counts as 1 day
 - **2025-01-25**: ADDED: Custom CSS classes for medicine-specific styling (medicine-item-card, medicine-dosage-card)
 - **2025-01-25**: ENHANCED: Professional glass morphism effects with medical color palette throughout medicine interface
 - **2025-01-25**: REDESIGNED: Medicine numbering system with clean badge design (#1, #2, etc.) replacing circular numbers

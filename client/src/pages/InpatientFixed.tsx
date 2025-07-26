@@ -158,9 +158,15 @@ export default function InpatientFixed() {
     if (!admissionDate || !dischargeDate || dischargeDate < admissionDate) return 1;
     
     const timeDiff = dischargeDate.getTime() - admissionDate.getTime();
-    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1; // +1 to include both admission and discharge days
+    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
     
-    return daysDiff > 0 ? daysDiff : 1;
+    // If admission and discharge are the same day, count as 1 day
+    // Otherwise, don't count the discharge day
+    if (daysDiff === 0) {
+      return 1; // Same day admission and discharge
+    } else {
+      return daysDiff; // Don't count discharge day
+    }
   };
 
   // Update days admitted when dates change
