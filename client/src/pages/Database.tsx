@@ -7,21 +7,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import Layout from '@/components/Layout';
-import { 
-  getAllItems, 
-  addItem, 
-  updateItem, 
-  deleteItem, 
-  getCategories,
-  DatabaseItem 
-} from '@/lib/database';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getCategoryNames } from '@/lib/categories';
+import type { MedicalItem } from '@shared/schema';
 
 const Database = () => {
-  const [items, setItems] = useState<DatabaseItem[]>([]);
+  const [items, setItems] = useState<MedicalItem[]>([]);
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'outpatient' | 'inpatient'>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
-  const [editingItem, setEditingItem] = useState<DatabaseItem | null>(null);
+  const [editingItem, setEditingItem] = useState<MedicalItem | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [isCarouselMode, setIsCarouselMode] = useState<boolean>(false);
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState<number>(0);
@@ -35,19 +31,20 @@ const Database = () => {
   
   const { toast } = useToast();
 
+  // Get all categories from permanent configuration (not database)
   const allCategories = [
-    ...getCategories(true),
-    ...getCategories(false)
+    ...getCategoryNames(true),  // Outpatient categories
+    ...getCategoryNames(false)  // Inpatient categories  
   ].filter((category, index, arr) => arr.indexOf(category) === index);
 
-  useEffect(() => {
-    loadItems();
-  }, []);
+  // Fetch medical items from API (database contains only price data)
+  const { data: medicalItems = [] } = useQuery<MedicalItem[]>({
+    queryKey: ['/api/medical-items'],
+  });
 
-  const loadItems = () => {
-    const allItems = getAllItems();
-    setItems(allItems);
-  };
+  useEffect(() => {
+    setItems(medicalItems);
+  }, [medicalItems]);
 
   const filteredItems = items.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -59,6 +56,79 @@ const Database = () => {
     
     return matchesSearch && matchesType && matchesCategory;
   });
+
+  // Add item mutation
+  const addItemMutation = useMutation({
+    mutationFn: async (itemData: any) => {
+      const response = await fetch('/api/medical-items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(itemData),
+      });
+      if (!response.ok) throw new Error('Failed to add item');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/medical-items'] });
+      toast({
+        title: "Success",
+        description: "Item added successfully"
+      });
+      resetForm();
+    },
+  });
+
+  // Update item mutation
+  const updateItemMutation = useMutation({
+    mutationFn: async ({ id, itemData }: { id: number, itemData: any }) => {
+      const response = await fetch(`/api/medical-items/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(itemData),
+      });
+      if (!response.ok) throw new Error('Failed to update item');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/medical-items'] });
+      toast({
+        title: "Success",
+        description: "Item updated successfully"
+      });
+      setEditingItem(null);
+      resetForm();
+    },
+  });
+
+  // Delete item mutation
+  const deleteItemMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/medical-items/${id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete item');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/medical-items'] });
+      toast({
+        title: "Success",
+        description: "Item deleted successfully"
+      });
+    },
+  });
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      category: '',
+      price: '',
+      description: '',
+      isOutpatient: true
+    });
+    setIsAdding(false);
+    setEditingItem(null);
+  };
 
   const handleSubmit = () => {
     if (!formData.name || !formData.category || !formData.price) {
@@ -74,56 +144,25 @@ const Database = () => {
       name: formData.name,
       category: formData.category,
       price: parseFloat(formData.price),
-      description: formData.description,
-      isOutpatient: formData.isOutpatient
+      description: formData.description || null,
+      isOutpatient: formData.isOutpatient,
+      currency: 'BDT'
     };
 
-    try {
-      if (editingItem) {
-        updateItem(editingItem.id, itemData);
-        toast({
-          title: "Success",
-          description: "Item updated successfully"
-        });
-      } else {
-        addItem(itemData);
-        toast({
-          title: "Success",
-          description: "Item added successfully"
-        });
-      }
-      
-      loadItems();
-      resetForm();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save item",
-        variant: "destructive"
-      });
+    if (editingItem) {
+      updateItemMutation.mutate({ id: editingItem.id, itemData });
+    } else {
+      addItemMutation.mutate(itemData);
     }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = (id: number) => {
     if (confirm('Are you sure you want to delete this item?')) {
-      try {
-        deleteItem(id);
-        loadItems();
-        toast({
-          title: "Success",
-          description: "Item deleted successfully"
-        });
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to delete item",
-          variant: "destructive"
-        });
-      }
+      deleteItemMutation.mutate(id);
     }
   };
 
-  const startEdit = (item: DatabaseItem) => {
+  const startEdit = (item: MedicalItem) => {
     setEditingItem(item);
     setFormData({
       name: item.name,
@@ -135,401 +174,187 @@ const Database = () => {
     setIsAdding(true);
   };
 
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      category: '',
-      price: '',
-      description: '',
-      isOutpatient: true
-    });
-    setEditingItem(null);
-    setIsAdding(false);
-  };
-
-  // Carousel navigation functions
-  const handleCategoryClick = (category: string) => {
-    if (isCarouselMode && category === filterCategory) {
-      // If already in carousel mode and same category clicked, exit carousel
-      setIsCarouselMode(false);
-      setFilterCategory('all');
-    } else {
-      setFilterCategory(category);
-      setIsCarouselMode(true);
-      setCurrentCategoryIndex(allCategories.indexOf(category));
-    }
-  };
-
-  const navigateCarousel = (direction: 'prev' | 'next') => {
-    const newIndex = direction === 'prev' 
-      ? (currentCategoryIndex - 1 + allCategories.length) % allCategories.length
-      : (currentCategoryIndex + 1) % allCategories.length;
-    
-    setCurrentCategoryIndex(newIndex);
-    setFilterCategory(allCategories[newIndex]);
-  };
-
-  const exitCarousel = () => {
-    setIsCarouselMode(false);
-    setFilterCategory('all');
-    setSearchQuery(''); // Clear search when exiting carousel
-  };
-
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto p-6">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-foreground mb-2 flex items-center">
-            <DatabaseIcon className="h-8 w-8 mr-3 text-primary" />
-            Database Management
-          </h1>
-          <p className="text-muted-foreground">Manage medical items and their prices</p>
+      <div className="flex flex-col h-full">
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-3">
+            <DatabaseIcon className="h-8 w-8 text-emerald-600" />
+            <h1 className="text-3xl font-bold text-emerald-800">Medical Items Database</h1>
+          </div>
+          <Button 
+            onClick={() => setIsAdding(true)}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Item
+          </Button>
         </div>
 
-        {/* Add/Edit Form */}
+        {/* Search and Filter Controls */}
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search medical items..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              <Select value={filterType} onValueChange={(value: any) => setFilterType(value)}>
+                <SelectTrigger className="w-full md:w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="outpatient">Outpatient</SelectItem>
+                  <SelectItem value="inpatient">Inpatient</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filterCategory} onValueChange={setFilterCategory}>
+                <SelectTrigger className="w-full md:w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {allCategories.map(category => (
+                    <SelectItem key={category} value={category}>{category}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Items List */}
+        <Card className="flex-1">
+          <CardHeader>
+            <CardTitle>Items ({filteredItems.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {filteredItems.map(item => (
+                <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex-1">
+                    <div className="font-medium">{item.name}</div>
+                    <div className="text-sm text-gray-600">
+                      {item.category} • ৳{item.price} • {item.isOutpatient ? 'Outpatient' : 'Inpatient'}
+                    </div>
+                    {item.description && (
+                      <div className="text-xs text-gray-500 mt-1">{item.description}</div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => startEdit(item)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDelete(item.id)}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Add/Edit Form Modal */}
         {isAdding && (
-          <Card className="mb-6 shadow-card border-l-4 border-l-primary">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>{editingItem ? 'Edit Item' : 'Add New Item'}</span>
-                <Button variant="outline" size="sm" onClick={resetForm}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-2 gap-4">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <Card className="w-full max-w-md">
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>{editingItem ? 'Edit Item' : 'Add New Item'}</CardTitle>
+                  <Button variant="ghost" size="sm" onClick={resetForm}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Item Name *</label>
+                  <label className="text-sm font-medium">Name *</label>
                   <Input
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Enter item name"
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    placeholder="Item name"
                   />
                 </div>
-                
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Price *</label>
-                  <Input
-                    type="number"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                    placeholder="Enter price"
-                  />
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Category *</label>
-                  <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                  <label className="text-sm font-medium">Category *</label>
+                  <Select 
+                    value={formData.category} 
+                    onValueChange={(value) => setFormData({...formData, category: value})}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
-                    <SelectContent className="bg-popover border border-border">
+                    <SelectContent>
                       {allCategories.map(category => (
-                        <SelectItem key={category} value={category}>
-                          {category}
-                        </SelectItem>
+                        <SelectItem key={category} value={category}>{category}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Type *</label>
+                  <label className="text-sm font-medium">Price (৳) *</label>
+                  <Input
+                    type="number"
+                    value={formData.price}
+                    onChange={(e) => setFormData({...formData, price: e.target.value})}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Description</label>
+                  <Textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    placeholder="Optional description"
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Type *</label>
                   <Select 
                     value={formData.isOutpatient ? 'outpatient' : 'inpatient'} 
-                    onValueChange={(value) => setFormData({ ...formData, isOutpatient: value === 'outpatient' })}
+                    onValueChange={(value) => setFormData({...formData, isOutpatient: value === 'outpatient'})}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-popover border border-border">
+                    <SelectContent>
                       <SelectItem value="outpatient">Outpatient</SelectItem>
                       <SelectItem value="inpatient">Inpatient</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                
-                <div className="md:col-span-2">
-                  <label className="text-sm font-medium mb-2 block">Description</label>
-                  <Textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Enter description (optional)"
-                    rows={3}
-                  />
+                <div className="flex gap-2 pt-4">
+                  <Button onClick={handleSubmit} className="flex-1">
+                    <Save className="h-4 w-4 mr-2" />
+                    {editingItem ? 'Update' : 'Add'} Item
+                  </Button>
+                  <Button variant="outline" onClick={resetForm}>
+                    Cancel
+                  </Button>
                 </div>
-              </div>
-              
-              <div className="flex justify-end space-x-2 mt-6">
-                <Button variant="outline" onClick={resetForm}>
-                  Cancel
-                </Button>
-                <Button onClick={handleSubmit} className="bg-primary hover:bg-primary-hover">
-                  <Save className="h-4 w-4 mr-2" />
-                  {editingItem ? 'Update' : 'Add'} Item
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         )}
-
-        {/* Controls */}
-        <div className="grid md:grid-cols-4 gap-4 mb-6">
-          <div>
-            <Button 
-              onClick={() => setIsAdding(true)}
-              className="w-full bg-primary hover:bg-primary-hover"
-              disabled={isAdding}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Item
-            </Button>
-          </div>
-          
-          {/* Search - Hidden in carousel mode */}
-          {!isCarouselMode && (
-            <div>
-              <Input
-                placeholder="Search items..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full"
-              />
-            </div>
-          )}
-          
-          <div>
-            <Select value={filterType} onValueChange={(value: any) => setFilterType(value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border border-border">
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="outpatient">Outpatient</SelectItem>
-                <SelectItem value="inpatient">Inpatient</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div>
-            <Select value={filterCategory} onValueChange={setFilterCategory}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-popover border border-border">
-                <SelectItem value="all">All Categories</SelectItem>
-                {allCategories.map(category => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {/* Category Carousel Navigation */}
-        <Card className="glass-card mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between text-medical-primary">
-              <span className="flex items-center">
-                <Grid3X3 className="mr-2 h-5 w-5" />
-                Browse Categories
-              </span>
-              {isCarouselMode && (
-                <Button 
-                  size="sm" 
-                  variant="medical-ghost" 
-                  onClick={exitCarousel}
-                  className="h-8 w-8 p-0"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {!isCarouselMode ? (
-              // Normal grid mode
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {allCategories.map((category) => {
-                  const itemCount = items.filter(item => item.category === category).length;
-                  return (
-                    <Button
-                      key={category}
-                      variant="medical-outline"
-                      className="h-auto p-2 sm:p-3 text-left justify-start min-h-[60px]"
-                      onClick={() => handleCategoryClick(category)}
-                    >
-                      <div className="w-full">
-                        <div className="font-semibold text-xs sm:text-sm truncate leading-tight">{category}</div>
-                        <div className="text-xs opacity-75 mt-1">{itemCount} items</div>
-                      </div>
-                    </Button>
-                  );
-                })}
-              </div>
-            ) : (
-              // Carousel mode with preview buttons
-              <div className="space-y-4">
-                {/* Category Navigation */}
-                <div className="flex items-center justify-center space-x-2">
-                  {/* Previous preview button */}
-                  <Button
-                    variant="medical-ghost"
-                    className="h-auto p-1.5 sm:p-2 text-left flex-shrink-0 opacity-60 hover:opacity-80 max-w-[60px] sm:max-w-[80px] justify-start"
-                    onClick={() => navigateCarousel('prev')}
-                  >
-                    <div className="w-full">
-                      <div className="text-xs sm:text-xs truncate text-left leading-tight">
-                        {allCategories[(currentCategoryIndex - 1 + allCategories.length) % allCategories.length]}
-                      </div>
-                    </div>
-                  </Button>
-
-                  {/* Previous arrow */}
-                  <Button
-                    variant="medical-outline"
-                    size="sm"
-                    onClick={() => navigateCarousel('prev')}
-                    className="h-10 w-10 p-0 flex-shrink-0"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  
-                  {/* Current selected category */}
-                  <Button
-                    variant="medical"
-                    className="h-auto p-2 sm:p-4 text-center flex-1 max-w-[140px] sm:max-w-[200px]"
-                    onClick={() => handleCategoryClick(filterCategory)}
-                  >
-                    <div className="w-full">
-                      <div className="font-semibold text-xs sm:text-sm truncate leading-tight">{filterCategory}</div>
-                      <div className="text-xs opacity-75 mt-1">
-                        {items.filter(item => item.category === filterCategory).length} items
-                      </div>
-                    </div>
-                  </Button>
-                  
-                  {/* Next arrow */}
-                  <Button
-                    variant="medical-outline"
-                    size="sm"
-                    onClick={() => navigateCarousel('next')}
-                    className="h-10 w-10 p-0 flex-shrink-0"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-
-                  {/* Next preview button */}
-                  <Button
-                    variant="medical-ghost"
-                    className="h-auto p-1.5 sm:p-2 text-right flex-shrink-0 opacity-60 hover:opacity-80 max-w-[60px] sm:max-w-[80px] justify-end"
-                    onClick={() => navigateCarousel('next')}
-                  >
-                    <div className="w-full">
-                      <div className="text-xs sm:text-xs truncate text-right leading-tight">
-                        {allCategories[(currentCategoryIndex + 1) % allCategories.length]}
-                      </div>
-                    </div>
-                  </Button>
-                </div>
-
-                {/* Add Items Button for Current Category */}
-                <div className="flex justify-center">
-                  <Button
-                    variant="medical"
-                    className="h-auto p-3 border-2 border-dashed border-medical-primary/50"
-                    onClick={() => {
-                      setFormData({
-                        ...formData,
-                        category: filterCategory
-                      });
-                      setIsAdding(true);
-                    }}
-                    disabled={isAdding}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    <span className="font-semibold">Add Item</span>
-                  </Button>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Items List */}
-        <Card className="shadow-card">
-          <CardHeader>
-            <CardTitle>
-              {isCarouselMode && filterCategory !== 'all' 
-                ? `${filterCategory} Items (${filteredItems.length} found)`
-                : `Items (${filteredItems.length} found)`
-              }
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {filteredItems.length > 0 ? (
-              <div className="space-y-3">
-                {filteredItems.map(item => (
-                  <div key={item.id} className="flex items-center justify-between p-4 bg-muted rounded-lg hover:bg-muted/80 transition-colors">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3">
-                        <h3 className="font-medium text-foreground">{item.name}</h3>
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${
-                          item.isOutpatient 
-                            ? 'bg-primary text-primary-foreground' 
-                            : 'bg-accent text-accent-foreground'
-                        }`}>
-                          {item.isOutpatient ? 'Outpatient' : 'Inpatient'}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{item.category}</p>
-                      {item.description && (
-                        <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
-                      )}
-                    </div>
-                    
-                    <div className="flex items-center space-x-4">
-                      <div className="text-right">
-                        <p className="text-xl font-bold text-primary">৳{item.price.toFixed(2)}</p>
-                      </div>
-                      
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => startEdit(item)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDelete(item.id)}
-                          className="hover:bg-destructive hover:text-destructive-foreground"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <DatabaseIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">
-                  {searchQuery || filterType !== 'all' || filterCategory !== 'all'
-                    ? 'No items match your filters'
-                    : 'No items in database yet. Add some items to get started.'
-                  }
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
     </Layout>
   );
