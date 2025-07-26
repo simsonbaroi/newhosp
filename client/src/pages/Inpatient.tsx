@@ -1311,7 +1311,33 @@ const Inpatient = () => {
               <Card className="glass-card">
                 <CardHeader>
                   <CardTitle className="text-medical-primary">{selectedCategory}</CardTitle>
-                  {/* Show Laboratory search + dropdown interface */}
+                  {/* Search input with Laboratory-specific functionality */}
+                  {selectedCategory === 'Laboratory' ? (
+                    <Input
+                      ref={searchInputRef}
+                      placeholder="Type lab test name and press comma or enter to add..."
+                      value={categorySearchQuery}
+                      onChange={(e) => {
+                        setCategorySearchQuery(e.target.value);
+                        // Clear dropdown selections when switching to search
+                        if (e.target.value.trim()) {
+                          setDropdownSelectedItems([]);
+                        }
+                      }}
+                      onKeyDown={handleLabSearchKeyDown}
+                      className="w-full"
+                    />
+                  ) : (
+                    <Input
+                      placeholder={`Search in ${selectedCategory}...`}
+                      value={categorySearchQuery}
+                      onChange={(e) => setCategorySearchQuery(e.target.value)}
+                      className="w-full"
+                    />
+                  )}
+                </CardHeader>
+                <CardContent>
+                  {/* Show Laboratory interface */}
                   {selectedCategory === 'Laboratory' ? (
                     <div className="space-y-4">
                       {/* Selected items, price counter and Add to Bill button above search */}
@@ -1353,22 +1379,7 @@ const Inpatient = () => {
                         </div>
                       )}
 
-                      <div className="space-y-2">
-                        <Input
-                          ref={searchInputRef}
-                          placeholder="Type lab test name and press comma or enter to add..."
-                          value={categorySearchQuery}
-                          onChange={(e) => {
-                            setCategorySearchQuery(e.target.value);
-                            // Clear dropdown selections when switching to search
-                            if (e.target.value.trim()) {
-                              setDropdownSelectedItems([]);
-                            }
-                          }}
-                          onKeyDown={handleLabSearchKeyDown}
-                          className="w-full"
-                        />
-                        
+                      <div className="space-y-2">                        
                         {/* Search suggestions appear right below search input */}
                         {categorySearchQuery && getLabSuggestions().length > 0 && (
                           <div className="space-y-1 max-h-40 overflow-y-auto border border-border rounded-md p-2 bg-muted/10">
@@ -1541,18 +1552,6 @@ const Inpatient = () => {
                       </div>
                     </div>
                   ) : (
-                    /* Regular search input for other categories */
-                    <Input
-                      placeholder={`Search in ${selectedCategory}...`}
-                      value={categorySearchQuery}
-                      onChange={(e) => setCategorySearchQuery(e.target.value)}
-                      className="w-full"
-                    />
-                  )}
-                </CardHeader>
-                <CardContent>
-                  {/* Show interface for other categories (not Laboratory) */}
-                  {selectedCategory !== 'Laboratory' && (
                     /* Regular item list for other categories */
                     <div className="space-y-2 max-h-96 overflow-y-auto">
                       {filteredCategoryItems.length > 0 ? (
