@@ -1,10 +1,14 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import aiRoutes from "./aiRoutes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize database with default data
   await storage.initializeDatabase();
+
+  // AI and ML Routes
+  app.use("/api/ai", aiRoutes);
 
   // Medical Items API Routes
   app.get("/api/medical-items", async (req, res) => {
