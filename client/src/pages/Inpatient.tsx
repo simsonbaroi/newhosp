@@ -10,6 +10,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
 import { useTakaFormat } from '../hooks/useCurrencyFormat';
 import { useSwipeGesture } from '../hooks/useSwipeGesture';
+import { CupertinoDateTimePicker } from '@/components/CupertinoDateTimePicker';
 import type { MedicalItem } from '../../../shared/schema';
 import { calculateMedicineDosage, formatDosageForBill, MEDICINE_RULES } from '../../../shared/medicineCalculations';
 
@@ -58,9 +59,9 @@ const Inpatient = () => {
   const [selectedMedicineForDosage, setSelectedMedicineForDosage] = useState<any>(null);
   const [showMedicineDosageSelection, setShowMedicineDosageSelection] = useState(false);
   
-  // Date picker modal state
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [datePickerType, setDatePickerType] = useState<'admission' | 'discharge'>('admission');
+  // Cupertino Date picker modal state
+  const [showCupertinoDatePicker, setShowCupertinoDatePicker] = useState(false);
+  const [cupertinoDatePickerType, setCupertinoDatePickerType] = useState<'admission' | 'discharge'>('admission');
   
   // Time state
   const [admissionTime, setAdmissionTime] = useState<string>(currentDateTime.time);
@@ -233,6 +234,49 @@ const Inpatient = () => {
     const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1; // +1 to include both admission and discharge days
     
     return daysDiff > 0 ? daysDiff : 1;
+  };
+
+  // Convert DD/MM/YY string and time string to Date object
+  const convertToDate = (dateStr: string, timeStr: string): Date => {
+    const parsedDate = parseCustomDate(dateStr);
+    const parsedTime = parseTime(timeStr);
+    
+    if (!parsedDate) return new Date();
+    
+    const hour24 = parsedTime.ampm === 'PM' && parsedTime.hour !== 12 ? parsedTime.hour + 12 :
+                   parsedTime.ampm === 'AM' && parsedTime.hour === 12 ? 0 : parsedTime.hour;
+    
+    parsedDate.setHours(hour24, parsedTime.minute, 0, 0);
+    return parsedDate;
+  };
+
+  // Convert Date object back to DD/MM/YY and time string
+  const convertFromDate = (date: Date): { dateStr: string; timeStr: string } => {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = String(date.getFullYear()).slice(-2);
+    
+    const hours12 = date.getHours() % 12 || 12;
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const ampm = date.getHours() >= 12 ? 'PM' : 'AM';
+    
+    return {
+      dateStr: `${day}/${month}/${year}`,
+      timeStr: `${hours12}:${minutes} ${ampm}`
+    };
+  };
+
+  // Handle Cupertino date picker confirmation
+  const handleCupertinoDateConfirm = (selectedDate: Date) => {
+    const { dateStr, timeStr } = convertFromDate(selectedDate);
+    
+    if (cupertinoDatePickerType === 'admission') {
+      setAdmissionDate(dateStr);
+      setAdmissionTime(timeStr);
+    } else {
+      setDischargeDate(dateStr);
+      setDischargeTime(timeStr);
+    }
   };
 
 
@@ -668,356 +712,38 @@ const Inpatient = () => {
               
               <div className="space-y-2">
                 <Label htmlFor="admissionDate" className="text-foreground font-medium">Admission Date & Time</Label>
-                <div className="grid grid-cols-6 gap-2 p-3 border rounded-lg bg-background">
-                  {/* Day */}
-                  <div className="flex flex-col items-center space-y-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-full p-0 hover:bg-medical-muted/20"
-                      onClick={() => setAdmissionDate(adjustDateComponent(admissionDate, 'day', 1))}
-                    >
-                      <ChevronUp className="h-3 w-3" />
-                    </Button>
-                    <div className="text-sm font-medium min-h-[20px] flex items-center justify-center">
-                      {parseDateComponents(admissionDate).day.toString().padStart(2, '0')}
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-full p-0 hover:bg-medical-muted/20"
-                      onClick={() => setAdmissionDate(adjustDateComponent(admissionDate, 'day', -1))}
-                    >
-                      <ChevronDown className="h-3 w-3" />
-                    </Button>
-                    <div className="text-xs text-muted-foreground">Day</div>
+                <Button
+                  variant="outline"
+                  className="w-full p-4 h-auto text-left justify-start"
+                  onClick={() => {
+                    setCupertinoDatePickerType('admission');
+                    setShowCupertinoDatePicker(true);
+                  }}
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
+                  <div className="flex flex-col">
+                    <span className="font-medium">{admissionDate} at {admissionTime}</span>
+                    <span className="text-sm text-muted-foreground">Click to change admission date & time</span>
                   </div>
-                  
-                  {/* Month */}
-                  <div className="flex flex-col items-center space-y-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-full p-0 hover:bg-medical-muted/20"
-                      onClick={() => setAdmissionDate(adjustDateComponent(admissionDate, 'month', 1))}
-                    >
-                      <ChevronUp className="h-3 w-3" />
-                    </Button>
-                    <div className="text-sm font-medium min-h-[20px] flex items-center justify-center">
-                      {monthNames[parseDateComponents(admissionDate).month - 1]}
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-full p-0 hover:bg-medical-muted/20"
-                      onClick={() => setAdmissionDate(adjustDateComponent(admissionDate, 'month', -1))}
-                    >
-                      <ChevronDown className="h-3 w-3" />
-                    </Button>
-                    <div className="text-xs text-muted-foreground">Month</div>
-                  </div>
-                  
-                  {/* Year */}
-                  <div className="flex flex-col items-center space-y-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-full p-0 hover:bg-medical-muted/20"
-                      onClick={() => setAdmissionDate(adjustDateComponent(admissionDate, 'year', 1))}
-                    >
-                      <ChevronUp className="h-3 w-3" />
-                    </Button>
-                    <div className="text-sm font-medium min-h-[20px] flex items-center justify-center">
-                      {2000 + parseDateComponents(admissionDate).year}
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-full p-0 hover:bg-medical-muted/20"
-                      onClick={() => setAdmissionDate(adjustDateComponent(admissionDate, 'year', -1))}
-                    >
-                      <ChevronDown className="h-3 w-3" />
-                    </Button>
-                    <div className="text-xs text-muted-foreground">Year</div>
-                  </div>
-                  
-                  {/* Hour */}
-                  <div className="flex flex-col items-center space-y-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-full p-0 hover:bg-medical-muted/20"
-                      onClick={() => {
-                        const { minute, ampm } = parseTime(admissionTime);
-                        const { hour } = parseTime(admissionTime);
-                        const newHour = hour === 12 ? 1 : hour + 1;
-                        setAdmissionTime(formatTime(newHour, minute, ampm));
-                      }}
-                    >
-                      <ChevronUp className="h-3 w-3" />
-                    </Button>
-                    <div className="text-sm font-medium min-h-[20px] flex items-center justify-center">
-                      {parseTime(admissionTime).hour}
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-full p-0 hover:bg-medical-muted/20"
-                      onClick={() => {
-                        const { minute, ampm } = parseTime(admissionTime);
-                        const { hour } = parseTime(admissionTime);
-                        const newHour = hour === 1 ? 12 : hour - 1;
-                        setAdmissionTime(formatTime(newHour, minute, ampm));
-                      }}
-                    >
-                      <ChevronDown className="h-3 w-3" />
-                    </Button>
-                    <div className="text-xs text-muted-foreground">Hour</div>
-                  </div>
-                  
-                  {/* Minute */}
-                  <div className="flex flex-col items-center space-y-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-full p-0 hover:bg-medical-muted/20"
-                      onClick={() => {
-                        const { hour, ampm } = parseTime(admissionTime);
-                        const { minute } = parseTime(admissionTime);
-                        const newMinute = minute === 59 ? 0 : minute + 1;
-                        setAdmissionTime(formatTime(hour, newMinute, ampm));
-                      }}
-                    >
-                      <ChevronUp className="h-3 w-3" />
-                    </Button>
-                    <div className="text-sm font-medium min-h-[20px] flex items-center justify-center">
-                      {String(parseTime(admissionTime).minute).padStart(2, '0')}
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-full p-0 hover:bg-medical-muted/20"
-                      onClick={() => {
-                        const { hour, ampm } = parseTime(admissionTime);
-                        const { minute } = parseTime(admissionTime);
-                        const newMinute = minute === 0 ? 59 : minute - 1;
-                        setAdmissionTime(formatTime(hour, newMinute, ampm));
-                      }}
-                    >
-                      <ChevronDown className="h-3 w-3" />
-                    </Button>
-                    <div className="text-xs text-muted-foreground">Min</div>
-                  </div>
-                  
-                  {/* AM/PM */}
-                  <div className="flex flex-col items-center space-y-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-full p-0 hover:bg-medical-muted/20"
-                      onClick={() => {
-                        const { hour, minute, ampm } = parseTime(admissionTime);
-                        const newAmPm = ampm === 'AM' ? 'PM' : 'AM';
-                        setAdmissionTime(formatTime(hour, minute, newAmPm));
-                      }}
-                    >
-                      <ChevronUp className="h-3 w-3" />
-                    </Button>
-                    <div className="text-sm font-medium min-h-[20px] flex items-center justify-center">
-                      {parseTime(admissionTime).ampm}
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-full p-0 hover:bg-medical-muted/20"
-                      onClick={() => {
-                        const { hour, minute, ampm } = parseTime(admissionTime);
-                        const newAmPm = ampm === 'AM' ? 'PM' : 'AM';
-                        setAdmissionTime(formatTime(hour, minute, newAmPm));
-                      }}
-                    >
-                      <ChevronDown className="h-3 w-3" />
-                    </Button>
-                    <div className="text-xs text-muted-foreground">AM/PM</div>
-                  </div>
-                </div>
+                </Button>
               </div>
               
               <div className="space-y-2">
                 <Label htmlFor="dischargeDate" className="text-foreground font-medium">Discharge Date & Time</Label>
-                <div className="grid grid-cols-6 gap-2 p-3 border rounded-lg bg-background">
-                  {/* Day */}
-                  <div className="flex flex-col items-center space-y-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-full p-0 hover:bg-medical-muted/20"
-                      onClick={() => setDischargeDate(adjustDateComponent(dischargeDate, 'day', 1))}
-                    >
-                      <ChevronUp className="h-3 w-3" />
-                    </Button>
-                    <div className="text-sm font-medium min-h-[20px] flex items-center justify-center">
-                      {parseDateComponents(dischargeDate).day.toString().padStart(2, '0')}
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-full p-0 hover:bg-medical-muted/20"
-                      onClick={() => setDischargeDate(adjustDateComponent(dischargeDate, 'day', -1))}
-                    >
-                      <ChevronDown className="h-3 w-3" />
-                    </Button>
-                    <div className="text-xs text-muted-foreground">Day</div>
+                <Button
+                  variant="outline"
+                  className="w-full p-4 h-auto text-left justify-start"
+                  onClick={() => {
+                    setCupertinoDatePickerType('discharge');
+                    setShowCupertinoDatePicker(true);
+                  }}
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
+                  <div className="flex flex-col">
+                    <span className="font-medium">{dischargeDate} at {dischargeTime}</span>
+                    <span className="text-sm text-muted-foreground">Click to change discharge date & time</span>
                   </div>
-                  
-                  {/* Month */}
-                  <div className="flex flex-col items-center space-y-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-full p-0 hover:bg-medical-muted/20"
-                      onClick={() => setDischargeDate(adjustDateComponent(dischargeDate, 'month', 1))}
-                    >
-                      <ChevronUp className="h-3 w-3" />
-                    </Button>
-                    <div className="text-sm font-medium min-h-[20px] flex items-center justify-center">
-                      {monthNames[parseDateComponents(dischargeDate).month - 1]}
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-full p-0 hover:bg-medical-muted/20"
-                      onClick={() => setDischargeDate(adjustDateComponent(dischargeDate, 'month', -1))}
-                    >
-                      <ChevronDown className="h-3 w-3" />
-                    </Button>
-                    <div className="text-xs text-muted-foreground">Month</div>
-                  </div>
-                  
-                  {/* Year */}
-                  <div className="flex flex-col items-center space-y-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-full p-0 hover:bg-medical-muted/20"
-                      onClick={() => setDischargeDate(adjustDateComponent(dischargeDate, 'year', 1))}
-                    >
-                      <ChevronUp className="h-3 w-3" />
-                    </Button>
-                    <div className="text-sm font-medium min-h-[20px] flex items-center justify-center">
-                      {2000 + parseDateComponents(dischargeDate).year}
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-full p-0 hover:bg-medical-muted/20"
-                      onClick={() => setDischargeDate(adjustDateComponent(dischargeDate, 'year', -1))}
-                    >
-                      <ChevronDown className="h-3 w-3" />
-                    </Button>
-                    <div className="text-xs text-muted-foreground">Year</div>
-                  </div>
-                  
-                  {/* Hour */}
-                  <div className="flex flex-col items-center space-y-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-full p-0 hover:bg-medical-muted/20"
-                      onClick={() => {
-                        const { minute, ampm } = parseTime(dischargeTime);
-                        const { hour } = parseTime(dischargeTime);
-                        const newHour = hour === 12 ? 1 : hour + 1;
-                        setDischargeTime(formatTime(newHour, minute, ampm));
-                      }}
-                    >
-                      <ChevronUp className="h-3 w-3" />
-                    </Button>
-                    <div className="text-sm font-medium min-h-[20px] flex items-center justify-center">
-                      {parseTime(dischargeTime).hour}
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-full p-0 hover:bg-medical-muted/20"
-                      onClick={() => {
-                        const { minute, ampm } = parseTime(dischargeTime);
-                        const { hour } = parseTime(dischargeTime);
-                        const newHour = hour === 1 ? 12 : hour - 1;
-                        setDischargeTime(formatTime(newHour, minute, ampm));
-                      }}
-                    >
-                      <ChevronDown className="h-3 w-3" />
-                    </Button>
-                    <div className="text-xs text-muted-foreground">Hour</div>
-                  </div>
-                  
-                  {/* Minute */}
-                  <div className="flex flex-col items-center space-y-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-full p-0 hover:bg-medical-muted/20"
-                      onClick={() => {
-                        const { hour, ampm } = parseTime(dischargeTime);
-                        const { minute } = parseTime(dischargeTime);
-                        const newMinute = minute === 59 ? 0 : minute + 1;
-                        setDischargeTime(formatTime(hour, newMinute, ampm));
-                      }}
-                    >
-                      <ChevronUp className="h-3 w-3" />
-                    </Button>
-                    <div className="text-sm font-medium min-h-[20px] flex items-center justify-center">
-                      {String(parseTime(dischargeTime).minute).padStart(2, '0')}
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-full p-0 hover:bg-medical-muted/20"
-                      onClick={() => {
-                        const { hour, ampm } = parseTime(dischargeTime);
-                        const { minute } = parseTime(dischargeTime);
-                        const newMinute = minute === 0 ? 59 : minute - 1;
-                        setDischargeTime(formatTime(hour, newMinute, ampm));
-                      }}
-                    >
-                      <ChevronDown className="h-3 w-3" />
-                    </Button>
-                    <div className="text-xs text-muted-foreground">Min</div>
-                  </div>
-                  
-                  {/* AM/PM */}
-                  <div className="flex flex-col items-center space-y-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-full p-0 hover:bg-medical-muted/20"
-                      onClick={() => {
-                        const { hour, minute, ampm } = parseTime(dischargeTime);
-                        const newAmPm = ampm === 'AM' ? 'PM' : 'AM';
-                        setDischargeTime(formatTime(hour, minute, newAmPm));
-                      }}
-                    >
-                      <ChevronUp className="h-3 w-3" />
-                    </Button>
-                    <div className="text-sm font-medium min-h-[20px] flex items-center justify-center">
-                      {parseTime(dischargeTime).ampm}
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-full p-0 hover:bg-medical-muted/20"
-                      onClick={() => {
-                        const { hour, minute, ampm } = parseTime(dischargeTime);
-                        const newAmPm = ampm === 'AM' ? 'PM' : 'AM';
-                        setDischargeTime(formatTime(hour, minute, newAmPm));
-                      }}
-                    >
-                      <ChevronDown className="h-3 w-3" />
-                    </Button>
-                    <div className="text-xs text-muted-foreground">AM/PM</div>
-                  </div>
-                </div>
+                </Button>
               </div>
             </div>
             
@@ -1594,8 +1320,17 @@ const Inpatient = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Date Picker Modal */}
-      <Dialog open={showDatePicker} onOpenChange={setShowDatePicker}>
+      {/* Cupertino Date Picker Modal */}
+      <CupertinoDateTimePicker
+        isOpen={showCupertinoDatePicker}
+        onClose={() => setShowCupertinoDatePicker(false)}
+        onConfirm={handleCupertinoDateConfirm}
+        initialDate={convertToDate(
+          cupertinoDatePickerType === 'admission' ? admissionDate : dischargeDate,
+          cupertinoDatePickerType === 'admission' ? admissionTime : dischargeTime
+        )}
+        title={`Select ${cupertinoDatePickerType === 'admission' ? 'Admission' : 'Discharge'} Date & Time`}
+      />
         <DialogContent className="sm:max-w-4xl">
           <DialogHeader>
             <DialogTitle>
@@ -1824,6 +1559,18 @@ const Inpatient = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Cupertino Date Picker Modal */}
+      <CupertinoDateTimePicker
+        isOpen={showCupertinoDatePicker}
+        onClose={() => setShowCupertinoDatePicker(false)}
+        onConfirm={handleCupertinoDateConfirm}
+        initialDate={convertToDate(
+          cupertinoDatePickerType === 'admission' ? admissionDate : dischargeDate,
+          cupertinoDatePickerType === 'admission' ? admissionTime : dischargeTime
+        )}
+        title={`Select ${cupertinoDatePickerType === 'admission' ? 'Admission' : 'Discharge'} Date & Time`}
+      />
     </Layout>
   );
 };

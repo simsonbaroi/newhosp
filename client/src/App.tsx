@@ -6,7 +6,7 @@ import { Router, Route, Switch } from "wouter";
 import { queryClient } from "@/lib/queryClient";
 import Index from "./pages/Index";
 import Outpatient from "./pages/Outpatient";
-import Inpatient from "./pages/Inpatient";
+import InpatientFixed from "./pages/InpatientFixed";
 import Database from "./pages/Database";
 import NotFound from "./pages/NotFound";
 
@@ -19,7 +19,7 @@ const App = () => (
         <Switch>
           <Route path="/" component={Index} />
           <Route path="/outpatient" component={Outpatient} />
-          <Route path="/inpatient" component={Inpatient} />
+          <Route path="/inpatient" component={InpatientFixed} />
           <Route path="/database" component={Database} />
           <Route component={NotFound} />
         </Switch>
