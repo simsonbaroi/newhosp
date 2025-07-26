@@ -208,6 +208,9 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-26**: UPDATED: Server storage to remove all inpatient items for Dr. Fees, Medic Fee, and Medicine categories
 - **2025-01-26**: ENHANCED: Added filtering to prevent excluded categories from appearing in Inpatient interface
 - **2025-01-26**: APPLIED: Category exclusion to both frontend display and database queries for clean separation
+- **2025-01-26**: UPDATED: Inpatient category order - added "Orthopedic, S.Roll, etc." between Halo and Surgery categories
+- **2025-01-26**: REPOSITIONED: "Medicine, ORS & Anesthesia, Ket, Spinal" category to appear after Discharge Medicine per user specification
+- **2025-01-26**: ADDED: Medical items for "Medicine, ORS & Anesthesia, Ket, Spinal" category including anesthesia and ORS solutions
 - **2025-01-25**: ADDED: Custom CSS classes for medicine-specific styling (medicine-item-card, medicine-dosage-card)
 - **2025-01-25**: ENHANCED: Professional glass morphism effects with medical color palette throughout medicine interface
 - **2025-01-25**: REDESIGNED: Medicine numbering system with clean badge design (#1, #2, etc.) replacing circular numbers

@@ -193,7 +193,7 @@ export default function InpatientFixed() {
   const categoryOrder = [
     'Blood', 'Laboratory', 'Limb and Brace', 'Food', 
     'Halo, O2, NO2, etc.', 'Orthopedic, S.Roll, etc.', 'Surgery, O.R. & Delivery', 
-    'Registration Fees', 'Discharge Medicine',
+    'Registration Fees', 'Discharge Medicine', 'Medicine, ORS & Anesthesia, Ket, Spinal',
     'Physical Therapy', 'IV.\'s', 'Plaster/Milk', 'Procedures', 
     'Seat & Ad. Fee', 'X-Ray', 'Lost Laundry', 'Travel', 'Others'
   ];

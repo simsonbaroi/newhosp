@@ -272,6 +272,12 @@ export class MemoryStorage implements IStorage {
       { category: 'Other', name: 'Miscellaneous Charges', price: '500.00', currency: 'BDT', isOutpatient: false },
       { category: 'Other', name: 'Administrative Fee', price: '300.00', currency: 'BDT', isOutpatient: false },
       
+      // Medicine, ORS & Anesthesia, Ket, Spinal category
+      { category: 'Medicine, ORS & Anesthesia, Ket, Spinal', name: 'General Anesthesia', price: '3000.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Medicine, ORS & Anesthesia, Ket, Spinal', name: 'Spinal Anesthesia', price: '2500.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Medicine, ORS & Anesthesia, Ket, Spinal', name: 'Ketamine Injection', price: '800.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Medicine, ORS & Anesthesia, Ket, Spinal', name: 'ORS Solution (per bottle)', price: '50.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Medicine, ORS & Anesthesia, Ket, Spinal', name: 'IV Fluid with ORS', price: '300.00', currency: 'BDT', isOutpatient: false },
 
     ];
 
