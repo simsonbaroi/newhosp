@@ -326,6 +326,8 @@ export default function Inpatient() {
 
     const billItemsToAdd = tempSelectedMedicines.map(medicine => ({
       ...medicine,
+      id: medicine.id.toString(),
+      price: parseFloat(medicine.price),
       billId: `medicine-${medicine.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     }));
 
@@ -495,11 +497,20 @@ export default function Inpatient() {
 
   // Auto-update medicine search suggestions when query changes
   useEffect(() => {
-    if (selectedCategory === 'Discharge Medicine') {
-      setMedicineSearchSuggestions(getMedicineSearchSuggestions());
+    if (selectedCategory === 'Discharge Medicine' && medicineSearchQuery) {
+      const suggestions = categoryItems
+        .filter((item: MedicalItem) => 
+          item.name.toLowerCase().includes(medicineSearchQuery.toLowerCase()) &&
+          !billItems.find(billItem => billItem.id === item.id.toString())
+        )
+        .slice(0, 5);
+      setMedicineSearchSuggestions(suggestions);
+      setHighlightedSearchIndex(-1);
+    } else if (!medicineSearchQuery) {
+      setMedicineSearchSuggestions([]);
       setHighlightedSearchIndex(-1);
     }
-  }, [medicineSearchQuery, categoryItems, billItems, selectedCategory]);
+  }, [medicineSearchQuery, selectedCategory]);
 
   // Handle click outside medicine dropdown to close it
   useEffect(() => {
@@ -2246,6 +2257,107 @@ export default function Inpatient() {
                           • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
                         </div>
                       </div>
+                    </div>
+                  ) : ['Physical Therapy', 'Limb and Brace'].includes(selectedCategory) ? (
+                    /* Manual entry interface for Physical Therapy and Limb and Brace matching outpatient */
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-foreground">Service Name</label>
+                        <Input
+                          placeholder={`Enter ${selectedCategory} service name...`}
+                          value={categorySearchQuery}
+                          onChange={(e) => setCategorySearchQuery(e.target.value)}
+                          className="w-full"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-foreground">Price (BDT)</label>
+                        <Input
+                          type="number"
+                          placeholder="Enter price..."
+                          className="w-full"
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+
+                      <div className="flex justify-end">
+                        <Button
+                          variant="medical"
+                          size="sm"
+                          className="text-xs font-medium shadow-md hover:shadow-lg transition-shadow px-3 py-1"
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          Add to Bill
+                        </Button>
+                      </div>
+
+                      <div className="text-sm text-muted-foreground">
+                        • Enter service name and price manually<br/>
+                        • All entries are saved for future reference<br/>
+                        • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
+                      </div>
+                    </div>
+                  ) : ['Registration Fees'].includes(selectedCategory) ? (
+                    /* Compact interface for Registration Fees matching outpatient */
+                    <div className="space-y-2">
+                      {categoryItems.map((item: MedicalItem) => {
+                        const isInBill = billItems.some(billItem => billItem.id === item.id.toString());
+                        
+                        const handleItemClick = () => {
+                          if (isInBill) {
+                            // Remove from bill
+                            const billItem = billItems.find(billItem => billItem.id === item.id.toString());
+                            if (billItem) {
+                              setBillItems(prev => prev.filter(bi => bi.billId !== billItem.billId));
+                            }
+                          } else {
+                            // Add to bill
+                            addItemToBill(item);
+                          }
+                        };
+                        
+                        return (
+                          <div 
+                            key={item.id} 
+                            onClick={handleItemClick}
+                            className={`flex items-center justify-between p-2 ${
+                              isInBill 
+                                ? 'bg-medical-primary/20 border border-medical-primary/30' 
+                                : 'bg-muted/30'
+                            } rounded-lg hover:bg-muted/50 transition-colors cursor-pointer`}
+                          >
+                            <div className="flex-1">
+                              <div className={`font-medium text-sm ${isInBill ? 'text-medical-primary' : 'text-foreground'}`}>
+                                {item.name}
+                                {isInBill && <span className="ml-2 text-xs">✓ Added</span>}
+                              </div>
+                              {item.description && (
+                                <div className="text-muted-foreground text-xs">{item.description}</div>
+                              )}
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <span className="font-semibold text-medical-primary text-sm">
+                                {format(item.price)}
+                              </span>
+                              <div 
+                                className={`flex items-center justify-center h-7 w-7 rounded ${
+                                  isInBill 
+                                    ? 'bg-red-500/20 text-red-600 hover:bg-red-500/30' 
+                                    : 'bg-medical-primary/20 text-medical-primary hover:bg-medical-primary/30'
+                                } transition-colors`}
+                              >
+                                {isInBill ? (
+                                  <X className="h-3 w-3" />
+                                ) : (
+                                  <Plus className="h-3 w-3" />
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : (
                     // Standard interface for other categories
