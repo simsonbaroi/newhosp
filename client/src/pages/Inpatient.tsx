@@ -1561,7 +1561,7 @@ const Inpatient = () => {
               <Card className="glass-card">
                 <CardHeader>
                   <CardTitle className="text-medical-primary">{selectedCategory}</CardTitle>
-                  {/* Search input with Laboratory-specific functionality */}
+                  {/* Search input with category-specific functionality */}
                   {selectedCategory === 'Laboratory' ? (
                     <Input
                       ref={searchInputRef}
@@ -1575,6 +1575,15 @@ const Inpatient = () => {
                         }
                       }}
                       onKeyDown={handleLabSearchKeyDown}
+                      className="w-full"
+                    />
+                  ) : selectedCategory === 'Discharge Medicine' ? (
+                    <Input
+                      ref={dischargeMedicineSearchInputRef}
+                      placeholder="Type discharge medicine names, press comma/enter to add as tags..."
+                      value={categorySearchQuery}
+                      onChange={(e) => setCategorySearchQuery(e.target.value)}
+                      onKeyDown={handleDischargeMedicineTagKeyPress}
                       className="w-full"
                     />
                   ) : (
