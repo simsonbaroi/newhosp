@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 interface SwipeGestureOptions {
   onSwipeLeft?: () => void;
   onSwipeRight?: () => void;
-  threshold?: number; // Minimum distance for a swipe
+  threshold?: number;
   preventDefaultEvents?: boolean;
 }
 
@@ -15,105 +15,106 @@ export const useSwipeGesture = (options: SwipeGestureOptions) => {
     preventDefaultEvents = false
   } = options;
 
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const elementRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const element = elementRef.current;
-    if (!element) return;
+    if (!element) {
+      console.log('❌ No element found for swipe gestures');
+      return;
+    }
+    
+    console.log('✅ Setting up swipe gestures on element');
 
     const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      
       const touch = e.touches[0];
       touchStartRef.current = {
         x: touch.clientX,
-        y: touch.clientY
+        y: touch.clientY,
+        time: Date.now()
       };
-      console.log('Touch start:', touch.clientX, touch.clientY);
+      console.log('🔵 Touch start:', touch.clientX, touch.clientY);
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      // Allow normal scrolling, don't prevent default unless specifically needed
-      if (preventDefaultEvents && touchStartRef.current) {
+      if (!touchStartRef.current || e.touches.length !== 1) return;
+      
+      if (preventDefaultEvents) {
         const touch = e.touches[0];
         const deltaX = Math.abs(touch.clientX - touchStartRef.current.x);
         const deltaY = Math.abs(touch.clientY - touchStartRef.current.y);
         
-        // Only prevent default if it's a horizontal swipe
-        if (deltaX > deltaY && deltaX > 10) {
+        // Only prevent default if it's clearly a horizontal swipe
+        if (deltaX > deltaY && deltaX > 15) {
           e.preventDefault();
+          e.stopPropagation();
         }
       }
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
-      if (!touchStartRef.current) return;
+      if (!touchStartRef.current || e.changedTouches.length !== 1) return;
 
       const touch = e.changedTouches[0];
       const deltaX = touch.clientX - touchStartRef.current.x;
       const deltaY = touch.clientY - touchStartRef.current.y;
+      const deltaTime = Date.now() - touchStartRef.current.time;
 
-      console.log('Touch end:', {
+      console.log('🔴 Touch end:', {
         deltaX,
         deltaY,
+        deltaTime,
         absDeltaX: Math.abs(deltaX),
         absDeltaY: Math.abs(deltaY),
         threshold,
         isHorizontal: Math.abs(deltaX) > Math.abs(deltaY),
-        meetsThreshold: Math.abs(deltaX) > threshold
+        meetsThreshold: Math.abs(deltaX) > threshold,
+        isQuickSwipe: deltaTime < 800
       });
 
-      // Check if horizontal swipe is dominant (more horizontal than vertical)
-      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > threshold) {
+      // Check for valid swipe: horizontal movement, meets threshold, not too slow
+      const isHorizontalSwipe = Math.abs(deltaX) > Math.abs(deltaY);
+      const meetsThreshold = Math.abs(deltaX) > threshold;
+      const isQuickEnough = deltaTime < 800; // Must complete within 800ms
+
+      if (isHorizontalSwipe && meetsThreshold && isQuickEnough) {
         if (deltaX > 0 && onSwipeRight) {
-          console.log('Triggering swipe right');
+          console.log('🟢 Triggering swipe RIGHT');
           onSwipeRight();
         } else if (deltaX < 0 && onSwipeLeft) {
-          console.log('Triggering swipe left');
+          console.log('🟢 Triggering swipe LEFT');
           onSwipeLeft();
         }
+      } else {
+        console.log('❌ Swipe rejected:', { isHorizontalSwipe, meetsThreshold, isQuickEnough });
       }
 
       touchStartRef.current = null;
     };
 
-    // Mouse events for desktop testing (optional)
-    let mouseStartX: number | null = null;
+    // Add touch event listeners with proper options
+    element.addEventListener('touchstart', handleTouchStart, { 
+      passive: true, 
+      capture: false 
+    });
+    element.addEventListener('touchmove', handleTouchMove, { 
+      passive: !preventDefaultEvents, 
+      capture: false 
+    });
+    element.addEventListener('touchend', handleTouchEnd, { 
+      passive: true, 
+      capture: false 
+    });
 
-    const handleMouseDown = (e: MouseEvent) => {
-      mouseStartX = e.clientX;
-    };
-
-    const handleMouseUp = (e: MouseEvent) => {
-      if (mouseStartX === null) return;
-      
-      const deltaX = e.clientX - mouseStartX;
-      
-      if (Math.abs(deltaX) > threshold) {
-        if (deltaX > 0 && onSwipeRight) {
-          onSwipeRight();
-        } else if (deltaX < 0 && onSwipeLeft) {
-          onSwipeLeft();
-        }
-      }
-      
-      mouseStartX = null;
-    };
-
-    // Add touch event listeners
-    element.addEventListener('touchstart', handleTouchStart, { passive: true });
-    element.addEventListener('touchmove', handleTouchMove, { passive: false });
-    element.addEventListener('touchend', handleTouchEnd, { passive: true });
-
-    // Add mouse event listeners for desktop testing
-    element.addEventListener('mousedown', handleMouseDown);
-    element.addEventListener('mouseup', handleMouseUp);
-
+    // Cleanup function
     return () => {
+      console.log('🧹 Cleaning up swipe gesture listeners');
       element.removeEventListener('touchstart', handleTouchStart);
       element.removeEventListener('touchmove', handleTouchMove);
       element.removeEventListener('touchend', handleTouchEnd);
-      element.removeEventListener('mousedown', handleMouseDown);
-      element.removeEventListener('mouseup', handleMouseUp);
     };
   }, [onSwipeLeft, onSwipeRight, threshold, preventDefaultEvents]);
 

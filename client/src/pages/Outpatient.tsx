@@ -1793,8 +1793,13 @@ const Outpatient = () => {
                   // Carousel mode with preview buttons - mobile-optimized layout
                   <div 
                     ref={swipeRef}
-                    className="w-full px-2 sm:px-0 relative select-none"
-                    style={{ touchAction: 'pan-x pan-y' }}
+                    className="w-full px-2 sm:px-0 relative select-none cursor-grab active:cursor-grabbing"
+                    style={{ 
+                      touchAction: 'pan-y',
+                      WebkitUserSelect: 'none',
+                      userSelect: 'none',
+                      minHeight: '80px'
+                    }}
                   >
                     <div className="flex items-center justify-center space-x-1 sm:space-x-2 max-w-full overflow-hidden">
                       {/* Previous preview button - hidden on very small screens */}
