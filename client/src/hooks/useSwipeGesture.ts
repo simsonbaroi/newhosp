@@ -28,6 +28,7 @@ export const useSwipeGesture = (options: SwipeGestureOptions) => {
         x: touch.clientX,
         y: touch.clientY
       };
+      console.log('Touch start:', touch.clientX, touch.clientY);
     };
 
     const handleTouchMove = (e: TouchEvent) => {
@@ -51,11 +52,23 @@ export const useSwipeGesture = (options: SwipeGestureOptions) => {
       const deltaX = touch.clientX - touchStartRef.current.x;
       const deltaY = touch.clientY - touchStartRef.current.y;
 
+      console.log('Touch end:', {
+        deltaX,
+        deltaY,
+        absDeltaX: Math.abs(deltaX),
+        absDeltaY: Math.abs(deltaY),
+        threshold,
+        isHorizontal: Math.abs(deltaX) > Math.abs(deltaY),
+        meetsThreshold: Math.abs(deltaX) > threshold
+      });
+
       // Check if horizontal swipe is dominant (more horizontal than vertical)
       if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > threshold) {
         if (deltaX > 0 && onSwipeRight) {
+          console.log('Triggering swipe right');
           onSwipeRight();
         } else if (deltaX < 0 && onSwipeLeft) {
+          console.log('Triggering swipe left');
           onSwipeLeft();
         }
       }

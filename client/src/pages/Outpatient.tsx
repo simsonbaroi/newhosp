@@ -270,10 +270,12 @@ const Outpatient = () => {
   };
 
   const navigateCarousel = (direction: 'prev' | 'next') => {
+    console.log('Navigate carousel:', direction, 'from index:', currentCategoryIndex);
     const newIndex = direction === 'prev' 
       ? (currentCategoryIndex - 1 + orderedCategories.length) % orderedCategories.length
       : (currentCategoryIndex + 1) % orderedCategories.length;
     
+    console.log('New index:', newIndex, 'category:', orderedCategories[newIndex]);
     setCurrentCategoryIndex(newIndex);
     setSelectedCategory(orderedCategories[newIndex]);
     setCategorySearchQuery(''); // Reset search when switching categories
@@ -282,11 +284,13 @@ const Outpatient = () => {
   // Swipe gesture support for carousel navigation
   const swipeRef = useSwipeGesture({
     onSwipeLeft: () => {
+      console.log('Swipe left detected, carousel mode:', isCarouselMode);
       if (isCarouselMode) {
         navigateCarousel('next');
       }
     },
     onSwipeRight: () => {
+      console.log('Swipe right detected, carousel mode:', isCarouselMode);
       if (isCarouselMode) {
         navigateCarousel('prev');
       }
