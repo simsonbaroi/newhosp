@@ -473,6 +473,158 @@ export default function InpatientFixed() {
     setDropdownFilterQuery('');
   };
 
+  // Get dropdown items filtered by direct typing in dropdown
+  const getFilteredDropdownItems = () => {
+    if (!dropdownFilterQuery.trim()) return categoryItems;
+    
+    const query = dropdownFilterQuery.toLowerCase();
+    
+    // Filter and sort by relevance
+    return categoryItems
+      .filter(item => item.name.toLowerCase().includes(query))
+      .sort((a, b) => {
+        const aName = a.name.toLowerCase();
+        const bName = b.name.toLowerCase();
+        
+        // Exact match gets highest priority
+        if (aName === query) return -1;
+        if (bName === query) return 1;
+        
+        // Starts with gets second priority
+        if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
+        if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
+        
+        // Contains gets third priority - already filtered above
+        return aName.localeCompare(bName);
+      });
+  };
+
+  // X-Ray specific functions (same as Laboratory)
+  
+  // Get sorted X-Ray suggestions with closest match first
+  const getXRaySuggestions = () => {
+    if (!categorySearchQuery) return [];
+    
+    const query = categorySearchQuery.toLowerCase();
+    const suggestions = filteredCategoryItems.filter(item => 
+      item.name.toLowerCase().includes(query)
+    );
+    
+    // Sort by relevance: exact matches first, then starts with, then contains
+    return suggestions.sort((a, b) => {
+      const aName = a.name.toLowerCase();
+      const bName = b.name.toLowerCase();
+      
+      // Exact match gets highest priority
+      if (aName === query) return -1;
+      if (bName === query) return 1;
+      
+      // Starts with query gets second priority
+      if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
+      if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
+      
+      // Both start with or both contain - sort alphabetically
+      return aName.localeCompare(bName);
+    });
+  };
+
+  // Handle comma-separated X-Ray item selection
+  const handleXRaySearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === ',' || e.key === 'Enter') {
+      e.preventDefault();
+      const query = categorySearchQuery.trim();
+      if (query) {
+        // Get the top suggestion (closest match)
+        const suggestions = getXRaySuggestions();
+        if (suggestions.length > 0) {
+          const topMatch = suggestions[0];
+          // Check if item is already in the bill
+          const alreadyInBill = billItems.find(billItem => billItem.id === topMatch.id);
+          
+          if (!alreadyInBill) {
+            handleXRayItemSelect(topMatch);
+          }
+        }
+        setCategorySearchQuery('');
+      }
+      // Refocus search input
+      setTimeout(() => {
+        if (xRaySearchInputRef.current) {
+          xRaySearchInputRef.current.focus();
+        }
+      }, 0);
+    }
+  };
+
+  const removeXRayItem = (itemId: number) => {
+    setSelectedXRayItems(prev => prev.filter(item => item.id !== itemId));
+    // Refocus search input
+    setTimeout(() => {
+      if (xRaySearchInputRef.current) {
+        xRaySearchInputRef.current.focus();
+      }
+    }, 0);
+  };
+
+  const addSelectedXRayItemsToBill = () => {
+    selectedXRayItems.forEach(item => {
+      const existingItem = billItems.find(billItem => billItem.id === item.id.toString());
+      if (!existingItem) {
+        handleXRayItemSelect(item);
+      }
+    });
+    setSelectedXRayItems([]);
+  };
+
+  const handleXRayItemSelect = (item: MedicalItem) => {
+    setSelectedXRayForViews(item);
+    setXRayViews({ AP: false, LAT: false, OBLIQUE: false, BOTH: false });
+    setIsOffChargePortable(false);
+    setShowXRayViewSelection(true);
+  };
+
+
+
+  const addXRayToBill = () => {
+    if (!selectedXRayForViews) return;
+    
+    const selectedViews = Object.entries(xRayViews)
+      .filter(([_, checked]) => checked)
+      .map(([view, _]) => view);
+    
+    if (selectedViews.length === 0) return;
+    
+    const viewText = selectedViews.includes('BOTH') ? 'AP and LAT' : selectedViews.join(', ');
+    const displayName = `${selectedXRayForViews.name} (${viewText}${isOffChargePortable ? ', Off-Charge/Portable' : ''})`;
+    
+    // Check for exact duplicate (same X-ray with same views)
+    const existingItem = billItems.find(billItem => 
+      billItem.id === selectedXRayForViews.id.toString() && 
+      billItem.name === displayName
+    );
+    
+    if (existingItem) {
+      setDuplicateDialog({ open: true, item: selectedXRayForViews });
+    } else {
+      const newBillItem = {
+        ...selectedXRayForViews,
+        id: selectedXRayForViews.id.toString(),
+        name: displayName,
+        billId: `${selectedXRayForViews.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      };
+      setBillItems(prev => [...prev, newBillItem]);
+    }
+    
+    setShowXRayViewSelection(false);
+    setSelectedXRayForViews(null);
+    setXRayViews({ AP: false, LAT: false, OBLIQUE: false, BOTH: false });
+    setIsOffChargePortable(false);
+  };
+
+  const removeXRayDropdownItem = (itemId: number) => {
+    setXRayDropdownSelectedItems(prev => prev.filter(item => item.id !== itemId));
+  };
+
   // X-Ray functionality
   const handleXRayItemSelection = (item: MedicalItem) => {
     setSelectedXRayForViews(item);
@@ -498,36 +650,7 @@ export default function InpatientFixed() {
     }
   };
 
-  const addXRayToBill = () => {
-    if (!selectedXRayForViews) return;
-    
-    const selectedViews = Object.entries(xRayViews)
-      .filter(([_, isSelected]) => isSelected)
-      .map(([view, _]) => view);
-    
-    if (selectedViews.length === 0) return;
-    
-    const filmCount = selectedViews.length;
-    const basePrice = parseFloat(selectedXRayForViews.price);
-    const totalPrice = basePrice * filmCount;
-    
-    const viewDisplay = selectedViews.includes('BOTH') ? 'AP and LAT' : selectedViews.join(', ');
-    const xRayName = `${selectedXRayForViews.name} (${viewDisplay}${filmCount > 1 ? ` - ${filmCount} films` : ''})${isOffChargePortable ? ' - Off-Charge/Portable' : ''}`;
-    
-    const billItem = {
-      ...selectedXRayForViews,
-      id: selectedXRayForViews.id.toString(),
-      name: xRayName,
-      price: totalPrice.toString(),
-      billId: `${selectedXRayForViews.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-    };
-    
-    setBillItems(prev => [...prev, billItem]);
-    setShowXRayViewSelection(false);
-    setSelectedXRayForViews(null);
-    setXRayViews({ AP: false, LAT: false, OBLIQUE: false, BOTH: false });
-    setIsOffChargePortable(false);
-  };
+
 
   return (
     <Layout>
@@ -796,26 +919,42 @@ export default function InpatientFixed() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {selectedCategory === 'Laboratory' ? (
-                    // Advanced Laboratory interface
                     <div className="space-y-4">
-                      {/* Selected items display */}
+                      {/* Selected items, price counter and Add to Bill button above search */}
                       {selectedLabItems.length > 0 && (
                         <div className="space-y-2">
-                          <div className="flex flex-wrap gap-2">
+                          {/* Selected items tags */}
+                          <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md">
                             {selectedLabItems.map((item) => (
-                              <span
-                                key={item.id}
-                                className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800 border border-green-200"
-                              >
-                                {item.name} - {format(parseFloat(item.price))}
+                              <div key={item.id} className="inline-flex items-center bg-medical-primary/10 text-medical-primary px-2 py-1 rounded text-xs">
+                                <span className="mr-1">{item.name}</span>
                                 <button
                                   onClick={() => removeLabItem(item.id)}
-                                  className="ml-1 text-green-600 hover:text-green-800"
+                                  className="hover:bg-medical-primary/20 rounded-full p-0.5"
                                 >
                                   <X className="h-3 w-3" />
                                 </button>
-                              </span>
+                              </div>
                             ))}
+                          </div>
+
+                          {/* Price counter on left, Add to Bill button on right */}
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-4 p-2 bg-medical-primary/5 rounded-md border border-medical-primary/20">
+                              <span className="text-sm font-medium text-medical-primary">
+                                Total Price: {format(selectedLabItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {selectedLabItems.length} item{selectedLabItems.length !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+                            <Button 
+                              onClick={addSelectedLabItemsToBill} 
+                              variant="outline"
+                              className="border-medical-primary/20 text-medical-primary hover:bg-medical-primary/10"
+                            >
+                              Add {selectedLabItems.length} Test{selectedLabItems.length !== 1 ? 's' : ''} to Bill
+                            </Button>
                           </div>
                         </div>
                       )}
@@ -894,26 +1033,55 @@ export default function InpatientFixed() {
                           className="w-full"
                         />
                         
-                        {/* Search suggestions */}
+                        {/* Search suggestions appear right below search input */}
                         {categorySearchQuery && getLabSuggestions().length > 0 && (
                           <div className="space-y-1 max-h-40 overflow-y-auto border border-border rounded-md p-2 bg-muted/10">
                             <div className="text-sm font-medium text-muted-foreground mb-2">
                               Matching tests (press comma to add):
                             </div>
-                            {getLabSuggestions().slice(0, 5).map((item: MedicalItem) => (
-                              <div
-                                key={item.id}
-                                className="p-2 rounded cursor-pointer hover:bg-muted/20 text-sm"
-                                onClick={() => {
-                                  setSelectedLabItems(prev => [...prev, item]);
-                                  setCategorySearchQuery('');
-                                  setDropdownSelectedItems([]);
-                                }}
-                              >
-                                <div className="font-medium">{item.name}</div>
-                                <div className="text-xs text-muted-foreground">{format(parseFloat(item.price))}</div>
+                            {getLabSuggestions().slice(0, 5).map((item: MedicalItem, index) => {
+                              const alreadyInSearch = selectedLabItems.find(selected => selected.id === item.id);
+                              const alreadyInBill = billItems.find(billItem => billItem.id === item.id);
+                              
+                              return (
+                              <div key={item.id} className={`text-xs p-2 rounded ${
+                                alreadyInBill 
+                                  ? 'bg-red-100 text-red-600 cursor-not-allowed border border-red-200'
+                                  : alreadyInSearch
+                                    ? 'bg-green-100 text-green-600 cursor-not-allowed border border-green-200'
+                                    : index === 0 
+                                      ? 'bg-medical-primary/10 border border-medical-primary/20 cursor-pointer hover:bg-muted/40' 
+                                      : 'bg-muted/20 cursor-pointer hover:bg-muted/40'
+                              }`}
+                                   onClick={() => {
+                                     // Check if item is already selected in search OR already in the bill
+                                     const alreadyInSearch = selectedLabItems.find(selected => selected.id === item.id);
+                                     const alreadyInBill = billItems.find(billItem => billItem.id === item.id);
+                                     
+                                     if (!alreadyInSearch && !alreadyInBill) {
+                                       setSelectedLabItems(prev => [...prev, item]);
+                                     }
+                                     setCategorySearchQuery('');
+                                     // Refocus search input after clicking suggestion
+                                     setTimeout(() => {
+                                       if (searchInputRef.current) {
+                                         searchInputRef.current.focus();
+                                       }
+                                     }, 0);
+                                   }}>
+                                <span className="font-medium">{item.name}</span> - {format(item.price)}
+                                {alreadyInBill && (
+                                  <span className="ml-2 text-red-600 text-xs">● Already in Bill</span>
+                                )}
+                                {alreadyInSearch && !alreadyInBill && (
+                                  <span className="ml-2 text-green-600 text-xs">✓ Selected</span>
+                                )}
+                                {index === 0 && !alreadyInBill && !alreadyInSearch && (
+                                  <span className="ml-2 text-medical-primary text-xs">← Will be added</span>
+                                )}
                               </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         )}
                       </div>
@@ -1009,25 +1177,155 @@ export default function InpatientFixed() {
                       </div>
                     </div>
                   ) : selectedCategory === 'X-Ray' ? (
-                    // Advanced X-Ray interface
                     <div className="space-y-4">
-                      {/* X-Ray selection interface */}
-                      <div className="grid grid-cols-1 gap-2">
-                        {categoryItems.map((item: MedicalItem) => (
-                          <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
-                            <div>
-                              <div className="font-medium">{item.name}</div>
-                              <div className="text-sm text-muted-foreground">{format(parseFloat(item.price))}</div>
+                      {/* Selected X-Ray items, price counter and Add to Bill button above search */}
+                      {selectedXRayItems.length > 0 && (
+                        <div className="space-y-2">
+                          {/* Selected items tags */}
+                          <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md">
+                            {selectedXRayItems.map((item) => (
+                              <div key={item.id} className="inline-flex items-center bg-medical-primary/10 text-medical-primary px-2 py-1 rounded text-xs">
+                                <span className="mr-1">{item.name}</span>
+                                <button
+                                  onClick={() => removeXRayItem(item.id)}
+                                  className="hover:bg-medical-primary/20 rounded-full p-0.5"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Price counter on left, Add to Bill button on right */}
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-4 p-2 bg-medical-primary/5 rounded-md border border-medical-primary/20">
+                              <span className="text-sm font-medium text-medical-primary">
+                                Total Price: {format(selectedXRayItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {selectedXRayItems.length} item{selectedXRayItems.length !== 1 ? 's' : ''}
+                              </span>
                             </div>
-                            <Button
-                              size="sm"
-                              variant="medical"
-                              onClick={() => handleXRayItemSelection(item)}
+                            <Button 
+                              onClick={addSelectedXRayItemsToBill} 
+                              variant="outline"
+                              className="border-medical-primary/20 text-medical-primary hover:bg-medical-primary/10"
                             >
-                              Select Views
+                              Add {selectedXRayItems.length} X-Ray{selectedXRayItems.length !== 1 ? 's' : ''} to Bill
                             </Button>
                           </div>
-                        ))}
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        <Input
+                          ref={xRaySearchInputRef}
+                          placeholder="Type X-ray name and press comma or enter to add..."
+                          value={categorySearchQuery}
+                          onChange={(e) => {
+                            setCategorySearchQuery(e.target.value);
+                            if (e.target.value.trim()) {
+                              setXRayDropdownSelectedItems([]);
+                            }
+                          }}
+                          onKeyDown={handleXRaySearchKeyDown}
+                          className="w-full"
+                        />
+                        
+                        {/* Search suggestions appear right below search input */}
+                        {categorySearchQuery && getXRaySuggestions().length > 0 && (
+                          <div className="space-y-1 max-h-40 overflow-y-auto border border-border rounded-md p-2 bg-muted/10">
+                            <div className="text-sm font-medium text-muted-foreground mb-2">
+                              Matching X-rays (press comma to add):
+                            </div>
+                            {getXRaySuggestions().slice(0, 5).map((item: MedicalItem, index) => {
+                              const alreadyInSearch = selectedXRayItems.find(selected => selected.id === item.id);
+                              const alreadyInBill = billItems.find(billItem => billItem.id === item.id);
+                              
+                              return (
+                              <div key={item.id} className={`text-xs p-2 rounded ${
+                                alreadyInBill 
+                                  ? 'bg-red-100 text-red-600 cursor-not-allowed border border-red-200'
+                                  : alreadyInSearch
+                                    ? 'bg-green-100 text-green-600 cursor-not-allowed border border-green-200'
+                                    : index === 0 
+                                      ? 'bg-medical-primary/10 border border-medical-primary/20 cursor-pointer hover:bg-muted/40' 
+                                      : 'bg-muted/20 cursor-pointer hover:bg-muted/40'
+                              }`}
+                                   onClick={() => {
+                                     const alreadyInSearch = selectedXRayItems.find(selected => selected.id === item.id);
+                                     const alreadyInBill = billItems.find(billItem => billItem.id === item.id);
+                                     
+                                     if (!alreadyInSearch && !alreadyInBill) {
+                                       handleXRayItemSelect(item);
+                                     }
+                                     setCategorySearchQuery('');
+                                     setTimeout(() => {
+                                       if (xRaySearchInputRef.current) {
+                                         xRaySearchInputRef.current.focus();
+                                       }
+                                     }, 0);
+                                   }}>
+                                <span className="font-medium">{item.name}</span> - {format(item.price)}
+                                {alreadyInBill && (
+                                  <span className="ml-2 text-red-600 text-xs">● Already in Bill</span>
+                                )}
+                                {alreadyInSearch && !alreadyInBill && (
+                                  <span className="ml-2 text-green-600 text-xs">✓ Selected</span>
+                                )}
+                                {index === 0 && !alreadyInBill && !alreadyInSearch && (
+                                  <span className="ml-2 text-medical-primary text-xs">← Will be added</span>
+                                )}
+                              </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* X-Ray View Selection Modal */}
+                      {showXRayViewSelection && selectedXRayForViews && (
+                        <div className="space-y-4 p-4 bg-muted/20 rounded-md border">
+                          <div className="font-medium">Select views for {selectedXRayForViews.name}</div>
+                          <div className="grid grid-cols-2 gap-2">
+                            {['AP', 'LAT', 'OBLIQUE', 'BOTH'].map((view) => (
+                              <label key={view} className="flex items-center space-x-2">
+                                <input
+                                  type="checkbox"
+                                  checked={xRayViews[view as keyof typeof xRayViews]}
+                                  onChange={(e) => handleXRayViewChange(view, e.target.checked)}
+                                />
+                                <span className="text-sm">{view === 'BOTH' ? 'AP and LAT' : view}</span>
+                              </label>
+                            ))}
+                          </div>
+                          {Object.values(xRayViews).some(checked => checked) && (
+                            <label className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                checked={isOffChargePortable}
+                                onChange={(e) => setIsOffChargePortable(e.target.checked)}
+                              />
+                              <span className="text-sm">Off-Charge/Portable</span>
+                            </label>
+                          )}
+                          <div className="flex space-x-2">
+                            <Button onClick={addXRayToBill} size="sm" variant="medical">
+                              Add to Bill
+                            </Button>
+                            <Button onClick={() => setShowXRayViewSelection(false)} size="sm" variant="outline">
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="text-sm text-muted-foreground">
+                        • Type to search X-rays and press comma/enter to select views<br/>
+                        • Choose film views (AP, LAT, OBLIQUE, or BOTH)<br/>
+                        • Check Off-Charge/Portable if applicable<br/>
+                        • Different films of same X-ray allowed, same films prevented<br/>
+                        • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
                       </div>
                     </div>
                   ) : (
