@@ -38,6 +38,10 @@ const Inpatient = () => {
   // Inpatient Medicine dosage selection state
   const [selectedMedicineForDosage, setSelectedMedicineForDosage] = useState<any>(null);
   const [showMedicineDosageSelection, setShowMedicineDosageSelection] = useState(false);
+  
+  // Date picker modal state
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [datePickerType, setDatePickerType] = useState<'admission' | 'discharge'>('admission');
   const [dosePrescribed, setDosePrescribed] = useState('');
   const [medType, setMedType] = useState('');
   const [doseFrequency, setDoseFrequency] = useState('');
@@ -105,6 +109,38 @@ const Inpatient = () => {
       newMonth = Math.max(1, Math.min(12, month + delta));
     } else if (component === 'year') {
       newYear = Math.max(0, Math.min(99, year + delta));
+    }
+    
+    // Validate day for the month
+    const daysInMonth = new Date(2000 + newYear, newMonth, 0).getDate();
+    if (newDay > daysInMonth) {
+      newDay = daysInMonth;
+    }
+    
+    return formatDateComponents(newDay, newMonth, newYear);
+  };
+
+  // Month names for the picker
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  
+  // Generate day and year options
+  const getDayOptions = () => Array.from({ length: 31 }, (_, i) => i + 1);
+  const getYearOptions = () => Array.from({ length: 100 }, (_, i) => i);
+
+  // Set specific date component
+  const setDateComponent = (dateStr: string, component: 'day' | 'month' | 'year', value: number): string => {
+    const { day, month, year } = parseDateComponents(dateStr);
+    
+    let newDay = day;
+    let newMonth = month;
+    let newYear = year;
+    
+    if (component === 'day') {
+      newDay = value;
+    } else if (component === 'month') {
+      newMonth = value;
+    } else if (component === 'year') {
+      newYear = value;
     }
     
     // Validate day for the month
@@ -585,158 +621,32 @@ const Inpatient = () => {
               
               <div className="space-y-2">
                 <Label htmlFor="admissionDate" className="text-foreground font-medium">Admission Date</Label>
-                <div className="flex items-center justify-between p-3 border rounded-lg bg-background">
-                  {/* Date Display */}
-                  <div className="flex items-center space-x-2">
-                    <div className="text-lg font-medium text-foreground">
-                      {admissionDate || '01/01/25'}
-                    </div>
-                  </div>
-                  
-                  {/* Date Adjusters */}
-                  <div className="flex items-center space-x-4">
-                    {/* Day */}
-                    <div className="flex flex-col items-center space-y-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 w-8 p-0 hover:bg-medical-muted/20"
-                        onClick={() => setAdmissionDate(adjustDateComponent(admissionDate || '01/01/25', 'day', 1))}
-                      >
-                        <ChevronUp className="h-3 w-3" />
-                      </Button>
-                      <div className="text-xs text-muted-foreground font-medium">D</div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 w-8 p-0 hover:bg-medical-muted/20"
-                        onClick={() => setAdmissionDate(adjustDateComponent(admissionDate || '01/01/25', 'day', -1))}
-                      >
-                        <ChevronDown className="h-3 w-3" />
-                      </Button>
-                    </div>
-                    
-                    {/* Month */}
-                    <div className="flex flex-col items-center space-y-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 w-8 p-0 hover:bg-medical-muted/20"
-                        onClick={() => setAdmissionDate(adjustDateComponent(admissionDate || '01/01/25', 'month', 1))}
-                      >
-                        <ChevronUp className="h-3 w-3" />
-                      </Button>
-                      <div className="text-xs text-muted-foreground font-medium">M</div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 w-8 p-0 hover:bg-medical-muted/20"
-                        onClick={() => setAdmissionDate(adjustDateComponent(admissionDate || '01/01/25', 'month', -1))}
-                      >
-                        <ChevronDown className="h-3 w-3" />
-                      </Button>
-                    </div>
-                    
-                    {/* Year */}
-                    <div className="flex flex-col items-center space-y-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 w-8 p-0 hover:bg-medical-muted/20"
-                        onClick={() => setAdmissionDate(adjustDateComponent(admissionDate || '01/01/25', 'year', 1))}
-                      >
-                        <ChevronUp className="h-3 w-3" />
-                      </Button>
-                      <div className="text-xs text-muted-foreground font-medium">Y</div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 w-8 p-0 hover:bg-medical-muted/20"
-                        onClick={() => setAdmissionDate(adjustDateComponent(admissionDate || '01/01/25', 'year', -1))}
-                      >
-                        <ChevronDown className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start text-left font-normal h-12"
+                  onClick={() => {
+                    setDatePickerType('admission');
+                    setShowDatePicker(true);
+                  }}
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
+                  {admissionDate || '01/01/25'}
+                </Button>
               </div>
               
               <div className="space-y-2">
                 <Label htmlFor="dischargeDate" className="text-foreground font-medium">Discharge Date</Label>
-                <div className="flex items-center justify-between p-3 border rounded-lg bg-background">
-                  {/* Date Display */}
-                  <div className="flex items-center space-x-2">
-                    <div className="text-lg font-medium text-foreground">
-                      {dischargeDate || '01/01/25'}
-                    </div>
-                  </div>
-                  
-                  {/* Date Adjusters */}
-                  <div className="flex items-center space-x-4">
-                    {/* Day */}
-                    <div className="flex flex-col items-center space-y-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 w-8 p-0 hover:bg-medical-muted/20"
-                        onClick={() => setDischargeDate(adjustDateComponent(dischargeDate || '01/01/25', 'day', 1))}
-                      >
-                        <ChevronUp className="h-3 w-3" />
-                      </Button>
-                      <div className="text-xs text-muted-foreground font-medium">D</div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 w-8 p-0 hover:bg-medical-muted/20"
-                        onClick={() => setDischargeDate(adjustDateComponent(dischargeDate || '01/01/25', 'day', -1))}
-                      >
-                        <ChevronDown className="h-3 w-3" />
-                      </Button>
-                    </div>
-                    
-                    {/* Month */}
-                    <div className="flex flex-col items-center space-y-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 w-8 p-0 hover:bg-medical-muted/20"
-                        onClick={() => setDischargeDate(adjustDateComponent(dischargeDate || '01/01/25', 'month', 1))}
-                      >
-                        <ChevronUp className="h-3 w-3" />
-                      </Button>
-                      <div className="text-xs text-muted-foreground font-medium">M</div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 w-8 p-0 hover:bg-medical-muted/20"
-                        onClick={() => setDischargeDate(adjustDateComponent(dischargeDate || '01/01/25', 'month', -1))}
-                      >
-                        <ChevronDown className="h-3 w-3" />
-                      </Button>
-                    </div>
-                    
-                    {/* Year */}
-                    <div className="flex flex-col items-center space-y-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 w-8 p-0 hover:bg-medical-muted/20"
-                        onClick={() => setDischargeDate(adjustDateComponent(dischargeDate || '01/01/25', 'year', 1))}
-                      >
-                        <ChevronUp className="h-3 w-3" />
-                      </Button>
-                      <div className="text-xs text-muted-foreground font-medium">Y</div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 w-8 p-0 hover:bg-medical-muted/20"
-                        onClick={() => setDischargeDate(adjustDateComponent(dischargeDate || '01/01/25', 'year', -1))}
-                      >
-                        <ChevronDown className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start text-left font-normal h-12"
+                  onClick={() => {
+                    setDatePickerType('discharge');
+                    setShowDatePicker(true);
+                  }}
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
+                  {dischargeDate || '01/01/25'}
+                </Button>
               </div>
             </div>
             
@@ -755,7 +665,7 @@ const Inpatient = () => {
             
             {/* Date Format Help */}
             <div className="mt-2 text-xs text-muted-foreground">
-              <p>Click the arrows above D, M, Y to adjust day, month, and year values.</p>
+              <p>Click the date buttons to open the date picker and select admission and discharge dates.</p>
             </div>
           </CardContent>
         </Card>
@@ -1308,6 +1218,131 @@ const Inpatient = () => {
               className="w-full sm:w-auto"
             >
               Remove Existing
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Date Picker Modal */}
+      <Dialog open={showDatePicker} onOpenChange={setShowDatePicker}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              Select {datePickerType === 'admission' ? 'Admission' : 'Discharge'} Date
+            </DialogTitle>
+          </DialogHeader>
+          <div className="p-6">
+            <div className="grid grid-cols-3 gap-8 max-h-96 overflow-hidden">
+              {/* Month Column */}
+              <div className="flex flex-col items-center space-y-3">
+                <div className="text-sm font-medium text-muted-foreground mb-2">Month</div>
+                <div className="flex flex-col space-y-2 overflow-y-auto max-h-80">
+                  {monthNames.map((month, index) => {
+                    const currentDate = datePickerType === 'admission' ? admissionDate : dischargeDate;
+                    const { month: selectedMonth } = parseDateComponents(currentDate || '01/01/25');
+                    const isSelected = selectedMonth === index + 1;
+                    
+                    return (
+                      <button
+                        key={month}
+                        className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+                          isSelected 
+                            ? 'bg-blue-500 text-white' 
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                        }`}
+                        onClick={() => {
+                          const currentDateStr = datePickerType === 'admission' ? admissionDate : dischargeDate;
+                          const newDate = setDateComponent(currentDateStr || '01/01/25', 'month', index + 1);
+                          if (datePickerType === 'admission') {
+                            setAdmissionDate(newDate);
+                          } else {
+                            setDischargeDate(newDate);
+                          }
+                        }}
+                      >
+                        {month}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Day Column */}
+              <div className="flex flex-col items-center space-y-3">
+                <div className="text-sm font-medium text-muted-foreground mb-2">Day</div>
+                <div className="flex flex-col space-y-2 overflow-y-auto max-h-80">
+                  {getDayOptions().map((day) => {
+                    const currentDate = datePickerType === 'admission' ? admissionDate : dischargeDate;
+                    const { day: selectedDay } = parseDateComponents(currentDate || '01/01/25');
+                    const isSelected = selectedDay === day;
+                    
+                    return (
+                      <button
+                        key={day}
+                        className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+                          isSelected 
+                            ? 'bg-blue-500 text-white' 
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                        }`}
+                        onClick={() => {
+                          const currentDateStr = datePickerType === 'admission' ? admissionDate : dischargeDate;
+                          const newDate = setDateComponent(currentDateStr || '01/01/25', 'day', day);
+                          if (datePickerType === 'admission') {
+                            setAdmissionDate(newDate);
+                          } else {
+                            setDischargeDate(newDate);
+                          }
+                        }}
+                      >
+                        {day}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Year Column */}
+              <div className="flex flex-col items-center space-y-3">
+                <div className="text-sm font-medium text-muted-foreground mb-2">Year</div>
+                <div className="flex flex-col space-y-2 overflow-y-auto max-h-80">
+                  {getYearOptions().map((year) => {
+                    const currentDate = datePickerType === 'admission' ? admissionDate : dischargeDate;
+                    const { year: selectedYear } = parseDateComponents(currentDate || '01/01/25');
+                    const isSelected = selectedYear === year;
+                    const displayYear = 2000 + year;
+                    
+                    return (
+                      <button
+                        key={year}
+                        className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+                          isSelected 
+                            ? 'bg-blue-500 text-white' 
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                        }`}
+                        onClick={() => {
+                          const currentDateStr = datePickerType === 'admission' ? admissionDate : dischargeDate;
+                          const newDate = setDateComponent(currentDateStr || '01/01/25', 'year', year);
+                          if (datePickerType === 'admission') {
+                            setAdmissionDate(newDate);
+                          } else {
+                            setDischargeDate(newDate);
+                          }
+                        }}
+                      >
+                        {displayYear}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="px-6 py-4 border-t">
+            <Button variant="outline" onClick={() => setShowDatePicker(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => setShowDatePicker(false)}>
+              OK
             </Button>
           </DialogFooter>
         </DialogContent>
