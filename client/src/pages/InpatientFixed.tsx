@@ -643,49 +643,16 @@ export default function InpatientFixed() {
                           50311
                         </td>
                       </tr>
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Bottom Section */}
-                <div className="border border-border rounded-lg overflow-hidden">
-                  <table className="w-full text-sm">
-                    <tbody>
+                      
+                      {/* Ancillary Row */}
                       <tr className="border-b border-border">
-                        <td className="border-r border-border p-2 w-1/6 font-medium bg-muted/20">Ancillary</td>
-                        <td className="border-r border-border p-2 w-1/6"></td>
-                        <td className="border-r border-border p-2 w-1/6 font-medium bg-muted/20 text-center">Date</td>
-                        <td className="p-2 w-1/2"></td>
-                      </tr>
-                      <tr className="border-b border-border">
-                        <td className="border-r border-border p-2 font-medium bg-muted/20">R. No</td>
-                        <td className="border-r border-border p-2 font-medium bg-muted/20">Signature</td>
-                        <td className="border-r border-border p-2 font-medium bg-muted/20 text-center">Total bill</td>
-                        <td className="p-2"></td>
-                      </tr>
-                      <tr className="border-b border-border">
-                        <td rowSpan={4} className="border-r border-border p-2 align-top"></td>
-                        <td rowSpan={4} className="border-r border-border p-2 align-top"></td>
-                        <td className="border-r border-border p-2 font-medium bg-muted/20">Amount Paid -</td>
-                        <td className="p-2"></td>
-                      </tr>
-                      <tr className="border-b border-border">
-                        <td className="border-r border-border p-2 font-medium bg-muted/20">Amount Due -</td>
-                        <td className="p-2"></td>
-                      </tr>
-                      <tr className="border-b border-border">
-                        <td className="border-r border-border p-2 font-medium bg-muted/20">Amount Paid -</td>
-                        <td className="p-2"></td>
-                      </tr>
-                      <tr className="border-b border-border">
-                        <td className="border-r border-border p-2 font-medium bg-muted/20">Amount Due -</td>
-                        <td className="p-2"></td>
-                      </tr>
-                      <tr>
-                        <td className="p-2"></td>
-                        <td className="p-2"></td>
-                        <td className="border-r border-border p-2 font-medium bg-muted/20">Amount Paid-</td>
-                        <td className="p-2"></td>
+                        <td className="border-r border-border p-2 w-1/2 font-medium bg-muted/20">
+                          Ancillary
+                        </td>
+                        <td className="border-r border-border p-2 w-1/4"></td>
+                        <td className="p-2 w-1/4 text-center text-xs text-muted-foreground">
+                          
+                        </td>
                       </tr>
                     </tbody>
                   </table>
