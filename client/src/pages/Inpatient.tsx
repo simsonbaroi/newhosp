@@ -711,6 +711,22 @@ export default function Inpatient() {
     setCategorySearchQuery(''); // Reset search when switching categories
   };
 
+  // Swipe gesture support for carousel navigation
+  const swipeRef = useSwipeGesture({
+    onSwipeLeft: () => {
+      if (isCarouselMode) {
+        navigateCarousel('next');
+      }
+    },
+    onSwipeRight: () => {
+      if (isCarouselMode) {
+        navigateCarousel('prev');
+      }
+    },
+    threshold: 75, // Minimum swipe distance
+    preventDefaultEvents: false
+  });
+
   const exitCarousel = () => {
     setIsCarouselMode(false);
     setSelectedCategory('');
@@ -1569,6 +1585,7 @@ export default function Inpatient() {
                 ) : (
                   // Carousel mode with preview buttons - mobile-optimized layout
                   <div 
+                    ref={swipeRef}
                     className="w-full px-2 sm:px-0 relative touch-pan-y user-select-none"
                     style={{ touchAction: 'pan-y' }}
                   >
