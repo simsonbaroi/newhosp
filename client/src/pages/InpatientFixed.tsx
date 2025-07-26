@@ -203,7 +203,9 @@ export default function InpatientFixed() {
                     Patient Information
                   </div>
                   <div className="flex items-center space-x-2">
-                    <span className="text-xs text-muted-foreground">Total Admitted Days: {daysAdmitted} days</span>
+                    <span className="text-xs text-muted-foreground">
+                      Total Admitted Days: <span className="font-semibold text-medical-primary">{daysAdmitted}{daysAdmitted === 1 ? 'day' : 'days'}</span>
+                    </span>
                     {isPatientInfoExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </div>
                 </CardTitle>
