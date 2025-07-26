@@ -102,6 +102,25 @@ export default function Inpatient() {
   const [isOffChargePortable, setIsOffChargePortable] = useState(false);
   const [showXRayViewSelection, setShowXRayViewSelection] = useState(false);
   
+  // Medicine-specific state for Discharge Medicine
+  const [selectedMedicineForDosage, setSelectedMedicineForDosage] = useState<MedicalItem | null>(null);
+  const [showMedicineDosageSelection, setShowMedicineDosageSelection] = useState(false);
+  const [dosePrescribed, setDosePrescribed] = useState('');
+  const [medType, setMedType] = useState('');
+  const [doseFrequency, setDoseFrequency] = useState('');
+  const [totalDays, setTotalDays] = useState('');
+  const [medicineType, setMedicineType] = useState<'ward' | 'discharge'>('discharge');
+  const [tempSelectedMedicines, setTempSelectedMedicines] = useState<Array<MedicalItem & { tempId: string }>>([]);
+  
+  // Medicine search and dropdown state
+  const [medicineSearchQuery, setMedicineSearchQuery] = useState('');
+  const [medicineSearchSuggestions, setMedicineSearchSuggestions] = useState<MedicalItem[]>([]);
+  const [highlightedSearchIndex, setHighlightedSearchIndex] = useState(-1);
+  const [medicineDropdownValue, setMedicineDropdownValue] = useState<string>('');
+  const [medicineHighlightedDropdownIndex, setMedicineHighlightedDropdownIndex] = useState<number>(-1);
+  const [isMedicineDropdownOpen, setIsMedicineDropdownOpen] = useState<boolean>(false);
+  const [medicineDropdownFilterQuery, setMedicineDropdownFilterQuery] = useState<string>('');
+
   // Refs for advanced functionality
   const dropdownRef = useRef<HTMLDivElement>(null);
   const dropdownButtonRef = useRef<HTMLButtonElement>(null);
@@ -112,6 +131,10 @@ export default function Inpatient() {
   const registrationDropdownRef = useRef<HTMLDivElement>(null);
   const registrationDropdownButtonRef = useRef<HTMLButtonElement>(null);
   const registrationSearchInputRef = useRef<HTMLInputElement>(null);
+  const medicineDropdownRef = useRef<HTMLDivElement>(null);
+  const medicineDropdownButtonRef = useRef<HTMLButtonElement>(null);
+  const medicineSearchInputRef = useRef<HTMLInputElement>(null);
+  const doseInputRef = useRef<HTMLInputElement>(null);
   
   // Cupertino Date picker modal state
   const [showCupertinoDatePicker, setShowCupertinoDatePicker] = useState(false);
@@ -220,6 +243,290 @@ export default function Inpatient() {
   }, [admissionDate, dischargeDate]);
 
   // Add item to bill function
+  // Medicine dosage configuration for inpatient
+  const medTypeOptions = Object.keys(MEDICINE_RULES);
+
+  const doseFrequencyOptions = [
+    { value: 'QD', label: 'QD (Once daily)' },
+    { value: 'BID', label: 'BID (Twice daily)' },
+    { value: 'TID', label: 'TID (Three times daily)' },
+    { value: 'QID', label: 'QID (Four times daily)' },
+    { value: 'QOD', label: 'QOD (Every other day)' },
+    { value: 'QWEEK', label: 'QWEEK (Weekly)' }
+  ];
+
+  const isDosageSelectionComplete = () => {
+    return dosePrescribed.trim() && medType && doseFrequency && totalDays.trim() && parseInt(totalDays) > 0;
+  };
+
+  const calculateInpatientMedicineDosage = () => {
+    if (!selectedMedicineForDosage || !isDosageSelectionComplete()) return { totalQuantity: 0, totalPrice: 0, calculationDetails: '', quantityUnit: '', pricePerUnit: 0, isPartialAllowed: false };
+
+    try {
+      const result = calculateMedicineDosage({
+        dosePrescribed,
+        medType,
+        doseFrequency,
+        totalDays: parseInt(totalDays),
+        basePrice: parseFloat(selectedMedicineForDosage.price),
+        isInpatient: true, // Inpatient logic
+        isDischargeMedicine: medicineType === 'discharge'
+      });
+
+      return result; // Return the complete result object
+    } catch (error) {
+      console.error('Medicine calculation error:', error);
+      return { totalQuantity: 0, totalPrice: 0, calculationDetails: 'Calculation error', quantityUnit: '', pricePerUnit: 0, isPartialAllowed: false };
+    }
+  };
+
+  const addMedicineToTempList = () => {
+    if (!selectedMedicineForDosage || !isDosageSelectionComplete()) return;
+
+    const calculationResult = calculateInpatientMedicineDosage();
+    
+    if (calculationResult.totalQuantity === 0) {
+      console.error('Failed to calculate medicine dosage');
+      return;
+    }
+
+    // Use the shared formatting function
+    const formattedName = formatDosageForBill(
+      selectedMedicineForDosage.name,
+      dosePrescribed,
+      medType,
+      doseFrequency,
+      parseInt(totalDays),
+      calculationResult
+    );
+
+    const medicineItem = {
+      ...selectedMedicineForDosage,
+      name: formattedName,
+      price: calculationResult.totalPrice.toString(),
+      tempId: `temp-medicine-${selectedMedicineForDosage.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      dosageInfo: {
+        dosePrescribed,
+        medType,
+        doseFrequency,
+        totalDays,
+        calculationResult,
+        medicineType
+      }
+    };
+
+    setTempSelectedMedicines(prev => [...prev, medicineItem]);
+    
+    // Reset dosage selection to allow adding another medicine
+    cancelMedicineDosageSelection();
+  };
+
+  const addAllTempMedicinesToBill = () => {
+    if (tempSelectedMedicines.length === 0) return;
+
+    const billItemsToAdd = tempSelectedMedicines.map(medicine => ({
+      ...medicine,
+      billId: `medicine-${medicine.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    }));
+
+    setBillItems(prevBillItems => [...prevBillItems, ...billItemsToAdd]);
+    setTempSelectedMedicines([]);
+  };
+
+  const removeTempMedicine = (tempId: string) => {
+    setTempSelectedMedicines(prev => prev.filter(medicine => medicine.tempId !== tempId));
+  };
+
+  const editTempMedicine = (medicine: any) => {
+    // Pre-fill the dosage calculator with existing values
+    if (medicine.dosageInfo) {
+      setSelectedMedicineForDosage(medicine);
+      setDosePrescribed(medicine.dosageInfo.dosePrescribed);
+      setMedType(medicine.dosageInfo.medType);
+      setDoseFrequency(medicine.dosageInfo.doseFrequency);
+      setTotalDays(medicine.dosageInfo.totalDays);
+      setMedicineType(medicine.dosageInfo.medicineType || 'discharge');
+      setShowMedicineDosageSelection(true);
+      
+      // Remove the medicine from temp list since it will be re-added after editing
+      removeTempMedicine(medicine.tempId);
+      
+      // Focus on dose input for immediate editing
+      setTimeout(() => {
+        if (doseInputRef.current) {
+          doseInputRef.current.focus();
+        }
+      }, 100);
+    }
+  };
+
+  const selectMedicineForDosage = (item: MedicalItem) => {
+    setSelectedMedicineForDosage(item);
+    setShowMedicineDosageSelection(true);
+    setMedicineSearchQuery('');
+    setMedicineSearchSuggestions([]);
+    setIsMedicineDropdownOpen(false);
+    
+    // Focus on dose input
+    setTimeout(() => {
+      if (doseInputRef.current) {
+        doseInputRef.current.focus();
+      }
+    }, 100);
+  };
+
+  const cancelMedicineDosageSelection = () => {
+    setSelectedMedicineForDosage(null);
+    setShowMedicineDosageSelection(false);
+    setDosePrescribed('');
+    setMedType('');
+    setDoseFrequency('');
+    setTotalDays('');
+    setMedicineType('discharge');
+  };
+
+  // Medicine search functionality
+  const getMedicineSearchSuggestions = () => {
+    if (!medicineSearchQuery || selectedCategory !== 'Discharge Medicine') return [];
+    return categoryItems
+      .filter((item: MedicalItem) => 
+        item.name.toLowerCase().includes(medicineSearchQuery.toLowerCase()) &&
+        !billItems.find(billItem => billItem.id === item.id.toString())
+      )
+      .slice(0, 5);
+  };
+
+  const handleMedicineSearchKeyDown = (e: React.KeyboardEvent) => {
+    const suggestions = getMedicineSearchSuggestions();
+    
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedSearchIndex(prev => 
+        prev < suggestions.length - 1 ? prev + 1 : prev
+      );
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedSearchIndex(prev => prev > 0 ? prev - 1 : prev);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (highlightedSearchIndex >= 0 && suggestions[highlightedSearchIndex]) {
+        selectMedicineForDosage(suggestions[highlightedSearchIndex]);
+        setHighlightedSearchIndex(-1);
+      } else if (suggestions.length > 0) {
+        selectMedicineForDosage(suggestions[0]);
+      }
+    } else if (e.key === 'Escape') {
+      setMedicineSearchSuggestions([]);
+      setHighlightedSearchIndex(-1);
+    }
+  };
+
+  // Medicine dropdown functionality
+  const getMedicineFilteredDropdownItems = () => {
+    if (!medicineDropdownFilterQuery.trim()) return categoryItems;
+    
+    const query = medicineDropdownFilterQuery.toLowerCase();
+    
+    // Filter and sort by relevance
+    return categoryItems
+      .filter(item => item.name.toLowerCase().includes(query))
+      .sort((a, b) => {
+        const aName = a.name.toLowerCase();
+        const bName = b.name.toLowerCase();
+        
+        // Exact match gets highest priority
+        if (aName === query) return -1;
+        if (bName === query) return 1;
+        
+        // Starts with gets second priority
+        if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
+        if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
+        
+        // Default alphabetical sort
+        return aName.localeCompare(bName);
+      });
+  };
+
+  const handleMedicineDropdownKeyDown = (e: React.KeyboardEvent) => {
+    const filteredItems = getMedicineFilteredDropdownItems();
+    
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setMedicineHighlightedDropdownIndex(prev => 
+        prev < filteredItems.length - 1 ? prev + 1 : 0
+      );
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setMedicineHighlightedDropdownIndex(prev => 
+        prev > 0 ? prev - 1 : filteredItems.length - 1
+      );
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (medicineHighlightedDropdownIndex >= 0 && filteredItems[medicineHighlightedDropdownIndex]) {
+        const item = filteredItems[medicineHighlightedDropdownIndex];
+        const alreadyInBill = billItems.find(billItem => billItem.id === item.id.toString());
+        if (!alreadyInBill) {
+          selectMedicineForDosage(item);
+        }
+      }
+    } else if (e.key === 'Escape') {
+      setIsMedicineDropdownOpen(false);
+      setMedicineHighlightedDropdownIndex(-1);
+      setMedicineDropdownFilterQuery('');
+    } else if (e.key === 'Backspace' && medicineDropdownFilterQuery.length > 0) {
+      setMedicineDropdownFilterQuery(prev => prev.slice(0, -1));
+      setMedicineHighlightedDropdownIndex(-1);
+    } else if (e.key.length === 1) {
+      // Add character to filter
+      setMedicineDropdownFilterQuery(prev => prev + e.key.toLowerCase());
+      setMedicineHighlightedDropdownIndex(-1);
+    }
+  };
+
+  // Fetch medical items
+  const { data: medicalItems = [] } = useQuery<MedicalItem[]>({
+    queryKey: ['/api/medical-items'],
+  });
+
+  // Filter items by category
+  const categoryItems = selectedCategory 
+    ? medicalItems.filter((item: MedicalItem) => item.category === selectedCategory)
+    : [];
+
+  // Auto-update medicine search suggestions when query changes
+  useEffect(() => {
+    if (selectedCategory === 'Discharge Medicine') {
+      setMedicineSearchSuggestions(getMedicineSearchSuggestions());
+      setHighlightedSearchIndex(-1);
+    }
+  }, [medicineSearchQuery, categoryItems, billItems, selectedCategory]);
+
+  // Handle click outside medicine dropdown to close it
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (medicineDropdownRef.current && !medicineDropdownRef.current.contains(event.target as Node)) {
+        setIsMedicineDropdownOpen(false);
+        setMedicineHighlightedDropdownIndex(-1);
+        setMedicineDropdownFilterQuery('');
+      }
+    };
+
+    if (isMedicineDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMedicineDropdownOpen]);
+
+  // Auto-focus medicine search input when Discharge Medicine category is selected
+  useEffect(() => {
+    if (selectedCategory === 'Discharge Medicine' && isCarouselMode && medicineSearchInputRef.current) {
+      medicineSearchInputRef.current.focus();
+    }
+  }, [selectedCategory, isCarouselMode]);
+
   const addItemToBill = (item: MedicalItem) => {
     const existingItem = billItems.find(billItem => billItem.id === item.id.toString());
     if (existingItem) {
@@ -286,16 +593,6 @@ export default function Inpatient() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isXRayDropdownOpen]);
-
-  // Fetch medical items
-  const { data: medicalItems = [] } = useQuery<MedicalItem[]>({
-    queryKey: ['/api/medical-items'],
-  });
-
-  // Filter items by category
-  const categoryItems = selectedCategory 
-    ? medicalItems.filter((item: MedicalItem) => item.category === selectedCategory)
-    : [];
 
   // Get inpatient categories from the database, excluding Dr. Fees, Medic Fee, and Medicine
   const excludedCategories = ['Dr. Fees', 'Medic Fee', 'Medicine'];
@@ -1603,6 +1900,351 @@ export default function Inpatient() {
                         • Click "Add to Bill" or outside dropdown to close • Escape to close without adding<br/>
                         • Both methods access same database but work independently<br/>
                         • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
+                      </div>
+                    </div>
+                  ) : selectedCategory === 'Discharge Medicine' ? (
+                    <div className="space-y-4">
+                      {/* Compact Selected Medicines Display - positioned below Discharge Medicine label */}
+                      {tempSelectedMedicines.length > 0 && (
+                        <div className="medicine-dosage-card p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-sm font-semibold text-medical-primary flex items-center">
+                              <Calculator className="h-4 w-4 mr-2" />
+                              Selected: {tempSelectedMedicines.length} medicines
+                            </span>
+                            <span className="text-sm font-bold text-medical-primary bg-medical-primary/10 px-2 py-1 rounded-md">
+                              {format(tempSelectedMedicines.reduce((sum, medicine) => sum + parseFloat(medicine.price), 0))}
+                            </span>
+                          </div>
+                          <div className="space-y-1">
+                            {tempSelectedMedicines.map((medicine, index) => (
+                              <div key={medicine.tempId} className="medicine-item-card flex items-center justify-between text-sm p-2 rounded-lg">
+                                <div className="flex items-center space-x-3 flex-1 min-w-0">
+                                  <span className="text-xs font-bold text-medical-primary bg-medical-primary/10 px-2 py-1 rounded-md flex-shrink-0">
+                                    #{index + 1}
+                                  </span>
+                                  <span className="font-medium text-foreground truncate">
+                                    {medicine.name.length > 25 ? `${medicine.name.substring(0, 25)}...` : medicine.name}
+                                  </span>
+                                </div>
+                                <div className="flex items-center space-x-2 flex-shrink-0">
+                                  <span className="text-medical-primary font-semibold bg-medical-primary/10 px-2 py-1 rounded">
+                                    {format(parseFloat(medicine.price))}
+                                  </span>
+                                  <button
+                                    onClick={() => editTempMedicine(medicine)}
+                                    className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 p-1 rounded transition-colors"
+                                    title="Edit medicine dosage"
+                                  >
+                                    <Calculator className="h-3 w-3" />
+                                  </button>
+                                  <button
+                                    onClick={() => removeTempMedicine(medicine.tempId)}
+                                    className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 p-1 rounded transition-colors"
+                                    title="Remove medicine"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="mt-4 pt-3 border-t border-medical-primary/20 flex justify-end">
+                            <Button
+                              onClick={addAllTempMedicinesToBill}
+                              variant="medical"
+                              size="sm"
+                              className="text-xs font-medium shadow-md hover:shadow-lg transition-shadow px-3 py-1"
+                            >
+                              <Plus className="h-3 w-3 mr-1" />
+                              Add to Bill
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Medicine Dosage Selection Interface */}
+                      {showMedicineDosageSelection && selectedMedicineForDosage && (
+                        <div className="medicine-dosage-card mt-6 p-6">
+                          <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-lg font-semibold text-medical-primary flex items-center">
+                              <Calculator className="h-5 w-5 mr-2" />
+                              Set Dosage for: {selectedMedicineForDosage.name}
+                            </h3>
+                            <Button
+                              onClick={cancelMedicineDosageSelection}
+                              variant="medical-ghost"
+                              size="sm"
+                              className="text-muted-foreground hover:text-medical-primary"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+
+                          <div className="space-y-4">
+                            {/* Ward Medicine vs Discharge Medicine selection */}
+                            <div className="space-y-3">
+                              <label className="text-sm font-medium text-foreground">Medicine Type</label>
+                              <div className="flex space-x-4">
+                                <label className="flex items-center space-x-2">
+                                  <input
+                                    type="radio"
+                                    name="medicineType"
+                                    value="discharge"
+                                    checked={medicineType === 'discharge'}
+                                    onChange={(e) => setMedicineType(e.target.value as 'ward' | 'discharge')}
+                                    className="w-4 h-4 text-medical-primary"
+                                  />
+                                  <span className="text-sm">Discharge Medicine (Full bottles only)</span>
+                                </label>
+                                <label className="flex items-center space-x-2">
+                                  <input
+                                    type="radio"
+                                    name="medicineType"
+                                    value="ward"
+                                    checked={medicineType === 'ward'}
+                                    onChange={(e) => setMedicineType(e.target.value as 'ward' | 'discharge')}
+                                    className="w-4 h-4 text-medical-primary"
+                                  />
+                                  <span className="text-sm">Ward Medicine (Partial allowed)</span>
+                                </label>
+                              </div>
+                            </div>
+
+                            {/* First Line: Dose Prescribed, Med Type, Dose Frequency */}
+                            <div className="grid grid-cols-3 gap-4">
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium text-foreground">Dose Prescribed</label>
+                                <Input
+                                  ref={doseInputRef}
+                                  placeholder="e.g., 500, 1, 2.5"
+                                  value={dosePrescribed}
+                                  onChange={(e) => setDosePrescribed(e.target.value)}
+                                  className="w-full"
+                                />
+                              </div>
+                              
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium text-foreground">Med Type</label>
+                                <Select value={medType} onValueChange={setMedType}>
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select type" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {medTypeOptions.map((type) => (
+                                      <SelectItem key={type} value={type}>
+                                        {type}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium text-foreground">Dose Frequency</label>
+                                <Select value={doseFrequency} onValueChange={setDoseFrequency}>
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select frequency" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {doseFrequencyOptions.map((freq) => (
+                                      <SelectItem key={freq.value} value={freq.value}>
+                                        {freq.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+
+                            {/* Second Line: Duration, Total Price, Add to Bill */}
+                            <div className="grid grid-cols-3 gap-4 items-end">
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium text-foreground">Duration (Days)</label>
+                                <Input
+                                  type="number"
+                                  placeholder="e.g., 7, 10"
+                                  value={totalDays}
+                                  onChange={(e) => setTotalDays(e.target.value)}
+                                  className="w-full"
+                                  min="1"
+                                />
+                              </div>
+
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium text-foreground">Total Price</label>
+                                <div className="h-10 p-2 bg-medical-primary/10 rounded-md border border-medical-primary/20 flex items-center justify-center">
+                                  <span className="text-lg font-semibold text-medical-primary">
+                                    {isDosageSelectionComplete() ? format(calculateInpatientMedicineDosage().totalPrice) : '---'}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium text-foreground invisible">Add Medicine</label>
+                                <Button
+                                  onClick={addMedicineToTempList}
+                                  disabled={!isDosageSelectionComplete()}
+                                  variant="medical"
+                                  className="w-full flex items-center justify-center space-x-2"
+                                >
+                                  <Plus className="h-4 w-4" />
+                                  <span>Add</span>
+                                </Button>
+                              </div>
+                            </div>
+
+                            {/* Calculation Details (Optional) */}
+                            {isDosageSelectionComplete() && (
+                              <div className="medicine-dosage-card p-4 rounded-lg">
+                                <div className="text-sm font-medium text-medical-primary mb-3 flex items-center">
+                                  <Calculator className="h-4 w-4 mr-2" />
+                                  Calculation Preview
+                                </div>
+                                <div className="grid grid-cols-2 gap-4 text-xs text-muted-foreground">
+                                  <div className="flex justify-between">
+                                    <span>Base price:</span>
+                                    <span className="font-medium text-medical-primary">{format(selectedMedicineForDosage.price)}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span>Calculation:</span>
+                                    <span className="font-medium">{calculateInpatientMedicineDosage().calculationDetails}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Medicine Search and Selection Interface */}
+                      <div className="space-y-4">
+                        {/* Medicine Search */}
+                        <div className="space-y-2">
+                          <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                            <Input
+                              ref={medicineSearchInputRef}
+                              placeholder="Search for medicines..."
+                              value={medicineSearchQuery}
+                              onChange={(e) => setMedicineSearchQuery(e.target.value)}
+                              onKeyDown={handleMedicineSearchKeyDown}
+                              className="pl-10"
+                            />
+                          </div>
+
+                          {/* Search suggestions dropdown */}
+                          {medicineSearchQuery.trim() && medicineSearchSuggestions.length > 0 && (
+                            <div className="bg-background border border-border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                              {medicineSearchSuggestions.map((item, index) => {
+                                const alreadyInBill = billItems.find(billItem => billItem.id === item.id.toString());
+                                const isHighlighted = index === highlightedSearchIndex;
+                                
+                                return (
+                                  <div
+                                    key={item.id}
+                                    className={`px-3 py-2 cursor-pointer flex items-center justify-between hover:bg-muted/40 ${
+                                      isHighlighted ? 'bg-medical-primary/10 border-l-2 border-medical-primary' : ''
+                                    } ${
+                                      alreadyInBill ? 'bg-red-50 text-red-600 cursor-not-allowed' : ''
+                                    }`}
+                                    onClick={() => {
+                                      if (!alreadyInBill) {
+                                        selectMedicineForDosage(item);
+                                      }
+                                    }}
+                                  >
+                                    <div className="flex-1">
+                                      <span className="text-sm font-medium">{item.name}</span>
+                                      {alreadyInBill && (
+                                        <span className="ml-2 text-red-600 text-xs">● Already in Bill</span>
+                                      )}
+                                      {isHighlighted && (
+                                        <span className="ml-2 text-medical-primary text-xs">← Highlighted</span>
+                                      )}
+                                    </div>
+                                    <span className="text-medical-primary font-semibold">
+                                      {format(item.price)}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Medicine Dropdown */}
+                        <div className="space-y-2">
+                          <div ref={medicineDropdownRef} className="relative">
+                            <button
+                              ref={medicineDropdownButtonRef}
+                              onClick={() => setIsMedicineDropdownOpen(!isMedicineDropdownOpen)}
+                              onKeyDown={handleMedicineDropdownKeyDown}
+                              className="w-full flex items-center justify-between px-3 py-2 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-medical-primary/20 hover:bg-muted/50"
+                            >
+                              <span className="text-sm text-muted-foreground">
+                                {medicineDropdownFilterQuery 
+                                  ? `Filter: "${medicineDropdownFilterQuery}" (${getMedicineFilteredDropdownItems().length} matches)`
+                                  : 'Medicine Dropdown - Type to filter, arrows to navigate'
+                                }
+                              </span>
+                              <ChevronRight className={`h-4 w-4 transition-transform ${isMedicineDropdownOpen ? 'rotate-90' : ''}`} />
+                            </button>
+                            
+                            {/* Dropdown content */}
+                            {isMedicineDropdownOpen && (
+                              <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                                {getMedicineFilteredDropdownItems().map((item: MedicalItem, index) => {
+                                  const alreadyInBill = billItems.find(billItem => billItem.id === item.id.toString());
+                                  const isHighlighted = index === medicineHighlightedDropdownIndex;
+                                  
+                                  return (
+                                    <div
+                                      key={item.id}
+                                      className={`px-3 py-2 cursor-pointer flex items-center justify-between hover:bg-muted/40 ${
+                                        isHighlighted ? 'bg-medical-primary/10 border-l-2 border-medical-primary' : ''
+                                      } ${
+                                        alreadyInBill ? 'bg-red-50 text-red-600 cursor-not-allowed' : ''
+                                      }`}
+                                      onClick={() => {
+                                        if (!alreadyInBill) {
+                                          selectMedicineForDosage(item);
+                                        }
+                                      }}
+                                    >
+                                      <div className="flex-1">
+                                        <span className="text-sm font-medium">{item.name}</span>
+                                        {alreadyInBill && (
+                                          <span className="ml-2 text-red-600 text-xs">● Already in Bill</span>
+                                        )}
+                                        {isHighlighted && (
+                                          <span className="ml-2 text-medical-primary text-xs">← Highlighted</span>
+                                        )}
+                                      </div>
+                                      <span className="text-medical-primary font-semibold">
+                                        {format(item.price)}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                                {getMedicineFilteredDropdownItems().length === 0 && (
+                                  <div className="px-3 py-2 text-sm text-muted-foreground">
+                                    No medicine items available
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="text-sm text-muted-foreground">
+                          • Type to search and select medicine for dosage calculation<br/>
+                          • Dropdown: Type letters to filter instantly, stays open for multiple selections<br/>
+                          • Arrow keys to navigate, Enter to select<br/>
+                          • Set dosage, frequency, and duration before adding to bill<br/>
+                          • Ward Medicine allows partial bottles, Discharge Medicine requires full bottles<br/>
+                          • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
+                        </div>
                       </div>
                     </div>
                   ) : (
