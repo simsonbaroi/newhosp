@@ -1329,7 +1329,7 @@ const Inpatient = () => {
           cupertinoDatePickerType === 'admission' ? admissionDate : dischargeDate,
           cupertinoDatePickerType === 'admission' ? admissionTime : dischargeTime
         )}
-        title={`Select ${cupertinoDatePickerType === 'admission' ? 'Admission' : 'Discharge'} Date & Time`}
+        title={`Select ${cupertinoDatePickerType === 'admission' ? 'Admission' : 'Discharge'} Date`}
       />
     </Layout>
   );
