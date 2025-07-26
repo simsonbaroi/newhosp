@@ -18,6 +18,14 @@ interface BillItem extends MedicalItem {
 }
 
 const Inpatient = () => {
+  // Patient information state
+  const [patientName, setPatientName] = useState<string>('');
+  const [opdNumber, setOpdNumber] = useState<string>('');
+  const [hospitalNumber, setHospitalNumber] = useState<string>('');
+  const [billNumber, setBillNumber] = useState<string>('');
+  const [admissionDate, setAdmissionDate] = useState<string>('');
+  const [dischargeDate, setDischargeDate] = useState<string>('');
+  
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
   const [categorySearchQuery, setCategorySearchQuery] = useState('');
@@ -37,6 +45,29 @@ const Inpatient = () => {
   const [isDischargeMedicine, setIsDischargeMedicine] = useState(false);
   
   const { format } = useTakaFormat();
+
+  // Calculate total admitted days based on admission and discharge dates
+  const calculateAdmittedDays = (admission: string, discharge: string): number => {
+    if (!admission || !discharge) return 1;
+    
+    const admissionDate = new Date(admission);
+    const dischargeDate = new Date(discharge);
+    
+    if (dischargeDate < admissionDate) return 1;
+    
+    const timeDiff = dischargeDate.getTime() - admissionDate.getTime();
+    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1; // +1 to include both admission and discharge days
+    
+    return daysDiff > 0 ? daysDiff : 1;
+  };
+
+  // Update days admitted when dates change
+  useEffect(() => {
+    if (admissionDate && dischargeDate) {
+      const calculatedDays = calculateAdmittedDays(admissionDate, dischargeDate);
+      setDaysAdmitted(calculatedDays);
+    }
+  }, [admissionDate, dischargeDate]);
 
   // Get inpatient medical items
   const { data: medicalItems = [] } = useQuery<MedicalItem[]>({
@@ -79,6 +110,14 @@ const Inpatient = () => {
           total: calculateTotal().toString(),
           daysAdmitted,
           currency: 'BDT',
+          patientInfo: {
+            patientName,
+            opdNumber,
+            hospitalNumber,
+            billNumber,
+            admissionDate,
+            dischargeDate,
+          },
         }),
       });
       if (!response.ok) throw new Error('Failed to save bill');
@@ -96,6 +135,16 @@ const Inpatient = () => {
           if (bill && bill.billData) {
             setBillItems(JSON.parse(bill.billData));
             setDaysAdmitted(bill.daysAdmitted || 1);
+            
+            // Load patient information if available
+            if (bill.patientInfo) {
+              setPatientName(bill.patientInfo.patientName || '');
+              setOpdNumber(bill.patientInfo.opdNumber || '');
+              setHospitalNumber(bill.patientInfo.hospitalNumber || '');
+              setBillNumber(bill.patientInfo.billNumber || '');
+              setAdmissionDate(bill.patientInfo.admissionDate || '');
+              setDischargeDate(bill.patientInfo.dischargeDate || '');
+            }
           }
         }
       } catch (error) {
@@ -105,12 +154,12 @@ const Inpatient = () => {
     loadSavedBill();
   }, []);
 
-  // Auto-save bill when items change
+  // Auto-save bill when items or patient info change
   useEffect(() => {
-    if (billItems.length > 0 || daysAdmitted > 1) {
+    if (billItems.length > 0 || daysAdmitted > 1 || patientName || opdNumber || hospitalNumber || billNumber || admissionDate || dischargeDate) {
       saveBillMutation.mutate(billItems);
     }
-  }, [billItems, daysAdmitted]);
+  }, [billItems, daysAdmitted, patientName, opdNumber, hospitalNumber, billNumber, admissionDate, dischargeDate]);
 
   const addToBill = (item: MedicalItem, quantity: number = 1) => {
     const existingItem = billItems.find(billItem => billItem.id === item.id);
@@ -378,6 +427,102 @@ const Inpatient = () => {
           <h1 className="text-3xl font-bold text-foreground mb-2">Inpatient Calculator</h1>
           <p className="text-muted-foreground">Calculate bills for inpatient services with daily rates and extended stay management</p>
         </div>
+
+        {/* Patient Information Card */}
+        <Card className="glass-card">
+          <CardHeader>
+            <CardTitle className="flex items-center text-medical-primary">
+              <Calendar className="mr-2 h-5 w-5" />
+              Patient Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="patientName" className="text-foreground font-medium">Patient Name</Label>
+                <Input
+                  id="patientName"
+                  type="text"
+                  value={patientName}
+                  onChange={(e) => setPatientName(e.target.value)}
+                  placeholder="Enter patient name"
+                  className="w-full"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="opdNumber" className="text-foreground font-medium">OPD Number</Label>
+                <Input
+                  id="opdNumber"
+                  type="text"
+                  value={opdNumber}
+                  onChange={(e) => setOpdNumber(e.target.value)}
+                  placeholder="Enter OPD number"
+                  className="w-full"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="hospitalNumber" className="text-foreground font-medium">Hospital Number</Label>
+                <Input
+                  id="hospitalNumber"
+                  type="text"
+                  value={hospitalNumber}
+                  onChange={(e) => setHospitalNumber(e.target.value)}
+                  placeholder="Enter hospital number"
+                  className="w-full"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="billNumber" className="text-foreground font-medium">Bill Number</Label>
+                <Input
+                  id="billNumber"
+                  type="text"
+                  value={billNumber}
+                  onChange={(e) => setBillNumber(e.target.value)}
+                  placeholder="Enter bill number"
+                  className="w-full"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="admissionDate" className="text-foreground font-medium">Admission Date</Label>
+                <Input
+                  id="admissionDate"
+                  type="date"
+                  value={admissionDate}
+                  onChange={(e) => setAdmissionDate(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="dischargeDate" className="text-foreground font-medium">Discharge Date</Label>
+                <Input
+                  id="dischargeDate"
+                  type="date"
+                  value={dischargeDate}
+                  onChange={(e) => setDischargeDate(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+            </div>
+            
+            {/* Total Admitted Days Counter */}
+            {admissionDate && dischargeDate && (
+              <div className="mt-4 p-3 bg-medical-muted/20 rounded-lg border border-medical-secondary/30">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-foreground">Total Admitted Days:</span>
+                  <span className="text-lg font-bold text-medical-primary">{daysAdmitted} {daysAdmitted === 1 ? 'day' : 'days'}</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Calculated from {new Date(admissionDate).toLocaleDateString()} to {new Date(dischargeDate).toLocaleDateString()}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Left Column - Categories and Items */}
