@@ -856,6 +856,33 @@ const Inpatient = () => {
     });
   };
 
+  // Get sorted Discharge Medicine suggestions with closest match first
+  const getDischargeMedicineSuggestions = () => {
+    if (!categorySearchQuery) return [];
+    
+    const query = categorySearchQuery.toLowerCase();
+    const suggestions = filteredCategoryItems.filter(item => 
+      item.name.toLowerCase().includes(query)
+    );
+    
+    // Sort by relevance: exact matches first, then starts with, then contains
+    return suggestions.sort((a, b) => {
+      const aName = a.name.toLowerCase();
+      const bName = b.name.toLowerCase();
+      
+      // Exact match gets highest priority
+      if (aName === query) return -1;
+      if (bName === query) return 1;
+      
+      // Starts with query gets second priority
+      if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
+      if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
+      
+      // Both start with or both contain - sort alphabetically
+      return aName.localeCompare(bName);
+    });
+  };
+
   // Handle comma-separated Laboratory item selection
   const handleLabSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === ',' || e.key === 'Enter') {
@@ -2009,16 +2036,56 @@ const Inpatient = () => {
                         </div>
                       )}
 
-                      {/* Medicine tag-based search input */}
+                      {/* Medicine search suggestions appear below header search */}
                       <div className="space-y-2">
-                        <Input
-                          ref={dischargeMedicineSearchInputRef}
-                          placeholder="Type discharge medicine names, press comma/enter to add as tags..."
-                          value={categorySearchQuery}
-                          onChange={(e) => setCategorySearchQuery(e.target.value)}
-                          onKeyDown={handleDischargeMedicineTagKeyPress}
-                          className="w-full"
-                        />
+                        {/* Search suggestions appear right below search input */}
+                        {categorySearchQuery && getDischargeMedicineSuggestions().length > 0 && (
+                          <div className="space-y-1 max-h-40 overflow-y-auto border border-border rounded-md p-2 bg-muted/10">
+                            <div className="text-sm font-medium text-muted-foreground mb-2">
+                              Matching medicines (press comma to add):
+                            </div>
+                            {getDischargeMedicineSuggestions().slice(0, 5).map((item: MedicalItem, index) => {
+                              const alreadyInSearch = selectedDischargeMedicineItems.find(selected => selected.id === item.id);
+                              const alreadyInBill = billItems.find(billItem => billItem.id === item.id);
+                              
+                              return (
+                              <div key={item.id} className={`text-xs p-2 rounded ${
+                                alreadyInBill 
+                                  ? 'bg-red-100 text-red-600 cursor-not-allowed border border-red-200'
+                                  : alreadyInSearch
+                                    ? 'bg-green-100 text-green-600 cursor-not-allowed border border-green-200'
+                                    : index === 0 
+                                      ? 'bg-green-500/10 border border-green-500/20 cursor-pointer hover:bg-muted/40' 
+                                      : 'bg-muted/20 cursor-pointer hover:bg-muted/40'
+                              }`}
+                                   onClick={() => {
+                                     // Check if item is already selected in search OR already in the bill
+                                     const alreadyInSearch = selectedDischargeMedicineItems.find(selected => selected.id === item.id);
+                                     const alreadyInBill = billItems.find(billItem => billItem.id === item.id);
+                                     
+                                     if (!alreadyInSearch && !alreadyInBill) {
+                                       setSelectedDischargeMedicineItems(prev => [...prev, item]);
+                                     }
+                                     setCategorySearchQuery('');
+                                     // Refocus search input after clicking suggestion
+                                     setTimeout(() => {
+                                       if (dischargeMedicineSearchInputRef.current) {
+                                         dischargeMedicineSearchInputRef.current.focus();
+                                       }
+                                     }, 0);
+                                   }}>
+                                <span className="font-medium">{item.name}</span> - {format(item.price)}
+                                {alreadyInBill && (
+                                  <span className="ml-2 text-red-600 text-xs">● Already in Bill</span>
+                                )}
+                                {alreadyInSearch && !alreadyInBill && (
+                                  <span className="ml-2 text-green-600 text-xs">✓ Selected</span>
+                                )}
+                              </div>
+                              );
+                            })}
+                          </div>
+                        )}
 
                         {/* Selected items as tags */}
                         {selectedDischargeMedicineItems.length > 0 && (
