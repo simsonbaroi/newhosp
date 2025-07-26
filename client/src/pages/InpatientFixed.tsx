@@ -220,6 +220,7 @@ export default function InpatientFixed() {
       const billItem = {
         ...item,
         id: item.id.toString(),
+        price: parseFloat(item.price),
         billId: `${item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
       };
       setBillItems(prev => [...prev, billItem]);
@@ -396,6 +397,7 @@ export default function InpatientFixed() {
       const billItemsToAdd = newItems.map(item => ({ 
         ...item, 
         id: item.id.toString(),
+        price: parseFloat(item.price),
         billId: `${item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` 
       }));
       setBillItems(prevBillItems => [...prevBillItems, ...billItemsToAdd]);
@@ -458,6 +460,7 @@ export default function InpatientFixed() {
       const billItemsToAdd = newItems.map(item => ({ 
         ...item, 
         id: item.id.toString(),
+        price: parseFloat(item.price),
         billId: `${item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` 
       }));
       setBillItems(prevBillItems => [...prevBillItems, ...billItemsToAdd]);
@@ -506,12 +509,12 @@ export default function InpatientFixed() {
     if (!categorySearchQuery) return [];
     
     const query = categorySearchQuery.toLowerCase();
-    const suggestions = filteredCategoryItems.filter(item => 
+    const suggestions = categoryItems.filter((item: MedicalItem) => 
       item.name.toLowerCase().includes(query)
     );
     
     // Sort by relevance: exact matches first, then starts with, then contains
-    return suggestions.sort((a, b) => {
+    return suggestions.sort((a: MedicalItem, b: MedicalItem) => {
       const aName = a.name.toLowerCase();
       const bName = b.name.toLowerCase();
       
@@ -539,7 +542,7 @@ export default function InpatientFixed() {
         if (suggestions.length > 0) {
           const topMatch = suggestions[0];
           // Check if item is already in the bill
-          const alreadyInBill = billItems.find(billItem => billItem.id === topMatch.id);
+          const alreadyInBill = billItems.find(billItem => billItem.id === topMatch.id.toString());
           
           if (!alreadyInBill) {
             handleXRayItemSelect(topMatch);
@@ -610,6 +613,7 @@ export default function InpatientFixed() {
         ...selectedXRayForViews,
         id: selectedXRayForViews.id.toString(),
         name: displayName,
+        price: parseFloat(selectedXRayForViews.price),
         billId: `${selectedXRayForViews.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
       };
       setBillItems(prev => [...prev, newBillItem]);
@@ -1041,7 +1045,7 @@ export default function InpatientFixed() {
                             </div>
                             {getLabSuggestions().slice(0, 5).map((item: MedicalItem, index) => {
                               const alreadyInSearch = selectedLabItems.find(selected => selected.id === item.id);
-                              const alreadyInBill = billItems.find(billItem => billItem.id === item.id);
+                              const alreadyInBill = billItems.find(billItem => billItem.id === item.id.toString());
                               
                               return (
                               <div key={item.id} className={`text-xs p-2 rounded ${
@@ -1056,7 +1060,7 @@ export default function InpatientFixed() {
                                    onClick={() => {
                                      // Check if item is already selected in search OR already in the bill
                                      const alreadyInSearch = selectedLabItems.find(selected => selected.id === item.id);
-                                     const alreadyInBill = billItems.find(billItem => billItem.id === item.id);
+                                     const alreadyInBill = billItems.find(billItem => billItem.id === item.id.toString());
                                      
                                      if (!alreadyInSearch && !alreadyInBill) {
                                        setSelectedLabItems(prev => [...prev, item]);
@@ -1240,7 +1244,7 @@ export default function InpatientFixed() {
                             </div>
                             {getXRaySuggestions().slice(0, 5).map((item: MedicalItem, index) => {
                               const alreadyInSearch = selectedXRayItems.find(selected => selected.id === item.id);
-                              const alreadyInBill = billItems.find(billItem => billItem.id === item.id);
+                              const alreadyInBill = billItems.find(billItem => billItem.id === item.id.toString());
                               
                               return (
                               <div key={item.id} className={`text-xs p-2 rounded ${
@@ -1254,7 +1258,7 @@ export default function InpatientFixed() {
                               }`}
                                    onClick={() => {
                                      const alreadyInSearch = selectedXRayItems.find(selected => selected.id === item.id);
-                                     const alreadyInBill = billItems.find(billItem => billItem.id === item.id);
+                                     const alreadyInBill = billItems.find(billItem => billItem.id === item.id.toString());
                                      
                                      if (!alreadyInSearch && !alreadyInBill) {
                                        handleXRayItemSelect(item);
@@ -1684,6 +1688,7 @@ export default function InpatientFixed() {
                   const billItem = {
                     ...duplicateDialog.item!,
                     id: duplicateDialog.item!.id.toString(),
+                    price: parseFloat(duplicateDialog.item!.price),
                     billId: `${duplicateDialog.item!.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
                   };
                   setBillItems(prev => [...prev, billItem]);
@@ -1707,6 +1712,7 @@ export default function InpatientFixed() {
                   const billItem = {
                     ...duplicateDialog.item!,
                     id: duplicateDialog.item!.id.toString(),
+                    price: parseFloat(duplicateDialog.item!.price),
                     billId: `${duplicateDialog.item!.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
                   };
                   setBillItems(prev => [...prev, billItem]);
