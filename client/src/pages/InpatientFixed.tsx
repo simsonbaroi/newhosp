@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, Minus, Calculator, Grid3X3, Calendar, ChevronLeft, ChevronRight, X, AlertTriangle } from 'lucide-react';
+import { Search, Plus, Minus, Calculator, Grid3X3, Calendar, ChevronLeft, ChevronRight, X, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -68,6 +68,7 @@ export default function InpatientFixed() {
   const [isCarouselMode, setIsCarouselMode] = useState<boolean>(false);
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState<number>(0);
   const [duplicateDialog, setDuplicateDialog] = useState<{open: boolean, item: MedicalItem | null}>({open: false, item: null});
+  const [isPatientInfoExpanded, setIsPatientInfoExpanded] = useState<boolean>(true);
   
   // Cupertino Date picker modal state
   const [showCupertinoDatePicker, setShowCupertinoDatePicker] = useState(false);
@@ -192,106 +193,104 @@ export default function InpatientFixed() {
           {/* Patient Information Panel */}
           <div className="space-y-6">
             <Card className="glass-card">
-              <CardHeader>
-                <CardTitle className="flex items-center text-medical-primary">
-                  <Calculator className="mr-2 h-5 w-5" />
-                  Patient Information
+              <CardHeader className="pb-2">
+                <CardTitle 
+                  className="flex items-center justify-between text-medical-primary cursor-pointer"
+                  onClick={() => setIsPatientInfoExpanded(!isPatientInfoExpanded)}
+                >
+                  <div className="flex items-center">
+                    <Calculator className="mr-2 h-5 w-5" />
+                    Patient Information
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs text-muted-foreground">Total Admitted Days: {daysAdmitted} days</span>
+                    {isPatientInfoExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </div>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="patientName" className="text-foreground font-medium">Patient Name</Label>
-                    <Input
-                      id="patientName"
-                      type="text"
-                      value={patientName}
-                      onChange={(e) => setPatientName(e.target.value)}
-                      placeholder="Enter patient name"
-                      className="w-full"
-                    />
+              {isPatientInfoExpanded && (
+                <CardContent className="space-y-3 pt-0">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="patientName" className="text-xs text-foreground font-medium">Patient Name</Label>
+                      <Input
+                        id="patientName"
+                        type="text"
+                        value={patientName}
+                        onChange={(e) => setPatientName(e.target.value)}
+                        placeholder="Enter patient name"
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <Label htmlFor="opdNumber" className="text-xs text-foreground font-medium">OPD Number</Label>
+                      <Input
+                        id="opdNumber"
+                        type="text"
+                        value={opdNumber}
+                        onChange={(e) => setOpdNumber(e.target.value)}
+                        placeholder="Enter OPD number"
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <Label htmlFor="hospitalNumber" className="text-xs text-foreground font-medium">Hospital Number</Label>
+                      <Input
+                        id="hospitalNumber"
+                        type="text"
+                        value={hospitalNumber}
+                        onChange={(e) => setHospitalNumber(e.target.value)}
+                        placeholder="Enter hospital number"
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <Label htmlFor="billNumber" className="text-xs text-foreground font-medium">Bill Number</Label>
+                      <Input
+                        id="billNumber"
+                        type="text"
+                        value={billNumber}
+                        onChange={(e) => setBillNumber(e.target.value)}
+                        placeholder="Enter bill number"
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <Label htmlFor="admissionDate" className="text-xs text-foreground font-medium">Admission Date</Label>
+                      <Button
+                        variant="outline"
+                        className="w-full h-8 text-left justify-start p-2"
+                        onClick={() => {
+                          setCupertinoDatePickerType('admission');
+                          setShowCupertinoDatePicker(true);
+                        }}
+                      >
+                        <Calendar className="mr-1 h-3 w-3" />
+                        <span className="text-xs">{admissionDate} at {admissionTime}</span>
+                      </Button>
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <Label htmlFor="dischargeDate" className="text-xs text-foreground font-medium">Discharge Date</Label>
+                      <Button
+                        variant="outline"
+                        className="w-full h-8 text-left justify-start p-2"
+                        onClick={() => {
+                          setCupertinoDatePickerType('discharge');
+                          setShowCupertinoDatePicker(true);
+                        }}
+                      >
+                        <Calendar className="mr-1 h-3 w-3" />
+                        <span className="text-xs">{dischargeDate} at {dischargeTime}</span>
+                      </Button>
+                    </div>
                   </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="opdNumber" className="text-foreground font-medium">OPD Number</Label>
-                    <Input
-                      id="opdNumber"
-                      type="text"
-                      value={opdNumber}
-                      onChange={(e) => setOpdNumber(e.target.value)}
-                      placeholder="Enter OPD number"
-                      className="w-full"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="hospitalNumber" className="text-foreground font-medium">Hospital Number</Label>
-                    <Input
-                      id="hospitalNumber"
-                      type="text"
-                      value={hospitalNumber}
-                      onChange={(e) => setHospitalNumber(e.target.value)}
-                      placeholder="Enter hospital number"
-                      className="w-full"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="billNumber" className="text-foreground font-medium">Bill Number</Label>
-                    <Input
-                      id="billNumber"
-                      type="text"
-                      value={billNumber}
-                      onChange={(e) => setBillNumber(e.target.value)}
-                      placeholder="Enter bill number"
-                      className="w-full"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="admissionDate" className="text-foreground font-medium">Admission Date</Label>
-                    <Button
-                      variant="outline"
-                      className="w-full p-4 h-auto text-left justify-start"
-                      onClick={() => {
-                        setCupertinoDatePickerType('admission');
-                        setShowCupertinoDatePicker(true);
-                      }}
-                    >
-                      <Calendar className="mr-2 h-4 w-4" />
-                      <div className="flex flex-col">
-                        <span className="font-medium">{admissionDate} at {admissionTime}</span>
-
-                      </div>
-                    </Button>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="dischargeDate" className="text-foreground font-medium">Discharge Date</Label>
-                    <Button
-                      variant="outline"
-                      className="w-full p-4 h-auto text-left justify-start"
-                      onClick={() => {
-                        setCupertinoDatePickerType('discharge');
-                        setShowCupertinoDatePicker(true);
-                      }}
-                    >
-                      <Calendar className="mr-2 h-4 w-4" />
-                      <div className="flex flex-col">
-                        <span className="font-medium">{dischargeDate} at {dischargeTime}</span>
-
-                      </div>
-                    </Button>
-                  </div>
-                </div>
-                
-                <div className="p-4 bg-medical-muted/10 rounded-lg border border-medical-muted/20">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Total Admitted Days:</span>
-                    <span className="text-lg font-semibold text-medical-primary">{daysAdmitted} days</span>
-                  </div>
-                </div>
-              </CardContent>
+                </CardContent>
+              )}
             </Card>
           </div>
 
