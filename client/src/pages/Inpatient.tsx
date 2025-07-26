@@ -71,7 +71,7 @@ const Inpatient = () => {
   const [selectedMedicineForDosage, setSelectedMedicineForDosage] = useState<any>(null);
   const [showMedicineDosageSelection, setShowMedicineDosageSelection] = useState(false);
   
-  // Discharge Medicine selection state (same as outpatient medicine)
+  // Discharge Medicine selection state (copied from outpatient medicine)
   const [tempSelectedDischargeMedicines, setTempSelectedDischargeMedicines] = useState<Array<MedicalItem & { tempId: string }>>([]);
   const [selectedDischargeMedicineItems, setSelectedDischargeMedicineItems] = useState<MedicalItem[]>([]);
   const [dischargeMedicineDropdownSelectedItems, setDischargeMedicineDropdownSelectedItems] = useState<MedicalItem[]>([]);
@@ -684,6 +684,139 @@ const Inpatient = () => {
     return selectedCategory === 'Discharge Medicine' ? categoryItems : [];
   };
 
+  // Discharge Medicine tag-based search functions (copied from outpatient)
+  const handleDischargeMedicineTagKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      addDischargeMedicineTagFromSearch();
+    }
+  };
+
+  const addDischargeMedicineTagFromSearch = () => {
+    if (!categorySearchQuery.trim()) return;
+    
+    const query = categorySearchQuery.toLowerCase();
+    const matchingItem = getDischargeMedicineSearchItems().find(item => 
+      item.name.toLowerCase().includes(query)
+    );
+    
+    if (matchingItem) {
+      const alreadySelected = selectedDischargeMedicineItems.find(selected => selected.id === matchingItem.id);
+      const alreadyInBill = billItems.find(billItem => billItem.id === matchingItem.id);
+      
+      if (!alreadySelected && !alreadyInBill) {
+        setSelectedDischargeMedicineItems(prev => [...prev, matchingItem]);
+      }
+    }
+    
+    setCategorySearchQuery('');
+    if (dischargeMedicineSearchInputRef.current) {
+      dischargeMedicineSearchInputRef.current.focus();
+    }
+  };
+
+  const removeDischargeMedicineTagItem = (itemId: number) => {
+    setSelectedDischargeMedicineItems(prev => prev.filter(item => item.id !== itemId));
+  };
+
+  const addDischargeMedicineTagItemsToBill = () => {
+    if (selectedDischargeMedicineItems.length === 0) return;
+
+    const billItemsToAdd = selectedDischargeMedicineItems.map(item => ({
+      ...item,
+      billId: `discharge-medicine-tag-${item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    }));
+
+    setBillItems(prevBillItems => [...prevBillItems, ...billItemsToAdd]);
+    setSelectedDischargeMedicineItems([]);
+  };
+
+  // Discharge Medicine dropdown functions (copied from outpatient)
+  const handleDischargeMedicineDropdownSelect = (itemId: string) => {
+    const item = getDischargeMedicineDropdownItems().find(item => item.id.toString() === itemId);
+    if (item) {
+      const alreadySelected = dischargeMedicineDropdownSelectedItems.find(selected => selected.id === item.id);
+      const alreadyInBill = billItems.find(billItem => billItem.id === item.id);
+      
+      if (!alreadySelected && !alreadyInBill) {
+        setDischargeMedicineDropdownSelectedItems(prev => [...prev, item]);
+      }
+    }
+    setDischargeMedicineDropdownFilterQuery('');
+    setDischargeMedicineHighlightedDropdownIndex(-1);
+  };
+
+  const removeDischargeMedicineDropdownItem = (itemId: number) => {
+    setDischargeMedicineDropdownSelectedItems(prev => prev.filter(item => item.id !== itemId));
+  };
+
+  const addDischargeMedicineDropdownSelectedItemsToBill = () => {
+    if (dischargeMedicineDropdownSelectedItems.length === 0) return;
+
+    const billItemsToAdd = dischargeMedicineDropdownSelectedItems.map(item => ({
+      ...item,
+      billId: `discharge-medicine-dropdown-${item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    }));
+
+    setBillItems(prevBillItems => [...prevBillItems, ...billItemsToAdd]);
+    setDischargeMedicineDropdownSelectedItems([]);
+    setIsDischargeMedicineDropdownOpen(false);
+    setDischargeMedicineDropdownFilterQuery('');
+    setDischargeMedicineHighlightedDropdownIndex(-1);
+  };
+
+  const getDischargeMedicineFilteredDropdownItems = () => {
+    if (!dischargeMedicineDropdownFilterQuery.trim()) return getDischargeMedicineDropdownItems();
+    
+    const query = dischargeMedicineDropdownFilterQuery.toLowerCase();
+    return getDischargeMedicineDropdownItems()
+      .filter(item => item.name.toLowerCase().includes(query))
+      .sort((a, b) => {
+        const aName = a.name.toLowerCase();
+        const bName = b.name.toLowerCase();
+        
+        if (aName === query) return -1;
+        if (bName === query) return 1;
+        
+        if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
+        if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
+        
+        return aName.localeCompare(bName);
+      });
+  };
+
+  const handleDischargeMedicineDropdownKeyDown = (e: React.KeyboardEvent) => {
+    if (!isDischargeMedicineDropdownOpen) return;
+    
+    const filteredItems = getDischargeMedicineFilteredDropdownItems();
+    
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setDischargeMedicineHighlightedDropdownIndex(prev => 
+        prev < filteredItems.length - 1 ? prev + 1 : 0
+      );
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setDischargeMedicineHighlightedDropdownIndex(prev => 
+        prev > 0 ? prev - 1 : filteredItems.length - 1
+      );
+    } else if (e.key === 'Enter' && dischargeMedicineHighlightedDropdownIndex >= 0) {
+      e.preventDefault();
+      const selectedItem = filteredItems[dischargeMedicineHighlightedDropdownIndex];
+      handleDischargeMedicineDropdownSelect(selectedItem.id.toString());
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setIsDischargeMedicineDropdownOpen(false);
+      setDischargeMedicineHighlightedDropdownIndex(-1);
+    } else if (e.key.length === 1) {
+      setDischargeMedicineDropdownFilterQuery(prev => prev + e.key);
+      setDischargeMedicineHighlightedDropdownIndex(0);
+    } else if (e.key === 'Backspace') {
+      setDischargeMedicineDropdownFilterQuery(prev => prev.slice(0, -1));
+      setDischargeMedicineHighlightedDropdownIndex(0);
+    }
+  };
+
   // Laboratory functions - identical to Outpatient
   const getSearchItems = () => {
     return categoryItems; // Use all items for search
@@ -1000,6 +1133,24 @@ const Inpatient = () => {
       }, 100);
     }
   }, [selectedCategory, isCarouselMode]);
+
+  // Click outside to close Discharge Medicine dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dischargeMedicineDropdownRef.current && !dischargeMedicineDropdownRef.current.contains(event.target as Node)) {
+        setIsDischargeMedicineDropdownOpen(false);
+        setDischargeMedicineHighlightedDropdownIndex(-1);
+      }
+    };
+    
+    if (isDischargeMedicineDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDischargeMedicineDropdownOpen]);
 
   // Click outside to close Laboratory dropdown
   useEffect(() => {
@@ -1697,65 +1848,319 @@ const Inpatient = () => {
                               </div>
                             ))}
                           </div>
-                          
-                          {/* Add to Bill Button */}
-                          <div className="flex justify-end pt-3 border-t border-medical-primary/10 mt-3">
-                            <Button 
+                          <div className="mt-4 pt-3 border-t border-medical-primary/20 flex justify-end">
+                            <Button
                               onClick={addAllDischargeMedicinesToBill}
-                              variant="outline" 
-                              className="text-sm border-medical-primary/20 text-medical-primary hover:bg-medical-primary/10"
+                              variant="medical"
+                              size="sm"
+                              className="text-xs font-medium shadow-md hover:shadow-lg transition-shadow px-3 py-1"
                             >
-                              Add {tempSelectedDischargeMedicines.length} Medicine{tempSelectedDischargeMedicines.length !== 1 ? 's' : ''} to Bill
+                              <Plus className="h-3 w-3 mr-1" />
+                              Add to Bill
                             </Button>
                           </div>
                         </div>
                       )}
 
-                      {/* Search Input */}
-                      <div className="space-y-2">
-                        <Input
-                          ref={dischargeMedicineSearchInputRef}
-                          placeholder="Search discharge medicines..."
-                          value={categorySearchQuery}
-                          onChange={(e) => setCategorySearchQuery(e.target.value)}
-                          className="w-full"
-                        />
-                      </div>
+                      {/* Medicine Dosage Selection Interface */}
+                      {showMedicineDosageSelection && selectedMedicineForDosage && selectedMedicineForDosage.category === 'Discharge Medicine' && (
+                        <div className="medicine-dosage-card mt-6 p-6">
+                          <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-lg font-semibold text-medical-primary flex items-center">
+                              <Calculator className="h-5 w-5 mr-2" />
+                              Set Dosage for: {selectedMedicineForDosage.name}
+                            </h3>
+                            <Button
+                              onClick={cancelMedicineDosageSelection}
+                              variant="medical-ghost"
+                              size="sm"
+                              className="text-muted-foreground hover:text-medical-primary"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
 
-                      {/* Medicine Results */}
-                      <div className="space-y-2 max-h-96 overflow-y-auto">
-                        {filteredCategoryItems.length > 0 ? (
-                          filteredCategoryItems.map((item: MedicalItem) => (
-                            <div key={item.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
-                              <div className="flex-1">
-                                <div className="font-medium text-foreground">{item.name}</div>
-                                {item.description && (
-                                  <div className="text-sm text-muted-foreground">{item.description}</div>
-                                )}
-                                <div className="text-xs text-medical-accent font-medium">Discharge Medicine (full bottles)</div>
+                          <div className="space-y-4">
+                            {/* First Line: Dose Prescribed, Med Type, Dose Frequency */}
+                            <div className="grid grid-cols-3 gap-4">
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium text-foreground">Dose Prescribed</label>
+                                <Input
+                                  ref={dischargeMedicineDoseInputRef}
+                                  placeholder="e.g., 500, 1, 2.5"
+                                  value={dosePrescribed}
+                                  onChange={(e) => setDosePrescribed(e.target.value)}
+                                  className="w-full"
+                                />
                               </div>
-                              <div className="flex items-center space-x-2">
-                                <span className="font-semibold text-medical-primary">
-                                  {format(item.price)}
-                                </span>
-                                <Button size="sm" onClick={() => handleMedicineItemSelect(item)} variant="medical">
+                              
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium text-foreground">Med Type</label>
+                                <Select value={medType} onValueChange={setMedType}>
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select type" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {medTypeOptions.map((type) => (
+                                      <SelectItem key={type} value={type}>
+                                        {type}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium text-foreground">Dose Frequency</label>
+                                <Select value={doseFrequency} onValueChange={setDoseFrequency}>
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select frequency" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {doseFrequencyOptions.map((freq) => (
+                                      <SelectItem key={freq.value} value={freq.value}>
+                                        {freq.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+
+                            {/* Second Line: Duration, Total Price, Add to Bill */}
+                            <div className="grid grid-cols-3 gap-4 items-end">
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium text-foreground">Duration (Days)</label>
+                                <Input
+                                  type="number"
+                                  placeholder="e.g., 7, 10"
+                                  value={totalDays}
+                                  onChange={(e) => setTotalDays(e.target.value)}
+                                  className="w-full"
+                                  min="1"
+                                />
+                              </div>
+
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium text-foreground">Total Price</label>
+                                <div className="h-10 p-2 bg-medical-primary/10 rounded-md border border-medical-primary/20 flex items-center justify-center">
+                                  <span className="text-lg font-semibold text-medical-primary">
+                                    {isDosageSelectionComplete() ? format(calculateInpatientMedicineDosage().totalPrice) : '---'}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium text-foreground invisible">Add Medicine</label>
+                                <Button
+                                  onClick={addDischargeMedicineToTempList}
+                                  disabled={!isDosageSelectionComplete()}
+                                  variant="medical"
+                                  className="w-full flex items-center justify-center space-x-2"
+                                >
                                   <Plus className="h-4 w-4" />
+                                  <span>Add</span>
                                 </Button>
                               </div>
                             </div>
-                          ))
-                        ) : (
-                          <div className="text-center text-muted-foreground py-8">
-                            {categorySearchQuery ? 'No discharge medicines found matching your search.' : 'No discharge medicines available.'}
+
+                            {/* Calculation Details (Optional) */}
+                            {isDosageSelectionComplete() && (
+                              <div className="medicine-dosage-card p-4 rounded-lg">
+                                <div className="text-sm font-medium text-medical-primary mb-3 flex items-center">
+                                  <Calculator className="h-4 w-4 mr-2" />
+                                  Calculation Preview - Discharge Medicine (Full Bottles)
+                                </div>
+                                <div className="grid grid-cols-2 gap-4 text-xs text-muted-foreground">
+                                  <div className="flex justify-between">
+                                    <span>Base price:</span>
+                                    <span className="font-medium text-medical-primary">{format(selectedMedicineForDosage.price)}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span>Frequency:</span>
+                                    <span className="font-medium">{doseFrequencyOptions.find(f => f.value === doseFrequency)?.label}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span>Duration:</span>
+                                    <span className="font-medium">{totalDays} days</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span>Total quantity:</span>
+                                    <span className="font-medium">{calculateInpatientMedicineDosage().totalQuantity} {calculateInpatientMedicineDosage().quantityUnit}</span>
+                                  </div>
+                                </div>
+                                <div className="mt-3 pt-3 border-t border-medical-primary/10">
+                                  <div className="text-xs text-muted-foreground">
+                                    <strong>Calculation:</strong> {calculateInpatientMedicineDosage().calculationDetails}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Medicine tag-based search input */}
+                      <div className="space-y-2">
+                        <Input
+                          ref={dischargeMedicineSearchInputRef}
+                          placeholder="Type discharge medicine names, press comma/enter to add as tags..."
+                          value={categorySearchQuery}
+                          onChange={(e) => setCategorySearchQuery(e.target.value)}
+                          onKeyDown={handleDischargeMedicineTagKeyPress}
+                          className="w-full"
+                        />
+
+                        {/* Selected items as tags */}
+                        {selectedDischargeMedicineItems.length > 0 && (
+                          <div className="space-y-2">
+                            <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md">
+                              {selectedDischargeMedicineItems.map((item) => (
+                                <div key={item.id} className="inline-flex items-center bg-green-500/10 text-green-600 px-2 py-1 rounded text-xs">
+                                  <span className="mr-1">{item.name}</span>
+                                  <button
+                                    onClick={() => removeDischargeMedicineTagItem(item.id)}
+                                    className="hover:bg-green-500/20 rounded-full p-0.5"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Price counter on left, Add to Bill button on right */}
+                            <div className="flex justify-between items-center">
+                              <div className="flex items-center gap-4 p-2 bg-green-500/5 rounded-md border border-green-500/20">
+                                <span className="text-sm font-medium text-green-600">
+                                  Total Price: {format(selectedDischargeMedicineItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {selectedDischargeMedicineItems.length} medicine{selectedDischargeMedicineItems.length !== 1 ? 's' : ''}
+                                </span>
+                              </div>
+                              <Button 
+                                onClick={addDischargeMedicineTagItemsToBill} 
+                                variant="outline"
+                                className="border-green-500/20 text-green-600 hover:bg-green-500/10"
+                              >
+                                Add {selectedDischargeMedicineItems.length} Medicine{selectedDischargeMedicineItems.length !== 1 ? 's' : ''} to Bill
+                              </Button>
+                            </div>
                           </div>
                         )}
                       </div>
 
+                      {/* Dropdown selected items as tags */}
+                      {dischargeMedicineDropdownSelectedItems.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md">
+                            {dischargeMedicineDropdownSelectedItems.map((item) => (
+                              <div key={item.id} className="inline-flex items-center bg-blue-500/10 text-blue-600 px-2 py-1 rounded text-xs">
+                                <span className="mr-1">{item.name}</span>
+                                <button
+                                  onClick={() => removeDischargeMedicineDropdownItem(item.id)}
+                                  className="hover:bg-blue-500/20 rounded-full p-0.5"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          {/* Price counter on left, Add to Bill button on right */}
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-4 p-2 bg-blue-500/5 rounded-md border border-blue-500/20">
+                              <span className="text-sm font-medium text-blue-600">
+                                Total Price: {format(dischargeMedicineDropdownSelectedItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {dischargeMedicineDropdownSelectedItems.length} medicine{dischargeMedicineDropdownSelectedItems.length !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+                            <Button 
+                              onClick={addDischargeMedicineDropdownSelectedItemsToBill} 
+                              variant="outline"
+                              className="border-blue-500/20 text-blue-600 hover:bg-blue-500/10"
+                            >
+                              Add {dischargeMedicineDropdownSelectedItems.length} Medicine{dischargeMedicineDropdownSelectedItems.length !== 1 ? 's' : ''} to Bill
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        <div ref={dischargeMedicineDropdownRef} className="relative">
+                          <button
+                            ref={dischargeMedicineDropdownButtonRef}
+                            onClick={() => setIsDischargeMedicineDropdownOpen(!isDischargeMedicineDropdownOpen)}
+                            onKeyDown={handleDischargeMedicineDropdownKeyDown}
+                            className="w-full flex items-center justify-between px-3 py-2 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-medical-primary/20 hover:bg-muted/50"
+                          >
+                            <span className="text-sm text-muted-foreground">
+                              {dischargeMedicineDropdownFilterQuery 
+                                ? `Filter: "${dischargeMedicineDropdownFilterQuery}" (${getDischargeMedicineFilteredDropdownItems().length} matches)`
+                                : 'Discharge Medicine Dropdown - Type to filter, arrows to navigate'
+                              }
+                            </span>
+                            <ChevronRight className={`h-4 w-4 transition-transform ${isDischargeMedicineDropdownOpen ? 'rotate-90' : ''}`} />
+                          </button>
+                          
+                          {isDischargeMedicineDropdownOpen && (
+                            <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                              {getDischargeMedicineFilteredDropdownItems().map((item: MedicalItem, index) => {
+                                const alreadyInDropdown = dischargeMedicineDropdownSelectedItems.find(selected => selected.id === item.id);
+                                const alreadyInBill = billItems.find(billItem => billItem.id === item.id);
+                                const isHighlighted = index === dischargeMedicineHighlightedDropdownIndex;
+                                
+                                return (
+                                <div
+                                  key={item.id}
+                                  className={`px-3 py-2 cursor-pointer flex items-center justify-between hover:bg-muted/40 ${
+                                    isHighlighted ? 'bg-medical-primary/10 border-l-2 border-medical-primary' : ''
+                                  } ${
+                                    alreadyInBill ? 'bg-red-50 text-red-600 cursor-not-allowed' : ''
+                                  } ${
+                                    alreadyInDropdown ? 'bg-green-50 text-green-600' : ''
+                                  }`}
+                                  onClick={() => {
+                                    if (!alreadyInDropdown && !alreadyInBill) {
+                                      handleDischargeMedicineDropdownSelect(item.id.toString());
+                                    }
+                                  }}
+                                >
+                                  <div className="flex-1">
+                                    <span className="text-sm font-medium">{item.name}</span>
+                                    {alreadyInBill && (
+                                      <span className="ml-2 text-red-600 text-xs">● Already in Bill</span>
+                                    )}
+                                    {alreadyInDropdown && !alreadyInBill && (
+                                      <span className="ml-2 text-green-600 text-xs">✓ Selected</span>
+                                    )}
+                                    {isHighlighted && (
+                                      <span className="ml-2 text-medical-primary text-xs">← Highlighted</span>
+                                    )}
+                                  </div>
+                                  <span className="text-medical-primary font-semibold">
+                                    {format(item.price)}
+                                  </span>
+                                </div>
+                                );
+                              })}
+                              {getDischargeMedicineFilteredDropdownItems().length === 0 && (
+                                <div className="px-3 py-2 text-sm text-muted-foreground">
+                                  No Discharge Medicine items available
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
                       <div className="text-sm text-muted-foreground">
-                        • Search: Select medicine to open dosage calculator<br/>
-                        • Set dose amount, medication type (Tablet, Mg, ml/cc, etc.)<br/>
-                        • Choose frequency: QD (daily), BID (twice), TID (3x), QID (4x), QOD, QWEEK<br/>
-                        • Enter total days to auto-calculate total quantity and cost<br/>
+                        • Type to search and press comma/enter to add as tags<br/>
+                        • Dropdown: Type letters to filter instantly, stays open for multiple selections<br/>
+                        • Arrow keys to navigate, Enter to select (filter resets after each selection)<br/>
+                        • Click "Add to Bill" or outside dropdown to close • Escape to close without adding<br/>
+                        • Both methods access same database but work independently<br/>
                         • Discharge medicines automatically calculate for full bottles only<br/>
                         • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
                       </div>
