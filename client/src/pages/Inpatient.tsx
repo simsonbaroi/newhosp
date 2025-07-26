@@ -1551,11 +1551,156 @@ const Inpatient = () => {
                   )}
                 </CardHeader>
                 <CardContent>
-                  {/* Show interface for Laboratory */}
+                  {/* Show Laboratory search + dropdown interface */}
                   {selectedCategory === 'Laboratory' ? (
                     <div className="space-y-4">
-                      {/* Separate Dropdown Selection */}
+                      {/* Selected items, price counter and Add to Bill button above search */}
+                      {selectedLabItems.length > 0 && (
+                        <div className="space-y-2">
+                          {/* Selected items tags */}
+                          <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md">
+                            {selectedLabItems.map((item) => (
+                              <div key={item.id} className="inline-flex items-center bg-medical-primary/10 text-medical-primary px-2 py-1 rounded text-xs">
+                                <span className="mr-1">{item.name}</span>
+                                <button
+                                  onClick={() => removeLabItem(item.id)}
+                                  className="hover:bg-medical-primary/20 rounded-full p-0.5"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Price counter on left, Add to Bill button on right */}
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-4 p-2 bg-medical-primary/5 rounded-md border border-medical-primary/20">
+                              <span className="text-sm font-medium text-medical-primary">
+                                Total Price: {format(selectedLabItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {selectedLabItems.length} item{selectedLabItems.length !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+                            <Button 
+                              onClick={addSelectedLabItemsToBill} 
+                              variant="outline"
+                              className="border-medical-primary/20 text-medical-primary hover:bg-medical-primary/10"
+                            >
+                              Add {selectedLabItems.length} Test{selectedLabItems.length !== 1 ? 's' : ''} to Bill
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="space-y-2">
+                        <Input
+                          ref={searchInputRef}
+                          placeholder="Type lab test name and press comma or enter to add..."
+                          value={categorySearchQuery}
+                          onChange={(e) => {
+                            setCategorySearchQuery(e.target.value);
+                            // Clear dropdown selections when switching to search
+                            if (e.target.value.trim()) {
+                              setDropdownSelectedItems([]);
+                            }
+                          }}
+                          onKeyDown={handleLabSearchKeyDown}
+                          className="w-full"
+                        />
+                        
+                        {/* Search suggestions appear right below search input */}
+                        {categorySearchQuery && getLabSuggestions().length > 0 && (
+                          <div className="space-y-1 max-h-40 overflow-y-auto border border-border rounded-md p-2 bg-muted/10">
+                            <div className="text-sm font-medium text-muted-foreground mb-2">
+                              Matching tests (press comma to add):
+                            </div>
+                            {getLabSuggestions().slice(0, 5).map((item: MedicalItem, index) => {
+                              const alreadyInSearch = selectedLabItems.find(selected => selected.id === item.id);
+                              const alreadyInBill = billItems.find(billItem => billItem.id === item.id);
+                              
+                              return (
+                              <div key={item.id} className={`text-xs p-2 rounded ${
+                                alreadyInBill 
+                                  ? 'bg-red-100 text-red-600 cursor-not-allowed border border-red-200'
+                                  : alreadyInSearch
+                                    ? 'bg-green-100 text-green-600 cursor-not-allowed border border-green-200'
+                                    : index === 0 
+                                      ? 'bg-medical-primary/10 border border-medical-primary/20 cursor-pointer hover:bg-muted/40' 
+                                      : 'bg-muted/20 cursor-pointer hover:bg-muted/40'
+                              }`}
+                                   onClick={() => {
+                                     // Check if item is already selected in search OR already in the bill
+                                     const alreadyInSearch = selectedLabItems.find(selected => selected.id === item.id);
+                                     const alreadyInBill = billItems.find(billItem => billItem.id === item.id);
+                                     
+                                     if (!alreadyInSearch && !alreadyInBill) {
+                                       setSelectedLabItems(prev => [...prev, item]);
+                                     }
+                                     setCategorySearchQuery('');
+                                     // Refocus search input after clicking suggestion
+                                     setTimeout(() => {
+                                       if (searchInputRef.current) {
+                                         searchInputRef.current.focus();
+                                       }
+                                     }, 0);
+                                   }}>
+                                <span className="font-medium">{item.name}</span> - {format(item.price)}
+                                {alreadyInBill && (
+                                  <span className="ml-2 text-red-600 text-xs">● Already in Bill</span>
+                                )}
+                                {alreadyInSearch && !alreadyInBill && (
+                                  <span className="ml-2 text-green-600 text-xs">✓ Selected</span>
+                                )}
+                                {index === 0 && !alreadyInBill && !alreadyInSearch && (
+                                  <span className="ml-2 text-medical-primary text-xs">← Will be added</span>
+                                )}
+                              </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Dropdown selected items as tags */}
+                      {dropdownSelectedItems.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md">
+                            {dropdownSelectedItems.map((item) => (
+                              <div key={item.id} className="inline-flex items-center bg-blue-500/10 text-blue-600 px-2 py-1 rounded text-xs">
+                                <span className="mr-1">{item.name}</span>
+                                <button
+                                  onClick={() => removeDropdownItem(item.id)}
+                                  className="hover:bg-blue-500/20 rounded-full p-0.5"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          {/* Price counter on left, Add to Bill button on right */}
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-4 p-2 bg-blue-500/5 rounded-md border border-blue-500/20">
+                              <span className="text-sm font-medium text-blue-600">
+                                Total Price: {format(dropdownSelectedItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {dropdownSelectedItems.length} item{dropdownSelectedItems.length !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+                            <Button 
+                              onClick={addDropdownSelectedItemsToBill} 
+                              variant="outline"
+                              className="border-blue-500/20 text-blue-600 hover:bg-blue-500/10"
+                            >
+                              Add {dropdownSelectedItems.length} Test{dropdownSelectedItems.length !== 1 ? 's' : ''} to Bill
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Separate Dropdown Selection */}
+                      <div className="space-y-2 border-t pt-4">
                         <div className="text-sm font-medium text-muted-foreground">
                           Alternative: Select from dropdown
                         </div>
@@ -1623,18 +1768,6 @@ const Inpatient = () => {
                               )}
                             </div>
                           )}
-                        </div>
-                      </div>
-
-                      <div className="text-center text-muted-foreground py-4">
-                        <div className="text-lg font-medium mb-2">Laboratory Quick Selection</div>
-                        <div className="text-sm">
-                          Type test names and press comma to add as tags, or use dropdown below
-                        </div>
-                        <div className="text-xs mt-2 opacity-75">
-                          {(selectedLabItems.length + dropdownSelectedItems.length) > 0 
-                            ? `${selectedLabItems.length + dropdownSelectedItems.length} test${(selectedLabItems.length + dropdownSelectedItems.length) !== 1 ? 's' : ''} selected` 
-                            : 'No tests selected yet'}
                         </div>
                       </div>
 
