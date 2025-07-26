@@ -476,31 +476,104 @@ export default function InpatientFixed() {
     setDropdownFilterQuery('');
   };
 
-  // Get dropdown items filtered by direct typing in dropdown
-  const getFilteredDropdownItems = () => {
-    if (!dropdownFilterQuery.trim()) return categoryItems;
+  // Handle keyboard navigation for dropdown
+  const handleDropdownKeyDown = (e: React.KeyboardEvent) => {
+    const orderedItems = getFilteredDropdownItems();
     
-    const query = dropdownFilterQuery.toLowerCase();
-    
-    // Filter and sort by relevance
-    return categoryItems
-      .filter(item => item.name.toLowerCase().includes(query))
-      .sort((a, b) => {
-        const aName = a.name.toLowerCase();
-        const bName = b.name.toLowerCase();
-        
-        // Exact match gets highest priority
-        if (aName === query) return -1;
-        if (bName === query) return 1;
-        
-        // Starts with gets second priority
-        if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
-        if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
-        
-        // Contains gets third priority - already filtered above
-        return aName.localeCompare(bName);
-      });
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedDropdownIndex(prev => 
+        prev < orderedItems.length - 1 ? prev + 1 : 0
+      );
+      if (!isDropdownOpen) setIsDropdownOpen(true);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedDropdownIndex(prev => 
+        prev > 0 ? prev - 1 : orderedItems.length - 1
+      );
+      if (!isDropdownOpen) setIsDropdownOpen(true);
+    } else if (e.key === 'Enter' && highlightedDropdownIndex >= 0) {
+      e.preventDefault();
+      const selectedItem = orderedItems[highlightedDropdownIndex];
+      if (selectedItem) {
+        handleDropdownSelect(selectedItem.id.toString());
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setIsDropdownOpen(false);
+      setHighlightedDropdownIndex(-1);
+      setDropdownFilterQuery('');
+    } else if (e.key.length === 1 && e.key.match(/[a-zA-Z0-9\s]/)) {
+      e.preventDefault();
+      const newQuery = dropdownFilterQuery + e.key.toLowerCase();
+      setDropdownFilterQuery(newQuery);
+      setHighlightedDropdownIndex(0);
+      if (!isDropdownOpen) setIsDropdownOpen(true);
+    } else if (e.key === 'Backspace') {
+      e.preventDefault();
+      setDropdownFilterQuery(prev => prev.slice(0, -1));
+      setHighlightedDropdownIndex(0);
+    }
   };
+
+  // Get filtered dropdown items
+  const getFilteredDropdownItems = () => {
+    if (!categoryItems) return [];
+    
+    const filtered = categoryItems.filter(item => 
+      !dropdownFilterQuery || 
+      item.name.toLowerCase().includes(dropdownFilterQuery.toLowerCase())
+    );
+    
+    if (!dropdownFilterQuery) return filtered.sort((a, b) => a.name.localeCompare(b.name));
+    
+    // Sort by relevance: exact matches first, then starts with, then contains
+    return filtered.sort((a, b) => {
+      const aName = a.name.toLowerCase();
+      const bName = b.name.toLowerCase();
+      const query = dropdownFilterQuery.toLowerCase();
+      
+      if (aName === query && bName !== query) return -1;
+      if (bName === query && aName !== query) return 1;
+      if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
+      if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
+      
+      return aName.localeCompare(bName);
+    });
+  };
+
+  // Handle click outside dropdown to close it
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+        setHighlightedDropdownIndex(-1);
+        setDropdownFilterQuery('');
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
+
+  // Ensure dropdown button stays focused for continuous keyboard input
+  useEffect(() => {
+    if (isDropdownOpen && dropdownButtonRef.current) {
+      dropdownButtonRef.current.focus();
+    }
+  }, [dropdownFilterQuery, dropdownSelectedItems.length]);
+
+  // Auto-focus search input when Laboratory category is selected
+  useEffect(() => {
+    if (selectedCategory === 'Laboratory' && isCarouselMode && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [selectedCategory, isCarouselMode]);
 
   // X-Ray specific functions (same as Laboratory)
   
@@ -963,65 +1036,6 @@ export default function InpatientFixed() {
                         </div>
                       )}
 
-                      {/* Selected dropdown items display */}
-                      {dropdownSelectedItems.length > 0 && (
-                        <div className="space-y-2">
-                          <div className="flex flex-wrap gap-2">
-                            {dropdownSelectedItems.map((item) => (
-                              <span
-                                key={item.id}
-                                className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800 border border-blue-200"
-                              >
-                                {item.name} - {format(parseFloat(item.price))}
-                                <button
-                                  onClick={() => removeDropdownItem(item.id)}
-                                  className="ml-1 text-blue-600 hover:text-blue-800"
-                                >
-                                  <X className="h-3 w-3" />
-                                </button>
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Price counters and Add buttons */}
-                      {(selectedLabItems.length > 0 || dropdownSelectedItems.length > 0) && (
-                        <div className="flex justify-between items-center">
-                          {selectedLabItems.length > 0 && (
-                            <div className="flex items-center space-x-3">
-                              <span className="text-sm font-medium">
-                                Total: {format(selectedLabItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
-                              </span>
-                              <Button
-                                size="sm"
-                                variant="medical-outline"
-                                onClick={addSelectedLabItemsToBill}
-                                className="h-8"
-                              >
-                                Add to Bill
-                              </Button>
-                            </div>
-                          )}
-                          {dropdownSelectedItems.length > 0 && (
-                            <div className="flex items-center space-x-3">
-                              <span className="text-sm font-medium">
-                                Total: {format(dropdownSelectedItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
-                              </span>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={addDropdownSelectedItemsToBill}
-                                className="h-8 border-blue-200 text-blue-700 hover:bg-blue-50"
-                              >
-                                Add to Bill
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Search input */}
                       <div className="space-y-2">
                         <Input
                           ref={searchInputRef}
@@ -1029,6 +1043,7 @@ export default function InpatientFixed() {
                           value={categorySearchQuery}
                           onChange={(e) => {
                             setCategorySearchQuery(e.target.value);
+                            // Clear dropdown selections when switching to search
                             if (e.target.value.trim()) {
                               setDropdownSelectedItems([]);
                             }
@@ -1090,94 +1105,122 @@ export default function InpatientFixed() {
                         )}
                       </div>
 
-                      {/* OR separator */}
-                      <div className="flex items-center space-x-4">
-                        <div className="flex-1 border-b border-muted"></div>
-                        <span className="text-sm text-muted-foreground">OR</span>
-                        <div className="flex-1 border-b border-muted"></div>
+                      {/* Dropdown selected items as tags */}
+                      {dropdownSelectedItems.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md">
+                            {dropdownSelectedItems.map((item) => (
+                              <div key={item.id} className="inline-flex items-center bg-blue-500/10 text-blue-600 px-2 py-1 rounded text-xs">
+                                <span className="mr-1">{item.name}</span>
+                                <button
+                                  onClick={() => removeDropdownItem(item.id)}
+                                  className="hover:bg-blue-500/20 rounded-full p-0.5"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          {/* Price counter on left, Add to Bill button on right */}
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-4 p-2 bg-blue-500/5 rounded-md border border-blue-500/20">
+                              <span className="text-sm font-medium text-blue-600">
+                                Total Price: {format(dropdownSelectedItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {dropdownSelectedItems.length} item{dropdownSelectedItems.length !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+                            <Button 
+                              onClick={addDropdownSelectedItemsToBill} 
+                              variant="outline"
+                              className="border-blue-500/20 text-blue-600 hover:bg-blue-500/10"
+                            >
+                              Add {dropdownSelectedItems.length} Test{dropdownSelectedItems.length !== 1 ? 's' : ''} to Bill
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Separate Dropdown Selection */}
+                      <div className="space-y-2 border-t pt-4">
+                        <div className="text-sm font-medium text-muted-foreground">
+                          Alternative: Select from dropdown
+                        </div>
+                        <div className="relative" ref={dropdownRef}>
+                          <button
+                            ref={dropdownButtonRef}
+                            type="button"
+                            onClick={() => {
+                              setIsDropdownOpen(!isDropdownOpen);
+                              setHighlightedDropdownIndex(-1);
+                            }}
+                            onKeyDown={handleDropdownKeyDown}
+                            className="w-full flex items-center justify-between px-3 py-2 border border-border rounded-md bg-background hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-medical-primary focus:ring-offset-2"
+                          >
+                            <span className="text-sm text-muted-foreground">
+                              {dropdownFilterQuery ? `Filtering: "${dropdownFilterQuery}" (${getFilteredDropdownItems().length} matches)` : 'Select lab test from dropdown... (Type to filter)'}
+                            </span>
+                            <ChevronRight className={`h-4 w-4 transition-transform ${isDropdownOpen ? 'rotate-90' : ''}`} />
+                          </button>
+                          
+                          {isDropdownOpen && (
+                            <div 
+                              className="absolute top-full left-0 right-0 z-50 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-y-auto"
+                            >
+                              {getFilteredDropdownItems().map((item: MedicalItem, index) => (
+                                <div
+                                  key={item.id}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    handleDropdownSelect(item.id.toString());
+                                  }}
+                                  className={`px-3 py-2 text-sm flex items-center justify-between ${
+                                    index === highlightedDropdownIndex 
+                                      ? 'bg-medical-primary/10 border-l-4 border-medical-primary' 
+                                      : ''
+                                  } ${
+                                    dropdownSelectedItems.find(selected => selected.id === item.id)
+                                      ? 'bg-blue-500/10 text-blue-600'
+                                      : billItems.find(billItem => billItem.id === item.id.toString())
+                                        ? 'bg-red-100 text-red-600 cursor-not-allowed'
+                                        : 'cursor-pointer hover:bg-muted/50'
+                                  }`}
+                                >
+                                  <div className="flex items-center">
+                                    <span>{item.name}</span>
+                                    {dropdownSelectedItems.find(selected => selected.id === item.id) && (
+                                      <span className="ml-2 text-blue-600 text-xs">✓ Selected</span>
+                                    )}
+                                    {billItems.find(billItem => billItem.id === item.id.toString()) && !dropdownSelectedItems.find(selected => selected.id === item.id) && (
+                                      <span className="ml-2 text-red-600 text-xs">● Already in Bill</span>
+                                    )}
+                                    {index === highlightedDropdownIndex && (
+                                      <span className="ml-2 text-medical-primary text-xs">← Highlighted</span>
+                                    )}
+                                  </div>
+                                  <span className="text-medical-primary font-semibold">
+                                    {format(item.price)}
+                                  </span>
+                                </div>
+                              ))}
+                              {getFilteredDropdownItems().length === 0 && (
+                                <div className="px-3 py-2 text-sm text-muted-foreground">
+                                  No lab tests available
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
 
-                      {/* Dropdown selection */}
-                      <div className="relative" ref={dropdownRef}>
-                        <Button
-                          ref={dropdownButtonRef}
-                          variant="outline"
-                          className="w-full justify-between"
-                          onClick={() => {
-                            setIsDropdownOpen(!isDropdownOpen);
-                            setSelectedLabItems([]);
-                            setCategorySearchQuery('');
-                          }}
-                        >
-                          <span>
-                            {dropdownFilterQuery 
-                              ? `Filter: "${dropdownFilterQuery}" (${categoryItems.filter(item => 
-                                  item.name.toLowerCase().includes(dropdownFilterQuery.toLowerCase())
-                                ).length} matches)`
-                              : 'Select from dropdown'
-                            }
-                          </span>
-                          <ChevronDown className="h-4 w-4" />
-                        </Button>
-                        
-                        {isDropdownOpen && (
-                          <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto bg-white border border-border rounded-md shadow-lg">
-                            {categoryItems
-                              .filter(item => 
-                                !dropdownFilterQuery || 
-                                item.name.toLowerCase().includes(dropdownFilterQuery.toLowerCase())
-                              )
-                              .sort((a, b) => {
-                                if (!dropdownFilterQuery) return a.name.localeCompare(b.name);
-                                
-                                const aName = a.name.toLowerCase();
-                                const bName = b.name.toLowerCase();
-                                const query = dropdownFilterQuery.toLowerCase();
-                                
-                                if (aName === query && bName !== query) return -1;
-                                if (bName === query && aName !== query) return 1;
-                                if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
-                                if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
-                                
-                                return aName.localeCompare(bName);
-                              })
-                              .map((item, index) => {
-                                const alreadySelected = dropdownSelectedItems.find(selected => selected.id === item.id);
-                                const alreadyInBill = billItems.find(billItem => billItem.id === item.id.toString());
-                                const isHighlighted = index === highlightedDropdownIndex;
-                                
-                                return (
-                                  <div
-                                    key={item.id}
-                                    className={`p-2 cursor-pointer hover:bg-gray-100 text-sm ${
-                                      isHighlighted ? 'bg-blue-100 border-l-4 border-blue-500' : ''
-                                    } ${
-                                      alreadyInBill ? 'bg-red-50 text-red-600' : ''
-                                    }`}
-                                    onClick={() => handleDropdownSelect(item.id.toString())}
-                                  >
-                                    <div className="flex justify-between items-center">
-                                      <div>
-                                        <div className="font-medium">{item.name}</div>
-                                        <div className="text-xs text-muted-foreground">{format(parseFloat(item.price))}</div>
-                                      </div>
-                                      <div className="flex items-center space-x-1">
-                                        {alreadySelected && (
-                                          <span className="text-xs text-blue-600 font-medium">✓ Selected</span>
-                                        )}
-                                        {alreadyInBill && (
-                                          <span className="text-xs text-red-600 font-medium">● Already in Bill</span>
-                                        )}
-                                        {isHighlighted && (
-                                          <span className="text-xs text-blue-600">← Highlighted</span>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                          </div>
-                        )}
+                      <div className="text-sm text-muted-foreground">
+                        • Type to search and press comma/enter to add as tags<br/>
+                        • Dropdown: Type letters to filter instantly, stays open for multiple selections<br/>
+                        • Arrow keys to navigate, Enter to select (filter resets after each selection)<br/>
+                        • Click "Add to Bill" or outside dropdown to close • Escape to close without adding<br/>
+                        • Both methods access same database but work independently<br/>
+                        • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
                       </div>
                     </div>
                   ) : selectedCategory === 'X-Ray' ? (
