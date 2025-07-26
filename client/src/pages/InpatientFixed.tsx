@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, Minus, Calculator, Grid3X3, Calendar, ChevronLeft, ChevronRight, X, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, Plus, Minus, Calculator, Grid3X3, Calendar, ChevronLeft, ChevronRight, X, AlertTriangle, ChevronDown, ChevronUp, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -70,6 +70,7 @@ export default function InpatientFixed() {
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState<number>(0);
   const [duplicateDialog, setDuplicateDialog] = useState<{open: boolean, item: MedicalItem | null}>({open: false, item: null});
   const [isPatientInfoExpanded, setIsPatientInfoExpanded] = useState<boolean>(true);
+  const [isBillFormHeaderExpanded, setIsBillFormHeaderExpanded] = useState<boolean>(false);
   
   // Cupertino Date picker modal state
   const [showCupertinoDatePicker, setShowCupertinoDatePicker] = useState(false);
@@ -548,52 +549,71 @@ export default function InpatientFixed() {
 
             {/* Hospital Bill Form */}
             <Card className="glass-card">
-              <CardHeader className="text-center pb-4">
-                <div className="space-y-1">
-                  <h2 className="text-xl font-bold text-foreground">Memorial Christian Hospital</h2>
-                  <p className="text-base font-semibold text-muted-foreground">P.O. Malumghat Hospital</p>
-                  <p className="text-sm text-muted-foreground">District Cox's Bazar</p>
-                </div>
+              <CardHeader className="pb-2">
+                <CardTitle 
+                  className="flex items-center justify-between text-medical-primary cursor-pointer"
+                  onClick={() => setIsBillFormHeaderExpanded(!isBillFormHeaderExpanded)}
+                >
+                  <div className="flex items-center">
+                    <FileText className="mr-2 h-5 w-5" />
+                    Hospital Bill Form
+                  </div>
+                  <div className="flex items-center">
+                    {isBillFormHeaderExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </div>
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Patient Information Row */}
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="flex">
-                    <span className="font-medium">Patient's Name:</span>
-                    <div className="flex-1 border-b border-dotted border-muted-foreground/50 ml-1"></div>
+              {isBillFormHeaderExpanded && (
+                <CardContent className="space-y-4 pt-0">
+                  {/* Hospital Header */}
+                  <div className="text-center space-y-1 border-b border-border pb-4">
+                    <h2 className="text-xl font-bold text-foreground">Memorial Christian Hospital</h2>
+                    <p className="text-base font-semibold text-muted-foreground">P.O. Malumghat Hospital</p>
+                    <p className="text-sm text-muted-foreground">District Cox's Bazar</p>
                   </div>
-                  <div className="flex">
-                    <span className="font-medium">O.D. No:</span>
-                    <div className="flex-1 border-b border-dotted border-muted-foreground/50 ml-1"></div>
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="flex">
-                    <span className="font-medium">Hospital No:</span>
-                    <div className="flex-1 border-b border-dotted border-muted-foreground/50 ml-1"></div>
+                  {/* Patient Information Row */}
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="flex">
+                      <span className="font-medium">Patient's Name:</span>
+                      <div className="flex-1 border-b border-dotted border-muted-foreground/50 ml-1"></div>
+                    </div>
+                    <div className="flex">
+                      <span className="font-medium">O.D. No:</span>
+                      <div className="flex-1 border-b border-dotted border-muted-foreground/50 ml-1"></div>
+                    </div>
                   </div>
-                  <div className="flex">
-                    <span className="font-medium">Bill Date:</span>
-                    <div className="flex-1 border-b border-dotted border-muted-foreground/50 ml-1"></div>
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="flex">
-                    <span className="font-medium">Bill No:</span>
-                    <div className="flex-1 border-b border-dotted border-muted-foreground/50 ml-1"></div>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="flex">
+                      <span className="font-medium">Hospital No:</span>
+                      <div className="flex-1 border-b border-dotted border-muted-foreground/50 ml-1"></div>
+                    </div>
+                    <div className="flex">
+                      <span className="font-medium">Bill Date:</span>
+                      <div className="flex-1 border-b border-dotted border-muted-foreground/50 ml-1"></div>
+                    </div>
                   </div>
-                  <div className="flex">
-                    <span className="font-medium">Date Discharged:</span>
-                    <div className="flex-1 border-b border-dotted border-muted-foreground/50 ml-1"></div>
-                  </div>
-                </div>
 
-                <div className="flex text-sm">
-                  <span className="font-medium">Date Admitted:</span>
-                  <div className="flex-1 border-b border-dotted border-muted-foreground/50 ml-1"></div>
-                </div>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="flex">
+                      <span className="font-medium">Bill No:</span>
+                      <div className="flex-1 border-b border-dotted border-muted-foreground/50 ml-1"></div>
+                    </div>
+                    <div className="flex">
+                      <span className="font-medium">Date Discharged:</span>
+                      <div className="flex-1 border-b border-dotted border-muted-foreground/50 ml-1"></div>
+                    </div>
+                  </div>
+
+                  <div className="flex text-sm">
+                    <span className="font-medium">Date Admitted:</span>
+                    <div className="flex-1 border-b border-dotted border-muted-foreground/50 ml-1"></div>
+                  </div>
+                </CardContent>
+              )}
+              
+              <CardContent className={`${isBillFormHeaderExpanded ? 'pt-0' : ''}`}>
 
                 {/* Bill Categories Table */}
                 <div className="border border-border rounded-lg overflow-hidden">
