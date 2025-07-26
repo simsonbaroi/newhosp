@@ -1,0 +1,1094 @@
+```jsx
+// src/App.js
+import React, { useState } from 'react';
+import LoginPage from './components/LoginPage';
+import AdminPanel from './components/AdminPanel';
+import './App.css';
+
+function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentPage, setCurrentPage] = useState('dashboard');
+  
+  const handleLogin = () => {
+    setIsLoggedIn(true);
+  };
+  
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+  };
+
+  if (!isLoggedIn) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
+
+  return (
+    <AdminPanel 
+      onLogout={handleLogout} 
+      currentPage={currentPage} 
+      setCurrentPage={setCurrentPage} 
+    />
+  );
+}
+
+export default App;
+```
+
+```jsx
+// src/components/LoginPage.jsx
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+
+const LoginPage = ({ onLogin }) => {
+  const [credentials, setCredentials] = useState({
+    email: '',
+    password: ''
+  });
+  const [rememberMe, setRememberMe] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setCredentials(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    // Basic validation
+    if (!credentials.email || !credentials.password) {
+      setError('Please fill in all fields');
+      return;
+    }
+    
+    // Simple email validation
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(credentials.email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+    
+    // Mock login - in a real app, this would call an API
+    onLogin();
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-blue-100 p-4">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden"
+      >
+        <div className="bg-gradient-to-r from-indigo-600 to-purple-700 p-8 text-white text-center">
+          <h1 className="text-3xl font-bold mb-2">Admin Portal</h1>
+          <p className="opacity-80">Sign in to your account</p>
+        </div>
+        
+        <div className="p-8">
+          {error && (
+            <div className="mb-6 p-3 bg-red-50 text-red-700 rounded-lg border border-red-200">
+              {error}
+            </div>
+          )}
+          
+          <form onSubmit={handleSubmit}>
+            <div className="mb-6">
+              <label htmlFor="email" className="block text-gray-700 mb-2">Email Address</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                  </svg>
+                </div>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={credentials.email}
+                  onChange={handleChange}
+                  className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  placeholder="you@example.com"
+                />
+              </div>
+            </div>
+            
+            <div className="mb-6">
+              <label htmlFor="password" className="block text-gray-700 mb-2">Password</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  value={credentials.password}
+                  onChange={handleChange}
+                  className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  placeholder="••••••••"
+                />
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center">
+                <input
+                  id="remember-me"
+                  name="remember-me"
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={() => setRememberMe(!rememberMe)}
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                />
+                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
+                  Remember me
+                </label>
+              </div>
+              
+              <div className="text-sm">
+                <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500">
+                  Forgot your password?
+                </a>
+              </div>
+            </div>
+            
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              type="submit"
+              className="w-full bg-gradient-to-r from-indigo-600 to-purple-700 text-white py-3 px-4 rounded-lg font-medium hover:opacity-90 transition-opacity shadow-md"
+            >
+              Sign in
+            </motion.button>
+          </form>
+          
+          <div className="mt-8 text-center">
+            <p className="text-gray-600">
+              Don't have an account?{' '}
+              <a href="#" className="text-indigo-600 font-medium hover:text-indigo-500">
+                Request access
+              </a>
+            </p>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
+export default LoginPage;
+```
+
+```jsx
+// src/components/AdminPanel.jsx
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import Dashboard from './Dashboard';
+import UserManagement from './UserManagement';
+import PageLocking from './PageLocking';
+import Settings from './Settings';
+
+const AdminPanel = ({ onLogout, currentPage, setCurrentPage }) => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  const renderPage = () => {
+    switch(currentPage) {
+      case 'dashboard': return <Dashboard />;
+      case 'users': return <UserManagement />;
+      case 'locking': return <PageLocking />;
+      case 'settings': return <Settings />;
+      default: return <Dashboard />;
+    }
+  };
+
+  return (
+    <div className="flex h-screen bg-gray-50">
+      {/* Sidebar */}
+      <motion.div 
+        initial={{ x: -300 }}
+        animate={{ x: sidebarOpen ? 0 : -300 }}
+        className={`fixed md:relative z-30 md:z-auto inset-y-0 left-0 w-64 bg-gradient-to-b from-indigo-700 to-purple-800 text-white transform transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}
+      >
+        <div className="p-5 border-b border-indigo-600">
+          <h1 className="text-2xl font-bold flex items-center">
+            <svg className="w-8 h-8 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+            Admin Panel
+          </h1>
+        </div>
+        
+        <nav className="mt-6">
+          <NavItem 
+            icon="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" 
+            text="Dashboard" 
+            active={currentPage === 'dashboard'} 
+            onClick={() => setCurrentPage('dashboard')}
+          />
+          <NavItem 
+            icon="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" 
+            text="User Management" 
+            active={currentPage === 'users'} 
+            onClick={() => setCurrentPage('users')}
+          />
+          <NavItem 
+            icon="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" 
+            text="Page Locking" 
+            active={currentPage === 'locking'} 
+            onClick={() => setCurrentPage('locking')}
+          />
+          <NavItem 
+            icon="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" 
+            text="Settings" 
+            active={currentPage === 'settings'} 
+            onClick={() => setCurrentPage('settings')}
+          />
+        </nav>
+        
+        <div className="absolute bottom-0 w-full p-4">
+          <button 
+            onClick={onLogout}
+            className="w-full flex items-center justify-center py-2 px-4 bg-white text-indigo-700 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+            </svg>
+            Sign Out
+          </button>
+        </div>
+      </motion.div>
+      
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <header className="flex items-center justify-between bg-white shadow-sm p-4">
+          <div className="flex items-center">
+            <button 
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="md:hidden text-gray-600 mr-4 focus:outline-none"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path>
+              </svg>
+            </button>
+            <h2 className="text-xl font-semibold text-gray-800 capitalize">
+              {currentPage === 'dashboard' && 'Dashboard'}
+              {currentPage === 'users' && 'User Management'}
+              {currentPage === 'locking' && 'Page Locking'}
+              {currentPage === 'settings' && 'Settings'}
+            </h2>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            <button className="relative p-1 text-gray-600 hover:text-gray-800">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+              </svg>
+              <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+            </button>
+            
+            <div className="relative">
+              <button className="flex items-center space-x-2 focus:outline-none">
+                <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white font-semibold">
+                  A
+                </div>
+                <span className="hidden md:inline text-gray-700">Admin User</span>
+              </button>
+            </div>
+          </div>
+        </header>
+        
+        {/* Content */}
+        <main className="flex-1 overflow-y-auto p-6 bg-gray-50">
+          {renderPage()}
+        </main>
+      </div>
+    </div>
+  );
+};
+
+const NavItem = ({ icon, text, active, onClick }) => (
+  <motion.button
+    whileHover={{ scale: 1.02 }}
+    className={`flex items-center w-full px-6 py-3 mt-1 text-left ${active ? 'bg-indigo-600' : 'hover:bg-indigo-600/50'}`}
+    onClick={onClick}
+  >
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={icon}></path>
+    </svg>
+    <span className="mx-4">{text}</span>
+  </motion.button>
+);
+
+export default AdminPanel;
+```
+
+```jsx
+// src/components/Dashboard.jsx
+import React from 'react';
+import { motion } from 'framer-motion';
+
+const Dashboard = () => {
+  const stats = [
+    { name: 'Total Users', value: '124', change: '+12%', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z' },
+    { name: 'Locked Pages', value: '8', change: '-2', icon: 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z' },
+    { name: 'Active Sessions', value: '42', change: '+5%', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
+    { name: 'System Health', value: '98%', change: 'Good', icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z' },
+  ];
+
+  const recentActivity = [
+    { user: 'John Doe', action: 'Updated settings', time: '5 min ago' },
+    { user: 'Sarah Smith', action: 'Locked the About page', time: '1 hour ago' },
+    { user: 'Admin', action: 'Added new user', time: '2 hours ago' },
+    { user: 'Mike Johnson', action: 'Unlocked the Contact page', time: '3 hours ago' },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {stats.map((stat, index) => (
+          <motion.div 
+            key={index}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+            className="bg-white rounded-xl shadow-sm p-6 border border-gray-100"
+          >
+            <div className="flex justify-between">
+              <div>
+                <p className="text-gray-500 text-sm">{stat.name}</p>
+                <p className="text-3xl font-bold mt-1">{stat.value}</p>
+                <p className={`mt-1 text-sm ${stat.change.includes('+') ? 'text-green-500' : stat.change.includes('-') ? 'text-red-500' : 'text-blue-500'}`}>
+                  {stat.change}
+                </p>
+              </div>
+              <div className="bg-indigo-100 rounded-lg p-3">
+                <svg className="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={stat.icon}></path>
+                </svg>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="bg-white rounded-xl shadow-sm p-6 border border-gray-100"
+        >
+          <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
+          <div className="space-y-4">
+            {recentActivity.map((activity, index) => (
+              <div key={index} className="flex items-start pb-4 border-b border-gray-100 last:border-0 last:pb-0">
+                <div className="bg-indigo-100 p-2 rounded-lg">
+                  <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <p className="font-medium">{activity.user}</p>
+                  <p className="text-gray-600 text-sm">{activity.action}</p>
+                </div>
+                <div className="ml-auto text-gray-500 text-sm">{activity.time}</div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="bg-white rounded-xl shadow-sm p-6 border border-gray-100"
+        >
+          <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <button className="flex flex-col items-center justify-center p-4 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors">
+              <div className="bg-indigo-100 p-3 rounded-full mb-2">
+                <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+              </div>
+              <span className="font-medium">Add User</span>
+            </button>
+            
+            <button className="flex flex-col items-center justify-center p-4 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors">
+              <div className="bg-indigo-100 p-3 rounded-full mb-2">
+                <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+              </div>
+              <span className="font-medium">Lock Page</span>
+            </button>
+            
+            <button className="flex flex-col items-center justify-center p-4 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors">
+              <div className="bg-indigo-100 p-3 rounded-full mb-2">
+                <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                </svg>
+              </div>
+              <span className="font-medium">Check Logs</span>
+            </button>
+            
+            <button className="flex flex-col items-center justify-center p-4 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors">
+              <div className="bg-indigo-100 p-3 rounded-full mb-2">
+                <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+              </div>
+              <span className="font-medium">Settings</span>
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  );
+};
+
+export default Dashboard;
+```
+
+```jsx
+// src/components/UserManagement.jsx
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+
+const UserManagement = () => {
+  const [users, setUsers] = useState([
+    { id: 1, name: 'John Doe', email: 'john@example.com', role: 'Admin', lastLogin: 'Today, 08:45', status: 'Active' },
+    { id: 2, name: 'Sarah Smith', email: 'sarah@example.com', role: 'Editor', lastLogin: 'Yesterday, 14:32', status: 'Active' },
+    { id: 3, name: 'Mike Johnson', email: 'mike@example.com', role: 'Editor', lastLogin: '2 days ago', status: 'Suspended' },
+    { id: 4, name: 'Emily Brown', email: 'emily@example.com', role: 'Viewer', lastLogin: '3 days ago', status: 'Active' },
+    { id: 5, name: 'Alex Turner', email: 'alex@example.com', role: 'Editor', lastLogin: '1 week ago', status: 'Active' },
+  ]);
+
+  const [newUser, setNewUser] = useState({
+    name: '',
+    email: '',
+    role: 'Editor',
+    status: 'Active'
+  });
+
+  const [showAddForm, setShowAddForm] = useState(false);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewUser(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleAddUser = () => {
+    if (!newUser.name || !newUser.email) return;
+    
+    const user = {
+      id: users.length + 1,
+      ...newUser,
+      lastLogin: 'Never'
+    };
+    
+    setUsers([...users, user]);
+    setNewUser({ name: '', email: '', role: 'Editor', status: 'Active' });
+    setShowAddForm(false);
+  };
+
+  const toggleUserStatus = (id) => {
+    setUsers(users.map(user => 
+      user.id === id 
+        ? { 
+            ...user, 
+            status: user.status === 'Active' ? 'Suspended' : 'Active' 
+          } 
+        : user
+    ));
+  };
+
+  return (
+    <div className="space-y-6">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white rounded-xl shadow-sm p-6 border border-gray-100"
+      >
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-semibold">User Management</h2>
+          <button 
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="flex items-center bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+            Add User
+          </button>
+        </div>
+
+        {showAddForm && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            className="mb-6 p-4 bg-indigo-50 rounded-lg"
+          >
+            <h3 className="font-medium mb-3">Add New User</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={newUser.name}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="John Doe"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={newUser.email}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="john@example.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <select
+                  name="role"
+                  value={newUser.role}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="Admin">Admin</option>
+                  <option value="Editor">Editor</option>
+                  <option value="Viewer">Viewer</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select
+                  name="status"
+                  value={newUser.status}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="Active">Active</option>
+                  <option value="Suspended">Suspended</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex justify-end mt-4 space-x-3">
+              <button 
+                onClick={() => setShowAddForm(false)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleAddUser}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+              >
+                Add User
+              </button>
+            </div>
+          </motion.div>
+        )}
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  User
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Role
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Last Login
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {users.map((user) => (
+                <tr key={user.id}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div className="bg-indigo-100 rounded-full w-8 h-8 flex items-center justify-center text-indigo-700 font-medium mr-3">
+                        {user.name.charAt(0)}
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-900">{user.name}</div>
+                        <div className="text-sm text-gray-500">{user.email}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                      ${user.role === 'Admin' ? 'bg-purple-100 text-purple-800' : 
+                         user.role === 'Editor' ? 'bg-blue-100 text-blue-800' : 
+                         'bg-green-100 text-green-800'}`}>
+                      {user.role}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {user.lastLogin}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                      ${user.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      {user.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button 
+                      onClick={() => toggleUserStatus(user.id)}
+                      className={`mr-3 ${user.status === 'Active' ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'}`}
+                    >
+                      {user.status === 'Active' ? 'Suspend' : 'Activate'}
+                    </button>
+                    <button className="text-indigo-600 hover:text-indigo-900">Edit</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
+export default UserManagement;
+```
+
+```jsx
+// src/components/PageLocking.jsx
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+
+const PageLocking = () => {
+  const [pages, setPages] = useState([
+    { id: 1, title: 'Home Page', url: '/', lastEdited: '2 hours ago', locked: false },
+    { id: 2, title: 'About Us', url: '/about', lastEdited: 'Yesterday', locked: true },
+    { id: 3, title: 'Services', url: '/services', lastEdited: 'Today, 09:15', locked: false },
+    { id: 4, title: 'Contact', url: '/contact', lastEdited: '3 days ago', locked: true },
+    { id: 5, title: 'Blog', url: '/blog', lastEdited: '1 week ago', locked: false },
+    { id: 6, title: 'Pricing', url: '/pricing', lastEdited: '4 days ago', locked: false },
+  ]);
+
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const toggleLock = (id) => {
+    setPages(pages.map(page => 
+      page.id === id ? { ...page, locked: !page.locked } : page
+    ));
+  };
+
+  const filteredPages = pages.filter(page => 
+    page.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    page.url.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <div className="space-y-6">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white rounded-xl shadow-sm p-6 border border-gray-100"
+      >
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-semibold">Page Locking</h2>
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search pages..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 w-64"
+            />
+            <div className="absolute left-3 top-2.5 text-gray-400">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Page
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  URL
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Last Edited
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredPages.map((page) => (
+                <tr key={page.id}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="font-medium text-gray-900">{page.title}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {page.url}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {page.lastEdited}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                      ${page.locked ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+                      {page.locked ? 'Locked' : 'Unlocked'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button 
+                      onClick={() => toggleLock(page.id)}
+                      className={`mr-3 ${page.locked ? 'text-green-600 hover:text-green-900' : 'text-red-600 hover:text-red-900'}`}
+                    >
+                      {page.locked ? 'Unlock' : 'Lock'}
+                    </button>
+                    <button 
+                      className={`text-indigo-600 hover:text-indigo-900 ${page.locked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      disabled={page.locked}
+                    >
+                      Edit
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </motion.div>
+
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="bg-white rounded-xl shadow-sm p-6 border border-gray-100"
+      >
+        <h3 className="text-lg font-semibold mb-4">Locking Rules</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="p-4 bg-blue-50 rounded-lg">
+            <h4 className="font-medium text-blue-800 mb-2">Locking a Page</h4>
+            <p className="text-sm text-blue-700">
+              When a page is locked, it cannot be edited by anyone except administrators. 
+              Use this feature to prevent changes during important updates or to freeze content.
+            </p>
+          </div>
+          <div className="p-4 bg-green-50 rounded-lg">
+            <h4 className="font-medium text-green-800 mb-2">Unlocking a Page</h4>
+            <p className="text-sm text-green-700">
+              Unlocked pages can be edited by authorized users. Remember to lock pages again 
+              after editing is complete to prevent unintended changes.
+            </p>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
+export default PageLocking;
+```
+
+```jsx
+// src/components/Settings.jsx
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+
+const Settings = () => {
+  const [settings, setSettings] = useState({
+    siteName: 'Admin Portal',
+    siteUrl: 'https://admin-portal.example.com',
+    timezone: 'America/New_York',
+    dateFormat: 'MM/DD/YYYY',
+    enableNotifications: true,
+    twoFactorAuth: false,
+    autoLock: true,
+    lockTimeout: 15
+  });
+
+  const [password, setPassword] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+
+  const handleSettingChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setSettings(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const handlePasswordChange = (e) => {
+    const { name, value } = e.target;
+    setPassword(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handlePasswordSubmit = (e) => {
+    e.preventDefault();
+    // Password change logic would go here
+    alert('Password change request submitted!');
+    setPassword({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  };
+
+  return (
+    <div className="space-y-6">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white rounded-xl shadow-sm p-6 border border-gray-100"
+      >
+        <h2 className="text-xl font-semibold mb-6">General Settings</h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Site Name</label>
+            <input
+              type="text"
+              name="siteName"
+              value={settings.siteName}
+              onChange={handleSettingChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Site URL</label>
+            <input
+              type="text"
+              name="siteUrl"
+              value={settings.siteUrl}
+              onChange={handleSettingChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
+            <select
+              name="timezone"
+              value={settings.timezone}
+              onChange={handleSettingChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="America/New_York">Eastern Time (America/New_York)</option>
+              <option value="America/Chicago">Central Time (America/Chicago)</option>
+              <option value="America/Denver">Mountain Time (America/Denver)</option>
+              <option value="America/Los_Angeles">Pacific Time (America/Los_Angeles)</option>
+              <option value="UTC">UTC</option>
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Date Format</label>
+            <select
+              name="dateFormat"
+              value={settings.dateFormat}
+              onChange={handleSettingChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+              <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+              <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+            </select>
+          </div>
+          
+          <div className="md:col-span-2">
+            <div className="flex items-center">
+              <input
+                id="enableNotifications"
+                name="enableNotifications"
+                type="checkbox"
+                checked={settings.enableNotifications}
+                onChange={handleSettingChange}
+                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+              />
+              <label htmlFor="enableNotifications" className="ml-2 block text-sm text-gray-700">
+                Enable Email Notifications
+              </label>
+            </div>
+            
+            <div className="flex items-center mt-3">
+              <input
+                id="twoFactorAuth"
+                name="twoFactorAuth"
+                type="checkbox"
+                checked={settings.twoFactorAuth}
+                onChange={handleSettingChange}
+                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+              />
+              <label htmlFor="twoFactorAuth" className="ml-2 block text-sm text-gray-700">
+                Enable Two-Factor Authentication
+              </label>
+            </div>
+            
+            <div className="flex items-center mt-3">
+              <input
+                id="autoLock"
+                name="autoLock"
+                type="checkbox"
+                checked={settings.autoLock}
+                onChange={handleSettingChange}
+                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+              />
+              <label htmlFor="autoLock" className="ml-2 block text-sm text-gray-700">
+                Auto-Lock Inactive Sessions
+              </label>
+            </div>
+            
+            {settings.autoLock && (
+              <div className="mt-3 ml-6">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Lock After (minutes)</label>
+                <input
+                  type="number"
+                  name="lockTimeout"
+                  value={settings.lockTimeout}
+                  onChange={handleSettingChange}
+                  min="1"
+                  max="120"
+                  className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+        
+        <div className="mt-6 flex justify-end">
+          <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+            Save Settings
+          </button>
+        </div>
+      </motion.div>
+      
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="bg-white rounded-xl shadow-sm p-6 border border-gray-100"
+      >
+        <h2 className="text-xl font-semibold mb-6">Change Password</h2>
+        
+        <form onSubmit={handlePasswordSubmit}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+              <input
+                type="password"
+                name="currentPassword"
+                value={password.currentPassword}
+                onChange={handlePasswordChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+              <input
+                type="password"
+                name="newPassword"
+                value={password.newPassword}
+                onChange={handlePasswordChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+              <input
+                type="password"
+                name="confirmPassword"
+                value={password.confirmPassword}
+                onChange={handlePasswordChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+          </div>
+          
+          <div className="mt-6 flex justify-end">
+            <button 
+              type="submit"
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+            >
+              Change Password
+            </button>
+          </div>
+        </form>
+      </motion.div>
+    </div>
+  );
+};
+
+export default Settings;
+```
+
+## Key Features
+
+1. **Modern Login Page:**
+   - Clean, gradient background with card-based layout
+   - Form validation and error handling
+   - Responsive design for all devices
+   - "Remember me" and "Forgot password" options
+
+2. **Admin Panel:**
+   - Responsive sidebar navigation with collapsible mobile menu
+   - Four main sections: Dashboard, User Management, Page Locking, Settings
+   - Modern UI with cards, tables, and forms
+   - Smooth animations and transitions
+
+3. **Dashboard:**
+   - Key metrics with visual indicators
+   - Recent activity feed
+   - Quick action buttons
+
+4. **User Management:**
+   - Add/edit/suspend users
+   - User role assignment (Admin, Editor, Viewer)
+   - Table view with sorting capabilities
+
+5. **Page Locking:**
+   - Lock/unlock pages to prevent editing
+   - Search functionality to find pages
+   - Status indicators for locked/unlocked state
+   - Locking rules and documentation
+
+6. **Settings:**
+   - General site settings
+   - Security options (2FA, auto-lock)
+   - Password change form
