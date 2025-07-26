@@ -223,6 +223,12 @@ export class MemoryStorage implements IStorage {
       { category: 'Halo, O2, NO2, etc.', name: 'Nitrous Oxide', price: '600.00', currency: 'BDT', isOutpatient: false },
       { category: 'Halo, O2, NO2, etc.', name: 'Halo Traction', price: '1200.00', currency: 'BDT', isOutpatient: false },
       
+      { category: 'Orthopedic, S.Roll, etc.', name: 'Orthopedic Consultation', price: '800.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Orthopedic, S.Roll, etc.', name: 'Spinal Roll Support', price: '1500.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Orthopedic, S.Roll, etc.', name: 'Orthopedic Brace', price: '2200.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Orthopedic, S.Roll, etc.', name: 'Spine Support System', price: '3500.00', currency: 'BDT', isOutpatient: false },
+      { category: 'Orthopedic, S.Roll, etc.', name: 'Orthopedic Device Setup', price: '1800.00', currency: 'BDT', isOutpatient: false },
+      
       { category: 'Surgery, O.R. & Delivery', name: 'Minor Surgery', price: '15000.00', currency: 'BDT', isOutpatient: false },
       { category: 'Surgery, O.R. & Delivery', name: 'Major Surgery', price: '35000.00', currency: 'BDT', isOutpatient: false },
       { category: 'Surgery, O.R. & Delivery', name: 'Normal Delivery', price: '8000.00', currency: 'BDT', isOutpatient: false },
