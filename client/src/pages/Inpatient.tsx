@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, Minus, Calculator, Grid3X3, Calendar, ChevronLeft, ChevronRight, X, AlertTriangle } from 'lucide-react';
+import { Search, Plus, Minus, Calculator, Grid3X3, Calendar, ChevronLeft, ChevronRight, X, AlertTriangle, ChevronUp, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -68,6 +68,52 @@ const Inpatient = () => {
     const year = String(date.getFullYear()).slice(-2);
     
     return `${day}/${month}/${year}`;
+  };
+
+  // Parse DD/MM/YY format into components
+  const parseDateComponents = (dateStr: string): { day: number; month: number; year: number } => {
+    const parts = dateStr.split('/');
+    if (parts.length === 3) {
+      return {
+        day: parseInt(parts[0], 10) || 1,
+        month: parseInt(parts[1], 10) || 1,
+        year: parseInt(parts[2], 10) || 25
+      };
+    }
+    return { day: 1, month: 1, year: 25 };
+  };
+
+  // Format date components back to DD/MM/YY
+  const formatDateComponents = (day: number, month: number, year: number): string => {
+    const paddedDay = String(day).padStart(2, '0');
+    const paddedMonth = String(month).padStart(2, '0');
+    const paddedYear = String(year).padStart(2, '0');
+    return `${paddedDay}/${paddedMonth}/${paddedYear}`;
+  };
+
+  // Adjust date component with validation
+  const adjustDateComponent = (dateStr: string, component: 'day' | 'month' | 'year', delta: number): string => {
+    const { day, month, year } = parseDateComponents(dateStr);
+    
+    let newDay = day;
+    let newMonth = month;
+    let newYear = year;
+    
+    if (component === 'day') {
+      newDay = Math.max(1, Math.min(31, day + delta));
+    } else if (component === 'month') {
+      newMonth = Math.max(1, Math.min(12, month + delta));
+    } else if (component === 'year') {
+      newYear = Math.max(0, Math.min(99, year + delta));
+    }
+    
+    // Validate day for the month
+    const daysInMonth = new Date(2000 + newYear, newMonth, 0).getDate();
+    if (newDay > daysInMonth) {
+      newDay = daysInMonth;
+    }
+    
+    return formatDateComponents(newDay, newMonth, newYear);
   };
 
   // Parse DD/MM/YY format to Date object
@@ -539,42 +585,174 @@ const Inpatient = () => {
               
               <div className="space-y-2">
                 <Label htmlFor="admissionDate" className="text-foreground font-medium">Admission Date</Label>
-                <div className="flex space-x-2">
+                <div className="flex items-center space-x-1 p-2 border rounded-md bg-background">
+                  {/* Day Spinner */}
+                  <div className="flex flex-col items-center">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-5 w-8 p-0"
+                      onClick={() => setAdmissionDate(adjustDateComponent(admissionDate || '01/01/25', 'day', 1))}
+                    >
+                      <ChevronUp className="h-3 w-3" />
+                    </Button>
+                    <div className="w-8 text-center text-sm font-mono">
+                      {parseDateComponents(admissionDate || '01/01/25').day.toString().padStart(2, '0')}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-5 w-8 p-0"
+                      onClick={() => setAdmissionDate(adjustDateComponent(admissionDate || '01/01/25', 'day', -1))}
+                    >
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  
+                  <span className="text-muted-foreground">/</span>
+                  
+                  {/* Month Spinner */}
+                  <div className="flex flex-col items-center">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-5 w-8 p-0"
+                      onClick={() => setAdmissionDate(adjustDateComponent(admissionDate || '01/01/25', 'month', 1))}
+                    >
+                      <ChevronUp className="h-3 w-3" />
+                    </Button>
+                    <div className="w-8 text-center text-sm font-mono">
+                      {parseDateComponents(admissionDate || '01/01/25').month.toString().padStart(2, '0')}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-5 w-8 p-0"
+                      onClick={() => setAdmissionDate(adjustDateComponent(admissionDate || '01/01/25', 'month', -1))}
+                    >
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  
+                  <span className="text-muted-foreground">/</span>
+                  
+                  {/* Year Spinner */}
+                  <div className="flex flex-col items-center">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-5 w-8 p-0"
+                      onClick={() => setAdmissionDate(adjustDateComponent(admissionDate || '01/01/25', 'year', 1))}
+                    >
+                      <ChevronUp className="h-3 w-3" />
+                    </Button>
+                    <div className="w-8 text-center text-sm font-mono">
+                      {parseDateComponents(admissionDate || '01/01/25').year.toString().padStart(2, '0')}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-5 w-8 p-0"
+                      onClick={() => setAdmissionDate(adjustDateComponent(admissionDate || '01/01/25', 'year', -1))}
+                    >
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  
+                  {/* Text Input for Manual Entry */}
                   <Input
-                    id="admissionDate"
                     type="text"
                     value={admissionDate}
                     onChange={(e) => setAdmissionDate(e.target.value)}
                     placeholder="DD/MM/YY"
-                    className="flex-1"
-                  />
-                  <Input
-                    type="date"
-                    value={convertToISODate(admissionDate)}
-                    onChange={(e) => setAdmissionDate(convertFromISODate(e.target.value))}
-                    className="flex-1"
-                    title="Date picker"
+                    className="flex-1 ml-4"
                   />
                 </div>
               </div>
               
               <div className="space-y-2">
                 <Label htmlFor="dischargeDate" className="text-foreground font-medium">Discharge Date</Label>
-                <div className="flex space-x-2">
+                <div className="flex items-center space-x-1 p-2 border rounded-md bg-background">
+                  {/* Day Spinner */}
+                  <div className="flex flex-col items-center">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-5 w-8 p-0"
+                      onClick={() => setDischargeDate(adjustDateComponent(dischargeDate || '01/01/25', 'day', 1))}
+                    >
+                      <ChevronUp className="h-3 w-3" />
+                    </Button>
+                    <div className="w-8 text-center text-sm font-mono">
+                      {parseDateComponents(dischargeDate || '01/01/25').day.toString().padStart(2, '0')}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-5 w-8 p-0"
+                      onClick={() => setDischargeDate(adjustDateComponent(dischargeDate || '01/01/25', 'day', -1))}
+                    >
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  
+                  <span className="text-muted-foreground">/</span>
+                  
+                  {/* Month Spinner */}
+                  <div className="flex flex-col items-center">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-5 w-8 p-0"
+                      onClick={() => setDischargeDate(adjustDateComponent(dischargeDate || '01/01/25', 'month', 1))}
+                    >
+                      <ChevronUp className="h-3 w-3" />
+                    </Button>
+                    <div className="w-8 text-center text-sm font-mono">
+                      {parseDateComponents(dischargeDate || '01/01/25').month.toString().padStart(2, '0')}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-5 w-8 p-0"
+                      onClick={() => setDischargeDate(adjustDateComponent(dischargeDate || '01/01/25', 'month', -1))}
+                    >
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  
+                  <span className="text-muted-foreground">/</span>
+                  
+                  {/* Year Spinner */}
+                  <div className="flex flex-col items-center">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-5 w-8 p-0"
+                      onClick={() => setDischargeDate(adjustDateComponent(dischargeDate || '01/01/25', 'year', 1))}
+                    >
+                      <ChevronUp className="h-3 w-3" />
+                    </Button>
+                    <div className="w-8 text-center text-sm font-mono">
+                      {parseDateComponents(dischargeDate || '01/01/25').year.toString().padStart(2, '0')}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-5 w-8 p-0"
+                      onClick={() => setDischargeDate(adjustDateComponent(dischargeDate || '01/01/25', 'year', -1))}
+                    >
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  
+                  {/* Text Input for Manual Entry */}
                   <Input
-                    id="dischargeDate"
                     type="text"
                     value={dischargeDate}
                     onChange={(e) => setDischargeDate(e.target.value)}
                     placeholder="DD/MM/YY"
-                    className="flex-1"
-                  />
-                  <Input
-                    type="date"
-                    value={convertToISODate(dischargeDate)}
-                    onChange={(e) => setDischargeDate(convertFromISODate(e.target.value))}
-                    className="flex-1"
-                    title="Date picker"
+                    className="flex-1 ml-4"
                   />
                 </div>
               </div>
@@ -595,7 +773,7 @@ const Inpatient = () => {
             
             {/* Date Format Help */}
             <div className="mt-2 text-xs text-muted-foreground">
-              <p>Enter dates manually (DD/MM/YY format) or use the date picker. Both inputs stay synchronized.</p>
+              <p>Use the up/down arrows to adjust day, month, and year, or type manually in DD/MM/YY format.</p>
             </div>
           </CardContent>
         </Card>
