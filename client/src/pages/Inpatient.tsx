@@ -46,6 +46,30 @@ const Inpatient = () => {
   
   const { format } = useTakaFormat();
 
+  // Convert DD/MM/YY format to ISO date string (YYYY-MM-DD) for date input
+  const convertToISODate = (dateStr: string): string => {
+    const parsedDate = parseCustomDate(dateStr);
+    if (!parsedDate) return '';
+    
+    const year = parsedDate.getFullYear();
+    const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(parsedDate.getDate()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}`;
+  };
+
+  // Convert ISO date string to DD/MM/YY format
+  const convertFromISODate = (isoDate: string): string => {
+    if (!isoDate) return '';
+    
+    const date = new Date(isoDate);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = String(date.getFullYear()).slice(-2);
+    
+    return `${day}/${month}/${year}`;
+  };
+
   // Parse DD/MM/YY format to Date object
   const parseCustomDate = (dateStr: string): Date | null => {
     if (!dateStr) return null;
@@ -515,26 +539,44 @@ const Inpatient = () => {
               
               <div className="space-y-2">
                 <Label htmlFor="admissionDate" className="text-foreground font-medium">Admission Date</Label>
-                <Input
-                  id="admissionDate"
-                  type="text"
-                  value={admissionDate}
-                  onChange={(e) => setAdmissionDate(e.target.value)}
-                  placeholder="DD/MM/YY"
-                  className="w-full"
-                />
+                <div className="flex space-x-2">
+                  <Input
+                    id="admissionDate"
+                    type="text"
+                    value={admissionDate}
+                    onChange={(e) => setAdmissionDate(e.target.value)}
+                    placeholder="DD/MM/YY"
+                    className="flex-1"
+                  />
+                  <Input
+                    type="date"
+                    value={convertToISODate(admissionDate)}
+                    onChange={(e) => setAdmissionDate(convertFromISODate(e.target.value))}
+                    className="flex-1"
+                    title="Date picker"
+                  />
+                </div>
               </div>
               
               <div className="space-y-2">
                 <Label htmlFor="dischargeDate" className="text-foreground font-medium">Discharge Date</Label>
-                <Input
-                  id="dischargeDate"
-                  type="text"
-                  value={dischargeDate}
-                  onChange={(e) => setDischargeDate(e.target.value)}
-                  placeholder="DD/MM/YY"
-                  className="w-full"
-                />
+                <div className="flex space-x-2">
+                  <Input
+                    id="dischargeDate"
+                    type="text"
+                    value={dischargeDate}
+                    onChange={(e) => setDischargeDate(e.target.value)}
+                    placeholder="DD/MM/YY"
+                    className="flex-1"
+                  />
+                  <Input
+                    type="date"
+                    value={convertToISODate(dischargeDate)}
+                    onChange={(e) => setDischargeDate(convertFromISODate(e.target.value))}
+                    className="flex-1"
+                    title="Date picker"
+                  />
+                </div>
               </div>
             </div>
             
@@ -553,7 +595,7 @@ const Inpatient = () => {
             
             {/* Date Format Help */}
             <div className="mt-2 text-xs text-muted-foreground">
-              <p>Date format: DD/MM/YY (e.g., 25/01/25 for January 25, 2025)</p>
+              <p>Enter dates manually (DD/MM/YY format) or use the date picker. Both inputs stay synchronized.</p>
             </div>
           </CardContent>
         </Card>
