@@ -142,6 +142,16 @@ export default function Inpatient() {
   const [ivHighlightedDropdownIndex, setIvHighlightedDropdownIndex] = useState<number>(-1);
   const [isIvDropdownOpen, setIsIvDropdownOpen] = useState<boolean>(false);
   const [ivDropdownFilterQuery, setIvDropdownFilterQuery] = useState<string>('');
+
+  // Plaster/Milk state
+  const [plasterMilkMode, setPlasterMilkMode] = useState<'plaster' | 'milk' | null>(null);
+  const [selectedPlasters, setSelectedPlasters] = useState<Array<{ item: MedicalItem; quantity: number }>>([]);
+  const [plasterDropdownValue, setPlasterDropdownValue] = useState<string>('');
+  const [plasterHighlightedDropdownIndex, setPlasterHighlightedDropdownIndex] = useState<number>(-1);
+  const [isPlasterDropdownOpen, setIsPlasterDropdownOpen] = useState<boolean>(false);
+  const [plasterDropdownFilterQuery, setPlasterDropdownFilterQuery] = useState<string>('');
+  const [plasterChargeChecked, setPlasterChargeChecked] = useState<boolean>(false);
+  const [milkQuantity, setMilkQuantity] = useState<number>(1);
   
   // Orthopedic search and dropdown state
   const [orthopedicSearchSuggestions, setOrthopedicSearchSuggestions] = useState<MedicalItem[]>([]);
@@ -187,6 +197,8 @@ export default function Inpatient() {
   const proceduresSearchInputRef = useRef<HTMLInputElement>(null);
   const ivDropdownRef = useRef<HTMLDivElement>(null);
   const ivDropdownButtonRef = useRef<HTMLButtonElement>(null);
+  const plasterDropdownRef = useRef<HTMLDivElement>(null);
+  const plasterDropdownButtonRef = useRef<HTMLButtonElement>(null);
   
   // Cupertino Date picker modal state
   const [showCupertinoDatePicker, setShowCupertinoDatePicker] = useState(false);
@@ -662,6 +674,80 @@ export default function Inpatient() {
       ivDropdownButtonRef.current.focus();
     }
   }, [ivDropdownFilterQuery, selectedIVs.length]);
+
+  // Plaster dropdown click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (plasterDropdownRef.current && !plasterDropdownRef.current.contains(event.target as Node)) {
+        setIsPlasterDropdownOpen(false);
+        setPlasterDropdownFilterQuery('');
+      }
+    };
+
+    if (isPlasterDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isPlasterDropdownOpen]);
+
+  // Plaster dropdown keyboard navigation
+  const handlePlasterDropdownKeyDown = (e: KeyboardEvent) => {
+    if (!isPlasterDropdownOpen) return;
+
+    const plasterItems = categoryItems.filter((item: MedicalItem) => 
+      item.name.toLowerCase().includes('plaster') &&
+      item.name.toLowerCase().includes(plasterDropdownFilterQuery.toLowerCase())
+    );
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setPlasterHighlightedDropdownIndex(prev => 
+          prev < plasterItems.length - 1 ? prev + 1 : 0
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setPlasterHighlightedDropdownIndex(prev => 
+          prev > 0 ? prev - 1 : plasterItems.length - 1
+        );
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (plasterHighlightedDropdownIndex >= 0 && plasterHighlightedDropdownIndex < plasterItems.length) {
+          const item = plasterItems[plasterHighlightedDropdownIndex];
+          const alreadySelected = selectedPlasters.find(plaster => plaster.item.id === item.id);
+          const alreadyInBill = billItems.find(billItem => billItem.id === item.id.toString());
+          
+          if (!alreadySelected && !alreadyInBill) {
+            setSelectedPlasters(prev => [...prev, { item, quantity: 1 }]);
+          }
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setIsPlasterDropdownOpen(false);
+        setPlasterDropdownFilterQuery('');
+        break;
+      default:
+        // Filter by typing
+        if (e.key.length === 1) {
+          setPlasterDropdownFilterQuery(prev => prev + e.key);
+          setPlasterHighlightedDropdownIndex(0);
+        } else if (e.key === 'Backspace') {
+          setPlasterDropdownFilterQuery(prev => prev.slice(0, -1));
+          setPlasterHighlightedDropdownIndex(0);
+        }
+        break;
+    }
+  };
+
+  // Plaster dropdown focus management
+  useEffect(() => {
+    if (isPlasterDropdownOpen && plasterDropdownButtonRef.current) {
+      plasterDropdownButtonRef.current.focus();
+    }
+  }, [plasterDropdownFilterQuery, selectedPlasters.length]);
 
   const addItemToBill = (item: MedicalItem) => {
     const existingItem = billItems.find(billItem => billItem.id === item.id.toString());
@@ -3162,6 +3248,333 @@ export default function Inpatient() {
                         • Select IV items from dropdown<br/>
                         • Use quantity controls (+ / -) to adjust amounts<br/>
                         • Multiple quantities of same item will be added as separate entries<br/>
+                        • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
+                      </div>
+                    </div>
+                  ) : selectedCategory === 'Plaster/Milk' ? (
+                    /* Plaster/Milk dual interface */
+                    <div className="space-y-4">
+                      {/* Mode Selection Buttons */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <Button
+                          onClick={() => {
+                            setPlasterMilkMode('plaster');
+                            setMilkQuantity(1);
+                          }}
+                          variant={plasterMilkMode === 'plaster' ? 'default' : 'outline'}
+                          className={`h-12 font-medium ${
+                            plasterMilkMode === 'plaster' 
+                              ? 'bg-purple-600 hover:bg-purple-700 text-white' 
+                              : 'border-purple-500/20 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20'
+                          }`}
+                        >
+                          Plaster
+                        </Button>
+                        
+                        <Button
+                          onClick={() => {
+                            setPlasterMilkMode('milk');
+                            setSelectedPlasters([]);
+                            setPlasterChargeChecked(false);
+                          }}
+                          variant={plasterMilkMode === 'milk' ? 'default' : 'outline'}
+                          className={`h-12 font-medium ${
+                            plasterMilkMode === 'milk' 
+                              ? 'bg-amber-600 hover:bg-amber-700 text-white' 
+                              : 'border-amber-500/20 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20'
+                          }`}
+                        >
+                          Milk
+                        </Button>
+                      </div>
+
+                      {/* Plaster Interface */}
+                      {plasterMilkMode === 'plaster' && (
+                        <div className="space-y-4">
+                          {/* Selected Plasters Display */}
+                          {selectedPlasters.length > 0 && (
+                            <div className="space-y-2 p-4 bg-purple-50/50 dark:bg-purple-900/10 rounded-lg border border-purple-200/50">
+                              <div className="flex items-center justify-between mb-3">
+                                <span className="text-sm font-semibold text-purple-600 flex items-center">
+                                  <Calculator className="h-4 w-4 mr-2" />
+                                  Selected: {selectedPlasters.length} plaster item{selectedPlasters.length !== 1 ? 's' : ''}
+                                </span>
+                                <span className="text-sm font-bold text-purple-600 bg-purple-100/80 px-2 py-1 rounded-md">
+                                  {format(selectedPlasters.reduce((sum, plaster) => sum + (parseFloat(plaster.item.price) * plaster.quantity), 0))}
+                                </span>
+                              </div>
+                              
+                              {selectedPlasters.map((plaster) => (
+                                <div key={plaster.item.id} className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border">
+                                  <div className="flex-1">
+                                    <div className="font-medium text-sm text-foreground">{plaster.item.name}</div>
+                                    <div className="text-xs text-muted-foreground">
+                                      {format(parseFloat(plaster.item.price))} × {plaster.quantity} = {format(parseFloat(plaster.item.price) * plaster.quantity)}
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="flex items-center space-x-2">
+                                    {/* Quantity Controls */}
+                                    <div className="flex items-center space-x-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                                      <button
+                                        onClick={() => {
+                                          setSelectedPlasters(prev => prev.map(item => 
+                                            item.item.id === plaster.item.id 
+                                              ? { ...item, quantity: Math.max(1, item.quantity - 1) }
+                                              : item
+                                          ));
+                                        }}
+                                        className="h-6 w-6 rounded bg-white dark:bg-gray-600 hover:bg-gray-50 dark:hover:bg-gray-500 flex items-center justify-center text-gray-600 dark:text-gray-300"
+                                      >
+                                        <Minus className="h-3 w-3" />
+                                      </button>
+                                      
+                                      <span className="w-8 text-center text-sm font-medium text-foreground">
+                                        {plaster.quantity}
+                                      </span>
+                                      
+                                      <button
+                                        onClick={() => {
+                                          setSelectedPlasters(prev => prev.map(item => 
+                                            item.item.id === plaster.item.id 
+                                              ? { ...item, quantity: item.quantity + 1 }
+                                              : item
+                                          ));
+                                        }}
+                                        className="h-6 w-6 rounded bg-white dark:bg-gray-600 hover:bg-gray-50 dark:hover:bg-gray-500 flex items-center justify-center text-gray-600 dark:text-gray-300"
+                                      >
+                                        <Plus className="h-3 w-3" />
+                                      </button>
+                                    </div>
+                                    
+                                    {/* Remove Button */}
+                                    <button
+                                      onClick={() => {
+                                        setSelectedPlasters(prev => prev.filter(item => item.item.id !== plaster.item.id));
+                                      }}
+                                      className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 p-1 rounded transition-colors"
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+
+                              {/* Plaster Charge Checkbox */}
+                              <div className="flex items-center space-x-2 pt-2 border-t border-purple-200/50">
+                                <input
+                                  type="checkbox"
+                                  id="plaster-charge"
+                                  checked={plasterChargeChecked}
+                                  onChange={(e) => setPlasterChargeChecked(e.target.checked)}
+                                  className="h-4 w-4 text-purple-600 border-purple-300 rounded focus:ring-purple-500"
+                                />
+                                <label htmlFor="plaster-charge" className="text-sm font-medium text-purple-700">
+                                  Plaster Charge
+                                </label>
+                              </div>
+                              
+                              <div className="flex justify-end pt-2">
+                                <Button
+                                  onClick={() => {
+                                    selectedPlasters.forEach(plaster => {
+                                      for (let i = 0; i < plaster.quantity; i++) {
+                                        const billId = `${plaster.item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                                        const billItem = {
+                                          ...plaster.item,
+                                          id: plaster.item.id.toString(),
+                                          price: parseFloat(plaster.item.price),
+                                          billId,
+                                          quantity: 1
+                                        };
+                                        setBillItems(prev => [...prev, billItem]);
+                                      }
+                                    });
+                                    
+                                    // Add plaster charge if checked
+                                    if (plasterChargeChecked) {
+                                      const plasterChargeBillId = `plaster-charge-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                                      const plasterChargeItem = {
+                                        id: 'plaster-charge',
+                                        name: 'Plaster Charge',
+                                        category: 'Plaster/Milk',
+                                        price: 50, // You can adjust this price as needed
+                                        billId: plasterChargeBillId,
+                                        quantity: 1
+                                      };
+                                      setBillItems(prev => [...prev, plasterChargeItem]);
+                                    }
+                                    
+                                    setSelectedPlasters([]);
+                                    setPlasterChargeChecked(false);
+                                  }}
+                                  variant="outline"
+                                  size="sm"
+                                  className="border-purple-500/20 text-purple-600 hover:bg-purple-500/10"
+                                >
+                                  Add to Bill
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Plaster Dropdown */}
+                          <div className="space-y-2">
+                            <div className="text-sm font-medium text-muted-foreground">
+                              Select plaster items:
+                            </div>
+                            
+                            <div className="relative" ref={plasterDropdownRef}>
+                              <Button
+                                ref={plasterDropdownButtonRef}
+                                variant="outline"
+                                onClick={() => setIsPlasterDropdownOpen(!isPlasterDropdownOpen)}
+                                onKeyDown={handlePlasterDropdownKeyDown}
+                                className="w-full justify-between h-10 border-purple-500/20"
+                              >
+                                <span className="text-left truncate">
+                                  {plasterDropdownFilterQuery 
+                                    ? `Filter: "${plasterDropdownFilterQuery}" (${categoryItems.filter((item: MedicalItem) => 
+                                        item.name.toLowerCase().includes('plaster') &&
+                                        item.name.toLowerCase().includes(plasterDropdownFilterQuery.toLowerCase())
+                                      ).length} matches)`
+                                    : 'Select plaster items...'
+                                  }
+                                </span>
+                                <ChevronDown className={`h-4 w-4 transition-transform ${isPlasterDropdownOpen ? 'rotate-180' : ''}`} />
+                              </Button>
+                              
+                              {isPlasterDropdownOpen && (
+                                <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                                  {categoryItems
+                                    .filter((item: MedicalItem) => 
+                                      item.name.toLowerCase().includes('plaster') &&
+                                      item.name.toLowerCase().includes(plasterDropdownFilterQuery.toLowerCase())
+                                    )
+                                    .map((item: MedicalItem, index) => {
+                                      const alreadySelected = selectedPlasters.find(plaster => plaster.item.id === item.id);
+                                      const alreadyInBill = billItems.find(billItem => billItem.id === item.id.toString());
+                                      const isHighlighted = index === plasterHighlightedDropdownIndex;
+                                      
+                                      return (
+                                        <div
+                                          key={item.id}
+                                          onClick={() => {
+                                            if (!alreadySelected && !alreadyInBill) {
+                                              setSelectedPlasters(prev => [...prev, { item, quantity: 1 }]);
+                                            }
+                                          }}
+                                          className={`flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-muted/40 ${
+                                            isHighlighted ? 'bg-purple-100 dark:bg-purple-900/30 border-l-4 border-purple-500' :
+                                            alreadySelected ? 'bg-green-100 dark:bg-green-900/20 text-green-600' :
+                                            alreadyInBill ? 'bg-red-100 dark:bg-red-900/20 text-red-600 cursor-not-allowed' :
+                                            'hover:bg-purple-50 dark:hover:bg-purple-900/20'
+                                          }`}
+                                        >
+                                          <div className="flex-1">
+                                            <span className="text-sm font-medium">{item.name}</span>
+                                            {alreadyInBill && (
+                                              <span className="ml-2 text-red-600 text-xs">● Already in Bill</span>
+                                            )}
+                                            {alreadySelected && !alreadyInBill && (
+                                              <span className="ml-2 text-green-600 text-xs">✓ Selected (Qty: {alreadySelected.quantity})</span>
+                                            )}
+                                            {isHighlighted && (
+                                              <span className="ml-2 text-purple-600 text-xs">← Highlighted</span>
+                                            )}
+                                          </div>
+                                          <span className="text-purple-600 font-semibold">
+                                            {format(item.price)}
+                                          </span>
+                                        </div>
+                                      );
+                                    })}
+                                  {categoryItems.filter((item: MedicalItem) => 
+                                    item.name.toLowerCase().includes('plaster') &&
+                                    item.name.toLowerCase().includes(plasterDropdownFilterQuery.toLowerCase())
+                                  ).length === 0 && (
+                                    <div className="px-3 py-2 text-sm text-muted-foreground">
+                                      No plaster items available
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Milk Interface */}
+                      {plasterMilkMode === 'milk' && (
+                        <div className="space-y-4">
+                          <div className="p-4 bg-amber-50/50 dark:bg-amber-900/10 rounded-lg border border-amber-200/50">
+                            <div className="flex items-center justify-between mb-4">
+                              <span className="text-sm font-semibold text-amber-700">Milk Quantity</span>
+                              <span className="text-sm font-bold text-amber-700 bg-amber-100/80 px-2 py-1 rounded-md">
+                                {format(milkQuantity * 25)} {/* Assuming milk costs 25 BDT per unit */}
+                              </span>
+                            </div>
+                            
+                            {/* Milk Quantity Controls */}
+                            <div className="flex items-center justify-center space-x-4">
+                              <button
+                                onClick={() => setMilkQuantity(prev => Math.max(1, prev - 1))}
+                                className="h-10 w-10 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center justify-center text-amber-600 border border-amber-200"
+                              >
+                                <Minus className="h-4 w-4" />
+                              </button>
+                              
+                              <div className="text-center">
+                                <div className="text-2xl font-bold text-amber-700">{milkQuantity}</div>
+                                <div className="text-xs text-amber-600">bottles</div>
+                              </div>
+                              
+                              <button
+                                onClick={() => setMilkQuantity(prev => prev + 1)}
+                                className="h-10 w-10 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center justify-center text-amber-600 border border-amber-200"
+                              >
+                                <Plus className="h-4 w-4" />
+                              </button>
+                            </div>
+                            
+                            <div className="flex justify-end mt-4">
+                              <Button
+                                onClick={() => {
+                                  for (let i = 0; i < milkQuantity; i++) {
+                                    const billId = `milk-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                                    const milkItem = {
+                                      id: 'milk',
+                                      name: 'Milk',
+                                      category: 'Plaster/Milk',
+                                      price: 25, // Milk price per bottle
+                                      billId,
+                                      quantity: 1
+                                    };
+                                    setBillItems(prev => [...prev, milkItem]);
+                                  }
+                                  setMilkQuantity(1);
+                                }}
+                                variant="outline"
+                                size="sm"
+                                className="border-amber-500/20 text-amber-600 hover:bg-amber-500/10"
+                              >
+                                Add to Bill
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {!plasterMilkMode && (
+                        <div className="text-center text-muted-foreground py-8">
+                          <div className="text-lg font-medium mb-2">Select Plaster or Milk</div>
+                          <div className="text-sm">Choose one of the options above to continue</div>
+                        </div>
+                      )}
+                      
+                      <div className="text-sm text-muted-foreground">
+                        • <strong>Plaster:</strong> Select items from dropdown, set quantities, optional plaster charge<br/>
+                        • <strong>Milk:</strong> Simple quantity counter for milk bottles<br/>
                         • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
                       </div>
                     </div>
