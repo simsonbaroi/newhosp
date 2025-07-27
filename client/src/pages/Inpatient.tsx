@@ -154,9 +154,8 @@ export default function Inpatient() {
   const [plasterChargeChecked, setPlasterChargeChecked] = useState<boolean>(false);
   const [milkQuantity, setMilkQuantity] = useState<number>(1);
 
-  // Patient classification checkboxes
-  const [mwFwChecked, setMwFwChecked] = useState<boolean>(false);
-  const [obChecked, setObChecked] = useState<boolean>(false);
+  // Patient classification - only one can be selected
+  const [selectedPatientType, setSelectedPatientType] = useState<'MW/FW' | 'OB' | null>(null);
   
   // Orthopedic search and dropdown state
   const [orthopedicSearchSuggestions, setOrthopedicSearchSuggestions] = useState<MedicalItem[]>([]);
@@ -1575,39 +1574,33 @@ export default function Inpatient() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Patient Information Panel */}
           <div className="space-y-6">
-            {/* Patient Classification Toggle Switches */}
+            {/* Patient Classification Toggle Buttons */}
             <Card className="glass-card">
               <CardContent className="py-4">
-                <div className="flex items-center justify-center space-x-8">
-                  <div className="flex items-center space-x-3">
-                    <Switch
-                      id="mw-fw-switch"
-                      checked={mwFwChecked}
-                      onCheckedChange={setMwFwChecked}
-                      className="data-[state=checked]:bg-medical-primary"
-                    />
-                    <label 
-                      htmlFor="mw-fw-switch" 
-                      className="text-lg font-semibold text-medical-primary cursor-pointer select-none"
-                    >
-                      MW/FW
-                    </label>
-                  </div>
+                <div className="flex items-center justify-center space-x-4">
+                  <Button
+                    variant={selectedPatientType === 'MW/FW' ? 'default' : 'outline'}
+                    onClick={() => setSelectedPatientType(selectedPatientType === 'MW/FW' ? null : 'MW/FW')}
+                    className={`px-6 py-3 text-lg font-semibold transition-all duration-200 ${
+                      selectedPatientType === 'MW/FW' 
+                        ? 'bg-medical-primary hover:bg-medical-primary/90 text-white border-medical-primary' 
+                        : 'border-medical-primary/30 text-medical-primary hover:bg-medical-primary/10 hover:border-medical-primary'
+                    }`}
+                  >
+                    MW/FW
+                  </Button>
                   
-                  <div className="flex items-center space-x-3">
-                    <Switch
-                      id="ob-switch"
-                      checked={obChecked}
-                      onCheckedChange={setObChecked}
-                      className="data-[state=checked]:bg-medical-primary"
-                    />
-                    <label 
-                      htmlFor="ob-switch" 
-                      className="text-lg font-semibold text-medical-primary cursor-pointer select-none"
-                    >
-                      OB
-                    </label>
-                  </div>
+                  <Button
+                    variant={selectedPatientType === 'OB' ? 'default' : 'outline'}
+                    onClick={() => setSelectedPatientType(selectedPatientType === 'OB' ? null : 'OB')}
+                    className={`px-6 py-3 text-lg font-semibold transition-all duration-200 ${
+                      selectedPatientType === 'OB' 
+                        ? 'bg-medical-primary hover:bg-medical-primary/90 text-white border-medical-primary' 
+                        : 'border-medical-primary/30 text-medical-primary hover:bg-medical-primary/10 hover:border-medical-primary'
+                    }`}
+                  >
+                    OB
+                  </Button>
                 </div>
               </CardContent>
             </Card>
