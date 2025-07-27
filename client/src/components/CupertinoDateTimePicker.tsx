@@ -179,12 +179,12 @@ export const CupertinoDateTimePicker: React.FC<CupertinoDateTimePickerProps> = (
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="cupertino-picker bg-white rounded-xl shadow-2xl overflow-hidden w-full max-w-md">
-        <div className="picker-header p-5 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">{title}</h2>
-          <div className="selected-datetime text-blue-600 font-medium">
+        <div className="picker-header">
+          <h2>{title}</h2>
+          <div className="selected-datetime">
             {formatDate(selectedDate)} at {formatTime(selectedDate)}
           </div>
-          <div className="picker-navigation mt-3">
+          <div className="picker-navigation">
             <button
               className={`nav-button ${showDatePicker ? 'active' : ''}`}
               onClick={() => {
