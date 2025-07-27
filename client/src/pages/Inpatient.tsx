@@ -1748,13 +1748,17 @@ export default function Inpatient() {
             <Card className="glass-card relative">
               {!selectedPatientType && (
                 <div className="absolute inset-0 z-10 bg-background/80 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center">
-                  <div className="text-center space-y-3">
-                    <div className="text-6xl">👆</div>
-                    <div className="text-lg font-semibold text-medical-primary">
-                      Select MW/FW or OB above
+                  <div className="text-center space-y-4">
+                    <div className="text-6xl text-medical-primary animate-bounce" style={{ animationDuration: '2s' }}>
+                      ☝️
                     </div>
-                    <div className="text-base text-medical-primary">
-                      to unlock the categories
+                    <div className="bg-medical-primary/10 border border-medical-primary/30 rounded-xl p-4 backdrop-blur-md">
+                      <div className="text-lg font-bold text-medical-primary mb-1">
+                        Select MW/FW or OB above
+                      </div>
+                      <div className="text-base text-medical-primary/80">
+                        to unlock the categories
+                      </div>
                     </div>
                   </div>
                 </div>
