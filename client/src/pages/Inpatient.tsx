@@ -158,6 +158,7 @@ export default function Inpatient() {
 
   // Patient classification - only one can be selected
   const [selectedPatientType, setSelectedPatientType] = useState<'MW/FW' | 'OB' | null>(null);
+  const [typeChangeIndicator, setTypeChangeIndicator] = useState<boolean>(false);
   
   // Orthopedic search and dropdown state
   const [orthopedicSearchSuggestions, setOrthopedicSearchSuggestions] = useState<MedicalItem[]>([]);
@@ -1758,11 +1759,19 @@ export default function Inpatient() {
                   </span>
                   {selectedPatientType && (
                     <button
-                      onClick={() => setSelectedPatientType(selectedPatientType === 'MW/FW' ? 'OB' : 'MW/FW')}
-                      className="text-sm text-medical-primary/60 hover:text-medical-primary hover:bg-medical-primary/10 px-2 py-1 rounded transition-colors"
+                      onClick={() => {
+                        setSelectedPatientType(selectedPatientType === 'MW/FW' ? 'OB' : 'MW/FW');
+                        setTypeChangeIndicator(true);
+                        setTimeout(() => setTypeChangeIndicator(false), 1000);
+                      }}
+                      className={`text-sm px-2 py-1 rounded transition-all duration-300 ${
+                        typeChangeIndicator 
+                          ? 'text-medical-primary bg-medical-primary/20 scale-105' 
+                          : 'text-medical-primary/60 hover:text-medical-primary hover:bg-medical-primary/10'
+                      }`}
                       title="Click to toggle between MW/FW and OB"
                     >
-                      Admission Type
+                      Admission Type {typeChangeIndicator && '✓'}
                     </button>
                   )}
                   {isCarouselMode && (
