@@ -172,6 +172,38 @@ export default function Inpatient() {
     dischargeDate: string;
   }>>([]);
   
+  // Saved patient information state
+  const [savedPatientInfo, setSavedPatientInfo] = useState<{
+    patientName: string;
+    opdNumber: string;
+    hospitalNumber: string;
+    billNumber: string;
+    admissionDate: string;
+    dischargeDate: string;
+    admissionTime: string;
+    dischargeTime: string;
+    totalVisitation: string;
+  } | null>(null);
+  
+  const [savedBabies, setSavedBabies] = useState<Array<{
+    id: string;
+    name: string;
+    opdNumber: string;
+    hospitalNumber: string;
+    billNumber: string;
+    admissionDate: string;
+    dischargeDate: string;
+  }>>([]);
+  
+  // Check if patient info has any data
+  const hasPatientData = patientName || opdNumber || hospitalNumber || billNumber || totalVisitation;
+  
+  // Check if any baby has data
+  const hasBabyData = babies.some(baby => 
+    baby.name || baby.opdNumber !== opdNumber || baby.hospitalNumber !== hospitalNumber || 
+    baby.billNumber !== billNumber || baby.admissionDate !== admissionDate || baby.dischargeDate !== dischargeDate
+  );
+  
   // Orthopedic search and dropdown state
   const [orthopedicSearchSuggestions, setOrthopedicSearchSuggestions] = useState<MedicalItem[]>([]);
   const [orthopedicHighlightedSearchIndex, setOrthopedicHighlightedSearchIndex] = useState(-1);
@@ -221,7 +253,8 @@ export default function Inpatient() {
   
   // Cupertino Date picker modal state
   const [showCupertinoDatePicker, setShowCupertinoDatePicker] = useState(false);
-  const [cupertinoDatePickerType, setCupertinoDatePickerType] = useState<'admission' | 'discharge'>('admission');
+  const [cupertinoDatePickerType, setCupertinoDatePickerType] = useState<'admission' | 'discharge' | 'baby-admission' | 'baby-discharge'>('admission');
+  const [currentBabyId, setCurrentBabyId] = useState<string>('');
   
   // Function to add a new baby
   const addNewBaby = () => {
@@ -247,6 +280,38 @@ export default function Inpatient() {
   // Function to remove a baby
   const removeBaby = (babyId: string) => {
     setBabies(prev => prev.filter(baby => baby.id !== babyId));
+  };
+  
+  // Function to save patient information
+  const savePatientInfo = () => {
+    setSavedPatientInfo({
+      patientName,
+      opdNumber,
+      hospitalNumber,
+      billNumber,
+      admissionDate,
+      dischargeDate,
+      admissionTime,
+      dischargeTime,
+      totalVisitation
+    });
+    setIsPatientInfoExpanded(false);
+  };
+  
+  // Function to save baby information
+  const saveBabyInfo = () => {
+    setSavedBabies([...babies]);
+    setShowBabyInfo(false);
+  };
+  
+  // Function to restore patient info when expanding
+  const expandPatientInfo = () => {
+    setIsPatientInfoExpanded(true);
+  };
+  
+  // Function to restore baby info when expanding
+  const expandBabyInfo = () => {
+    setShowBabyInfo(true);
   };
   
   // Initialize first baby when Baby button is clicked for the first time
@@ -321,12 +386,17 @@ export default function Inpatient() {
     if (cupertinoDatePickerType === 'admission') {
       setAdmissionDate(dateStr);
       setAdmissionTime(timeStr);
-    } else {
+    } else if (cupertinoDatePickerType === 'discharge') {
       setDischargeDate(dateStr);
       setDischargeTime(timeStr);
+    } else if (cupertinoDatePickerType === 'baby-admission') {
+      updateBaby(currentBabyId, 'admissionDate', dateStr);
+    } else if (cupertinoDatePickerType === 'baby-discharge') {
+      updateBaby(currentBabyId, 'dischargeDate', dateStr);
     }
     
     setShowCupertinoDatePicker(false);
+    setCurrentBabyId('');
   };
 
   // Calculate total admitted days based on admission and discharge dates
@@ -1641,11 +1711,20 @@ export default function Inpatient() {
               <CardHeader className="pb-2">
                 <CardTitle 
                   className="flex items-center justify-between text-medical-primary cursor-pointer"
-                  onClick={() => setIsPatientInfoExpanded(!isPatientInfoExpanded)}
+                  onClick={() => savedPatientInfo ? expandPatientInfo() : setIsPatientInfoExpanded(!isPatientInfoExpanded)}
                 >
                   <div className="flex items-center">
                     <Calculator className="mr-2 h-5 w-5" />
-                    Patient Information
+                    {savedPatientInfo && !isPatientInfoExpanded ? (
+                      <div className="flex flex-col">
+                        <span>Patient Information</span>
+                        <span className="text-xs text-muted-foreground font-normal">
+                          {savedPatientInfo.patientName || 'No name'} | {savedPatientInfo.opdNumber || 'No OPD'} | {savedPatientInfo.admissionDate} to {savedPatientInfo.dischargeDate}
+                        </span>
+                      </div>
+                    ) : (
+                      'Patient Information'
+                    )}
                   </div>
                   <div className="flex items-center space-x-4">
                     <div className="flex items-center space-x-2">
@@ -1883,24 +1962,34 @@ export default function Inpatient() {
                             
                             <div className="space-y-1">
                               <Label className="text-xs text-foreground font-medium">Admission Date</Label>
-                              <Input
-                                type="text"
-                                value={baby.admissionDate}
-                                onChange={(e) => updateBaby(baby.id, 'admissionDate', e.target.value)}
-                                placeholder="DD/MM/YY"
-                                className="h-7 text-xs"
-                              />
+                              <Button
+                                variant="outline"
+                                className="w-full h-7 text-left justify-start p-2"
+                                onClick={() => {
+                                  setCurrentBabyId(baby.id);
+                                  setCupertinoDatePickerType('baby-admission');
+                                  setShowCupertinoDatePicker(true);
+                                }}
+                              >
+                                <Calendar className="mr-1 h-3 w-3" />
+                                <span className="text-xs">{baby.admissionDate || 'Select date'}</span>
+                              </Button>
                             </div>
                             
                             <div className="space-y-1">
                               <Label className="text-xs text-foreground font-medium">Discharge Date</Label>
-                              <Input
-                                type="text"
-                                value={baby.dischargeDate}
-                                onChange={(e) => updateBaby(baby.id, 'dischargeDate', e.target.value)}
-                                placeholder="DD/MM/YY"
-                                className="h-7 text-xs"
-                              />
+                              <Button
+                                variant="outline"
+                                className="w-full h-7 text-left justify-start p-2"
+                                onClick={() => {
+                                  setCurrentBabyId(baby.id);
+                                  setCupertinoDatePickerType('baby-discharge');
+                                  setShowCupertinoDatePicker(true);
+                                }}
+                              >
+                                <Calendar className="mr-1 h-3 w-3" />
+                                <span className="text-xs">{baby.dischargeDate || 'Select date'}</span>
+                              </Button>
                             </div>
                           </div>
                         </div>
