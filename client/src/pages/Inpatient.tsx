@@ -1574,37 +1574,6 @@ export default function Inpatient() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Patient Information Panel */}
           <div className="space-y-6">
-            {/* Patient Classification Toggle Buttons */}
-            <Card className="glass-card">
-              <CardContent className="py-4">
-                <div className="flex items-center justify-center space-x-4">
-                  <Button
-                    variant={selectedPatientType === 'MW/FW' ? 'default' : 'outline'}
-                    onClick={() => setSelectedPatientType(selectedPatientType === 'MW/FW' ? null : 'MW/FW')}
-                    className={`px-6 py-3 text-lg font-semibold transition-all duration-200 ${
-                      selectedPatientType === 'MW/FW' 
-                        ? 'bg-medical-primary hover:bg-medical-primary/90 text-white border-medical-primary' 
-                        : 'border-medical-primary/30 text-medical-primary hover:bg-medical-primary/10 hover:border-medical-primary'
-                    }`}
-                  >
-                    MW/FW
-                  </Button>
-                  
-                  <Button
-                    variant={selectedPatientType === 'OB' ? 'default' : 'outline'}
-                    onClick={() => setSelectedPatientType(selectedPatientType === 'OB' ? null : 'OB')}
-                    className={`px-6 py-3 text-lg font-semibold transition-all duration-200 ${
-                      selectedPatientType === 'OB' 
-                        ? 'bg-medical-primary hover:bg-medical-primary/90 text-white border-medical-primary' 
-                        : 'border-medical-primary/30 text-medical-primary hover:bg-medical-primary/10 hover:border-medical-primary'
-                    }`}
-                  >
-                    OB
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
             <Card className="glass-card">
               <CardHeader className="pb-2">
                 <CardTitle 
@@ -1622,6 +1591,33 @@ export default function Inpatient() {
               </CardHeader>
               {isPatientInfoExpanded && (
                 <CardContent className="space-y-3 pt-0">
+                  {/* Patient Classification Toggle Buttons */}
+                  <div className="flex items-center justify-start space-x-4 pb-2">
+                    <Button
+                      variant={selectedPatientType === 'MW/FW' ? 'default' : 'outline'}
+                      onClick={() => setSelectedPatientType(selectedPatientType === 'MW/FW' ? null : 'MW/FW')}
+                      className={`px-4 py-2 text-sm font-semibold transition-all duration-200 ${
+                        selectedPatientType === 'MW/FW' 
+                          ? 'bg-medical-primary hover:bg-medical-primary/90 text-white border-medical-primary' 
+                          : 'border-medical-primary/30 text-medical-primary hover:bg-medical-primary/10 hover:border-medical-primary'
+                      }`}
+                    >
+                      MW/FW
+                    </Button>
+                    
+                    <Button
+                      variant={selectedPatientType === 'OB' ? 'default' : 'outline'}
+                      onClick={() => setSelectedPatientType(selectedPatientType === 'OB' ? null : 'OB')}
+                      className={`px-4 py-2 text-sm font-semibold transition-all duration-200 ${
+                        selectedPatientType === 'OB' 
+                          ? 'bg-medical-primary hover:bg-medical-primary/90 text-white border-medical-primary' 
+                          : 'border-medical-primary/30 text-medical-primary hover:bg-medical-primary/10 hover:border-medical-primary'
+                      }`}
+                    >
+                      OB
+                    </Button>
+                  </div>
+                  
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <Label htmlFor="patientName" className="text-xs text-foreground font-medium">Patient Name</Label>
