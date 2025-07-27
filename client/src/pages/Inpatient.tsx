@@ -1746,16 +1746,18 @@ export default function Inpatient() {
 
             {/* Category Buttons */}
             <Card className={`glass-card ${!selectedPatientType ? 'opacity-50' : ''}`}>
+              {!selectedPatientType && (
+                <div className="text-center py-4 border-b border-border/50">
+                  <span className="text-lg font-semibold text-medical-primary">
+                    Select MW/FW or OB to unlock categories
+                  </span>
+                </div>
+              )}
               <CardHeader>
                 <CardTitle className="flex items-center justify-between text-medical-primary">
                   <span className="flex items-center">
                     <Grid3X3 className="mr-2 h-5 w-5" />
                     Inpatient Categories
-                    {!selectedPatientType && (
-                      <span className="ml-2 text-xs text-destructive font-normal">
-                        (Select MW/FW or OB to unlock)
-                      </span>
-                    )}
                   </span>
                   {isCarouselMode && (
                     <div className="flex items-center space-x-2">
