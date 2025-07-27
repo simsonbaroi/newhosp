@@ -37,7 +37,7 @@ export const INPATIENT_CATEGORIES: CategoryConfig[] = [
   { name: 'Discharge Medicine', order: 9, interface: 'special', hasSearch: true, hasDropdown: true, description: 'Discharge medications with dosage' },
   { name: 'Medicine, ORS & Anesthesia, Ket, Spinal', order: 10, interface: 'search', hasSearch: true, hasDropdown: true, description: 'Anesthesia and ORS solutions' },
   { name: 'Physical Therapy', order: 11, interface: 'manual', hasManualEntry: true, description: 'Physical therapy sessions' },
-  { name: 'IV.\'s', order: 12, interface: 'search', hasSearch: true, hasDropdown: true, description: 'IV fluids and medications' },
+  { name: 'IV.\'s', order: 12, interface: 'special', hasSearch: true, hasDropdown: true, description: 'IV fluids and medications with quantity' },
   { name: 'Plaster/Milk', order: 13, interface: 'search', hasSearch: true, hasDropdown: true, description: 'Casting and nutrition services' },
   { name: 'Procedures', order: 14, interface: 'search', hasSearch: true, hasDropdown: true, description: 'Medical procedures' },
   { name: 'Seat & Ad. Fee', order: 15, interface: 'search', hasSearch: true, hasDropdown: true, description: 'Seating and additional fees' },

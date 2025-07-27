@@ -136,6 +136,13 @@ export default function Inpatient() {
   const [medicineSearchSuggestions, setMedicineSearchSuggestions] = useState<MedicalItem[]>([]);
   const [highlightedSearchIndex, setHighlightedSearchIndex] = useState(-1);
   
+  // IV state - dropdown with quantity controls
+  const [selectedIVs, setSelectedIVs] = useState<Array<{ item: MedicalItem; quantity: number }>>([]);
+  const [ivDropdownValue, setIvDropdownValue] = useState<string>('');
+  const [ivHighlightedDropdownIndex, setIvHighlightedDropdownIndex] = useState<number>(-1);
+  const [isIvDropdownOpen, setIsIvDropdownOpen] = useState<boolean>(false);
+  const [ivDropdownFilterQuery, setIvDropdownFilterQuery] = useState<string>('');
+  
   // Orthopedic search and dropdown state
   const [orthopedicSearchSuggestions, setOrthopedicSearchSuggestions] = useState<MedicalItem[]>([]);
   const [orthopedicHighlightedSearchIndex, setOrthopedicHighlightedSearchIndex] = useState(-1);
@@ -178,6 +185,8 @@ export default function Inpatient() {
   const proceduresDropdownRef = useRef<HTMLDivElement>(null);
   const proceduresDropdownButtonRef = useRef<HTMLButtonElement>(null);
   const proceduresSearchInputRef = useRef<HTMLInputElement>(null);
+  const ivDropdownRef = useRef<HTMLDivElement>(null);
+  const ivDropdownButtonRef = useRef<HTMLButtonElement>(null);
   
   // Cupertino Date picker modal state
   const [showCupertinoDatePicker, setShowCupertinoDatePicker] = useState(false);
@@ -580,6 +589,79 @@ export default function Inpatient() {
       medicineSearchInputRef.current.focus();
     }
   }, [selectedCategory, isCarouselMode]);
+
+  // IV dropdown click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (ivDropdownRef.current && !ivDropdownRef.current.contains(event.target as Node)) {
+        setIsIvDropdownOpen(false);
+        setIvDropdownFilterQuery('');
+      }
+    };
+
+    if (isIvDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isIvDropdownOpen]);
+
+  // IV dropdown keyboard navigation
+  const handleIvDropdownKeyDown = (e: KeyboardEvent) => {
+    if (!isIvDropdownOpen) return;
+
+    const filteredItems = categoryItems.filter((item: MedicalItem) => 
+      item.name.toLowerCase().includes(ivDropdownFilterQuery.toLowerCase())
+    );
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setIvHighlightedDropdownIndex(prev => 
+          prev < filteredItems.length - 1 ? prev + 1 : 0
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setIvHighlightedDropdownIndex(prev => 
+          prev > 0 ? prev - 1 : filteredItems.length - 1
+        );
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (ivHighlightedDropdownIndex >= 0 && ivHighlightedDropdownIndex < filteredItems.length) {
+          const item = filteredItems[ivHighlightedDropdownIndex];
+          const alreadySelected = selectedIVs.find(iv => iv.item.id === item.id);
+          const alreadyInBill = billItems.find(billItem => billItem.id === item.id.toString());
+          
+          if (!alreadySelected && !alreadyInBill) {
+            setSelectedIVs(prev => [...prev, { item, quantity: 1 }]);
+          }
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setIsIvDropdownOpen(false);
+        setIvDropdownFilterQuery('');
+        break;
+      default:
+        // Filter by typing
+        if (e.key.length === 1) {
+          setIvDropdownFilterQuery(prev => prev + e.key);
+          setIvHighlightedDropdownIndex(0);
+        } else if (e.key === 'Backspace') {
+          setIvDropdownFilterQuery(prev => prev.slice(0, -1));
+          setIvHighlightedDropdownIndex(0);
+        }
+        break;
+    }
+  };
+
+  // IV dropdown focus management
+  useEffect(() => {
+    if (isIvDropdownOpen && ivDropdownButtonRef.current) {
+      ivDropdownButtonRef.current.focus();
+    }
+  }, [ivDropdownFilterQuery, selectedIVs.length]);
 
   const addItemToBill = (item: MedicalItem) => {
     const existingItem = billItems.find(billItem => billItem.id === item.id.toString());
@@ -2893,6 +2975,194 @@ export default function Inpatient() {
                           • Ward Medicine allows partial bottles, Discharge Medicine requires full bottles<br/>
                           • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
                         </div>
+                      </div>
+                    </div>
+                  ) : selectedCategory === 'IV.\'s' ? (
+                    /* IV dropdown with quantity controls */
+                    <div className="space-y-4">
+                      {/* Selected IVs Display */}
+                      {selectedIVs.length > 0 && (
+                        <div className="space-y-2 p-4 bg-blue-50/50 dark:bg-blue-900/10 rounded-lg border border-blue-200/50">
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-sm font-semibold text-blue-600 flex items-center">
+                              <Calculator className="h-4 w-4 mr-2" />
+                              Selected: {selectedIVs.length} IV item{selectedIVs.length !== 1 ? 's' : ''}
+                            </span>
+                            <span className="text-sm font-bold text-blue-600 bg-blue-100/80 px-2 py-1 rounded-md">
+                              {format(selectedIVs.reduce((sum, iv) => sum + (parseFloat(iv.item.price) * iv.quantity), 0))}
+                            </span>
+                          </div>
+                          
+                          {selectedIVs.map((iv, index) => (
+                            <div key={iv.item.id} className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border">
+                              <div className="flex-1">
+                                <div className="font-medium text-sm text-foreground">{iv.item.name}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {format(parseFloat(iv.item.price))} × {iv.quantity} = {format(parseFloat(iv.item.price) * iv.quantity)}
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2">
+                                {/* Quantity Controls */}
+                                <div className="flex items-center space-x-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                                  <button
+                                    onClick={() => {
+                                      setSelectedIVs(prev => prev.map(item => 
+                                        item.item.id === iv.item.id 
+                                          ? { ...item, quantity: Math.max(1, item.quantity - 1) }
+                                          : item
+                                      ));
+                                    }}
+                                    className="h-6 w-6 rounded bg-white dark:bg-gray-600 hover:bg-gray-50 dark:hover:bg-gray-500 flex items-center justify-center text-gray-600 dark:text-gray-300"
+                                  >
+                                    <Minus className="h-3 w-3" />
+                                  </button>
+                                  
+                                  <span className="w-8 text-center text-sm font-medium text-foreground">
+                                    {iv.quantity}
+                                  </span>
+                                  
+                                  <button
+                                    onClick={() => {
+                                      setSelectedIVs(prev => prev.map(item => 
+                                        item.item.id === iv.item.id 
+                                          ? { ...item, quantity: item.quantity + 1 }
+                                          : item
+                                      ));
+                                    }}
+                                    className="h-6 w-6 rounded bg-white dark:bg-gray-600 hover:bg-gray-50 dark:hover:bg-gray-500 flex items-center justify-center text-gray-600 dark:text-gray-300"
+                                  >
+                                    <Plus className="h-3 w-3" />
+                                  </button>
+                                </div>
+                                
+                                {/* Remove Button */}
+                                <button
+                                  onClick={() => {
+                                    setSelectedIVs(prev => prev.filter(item => item.item.id !== iv.item.id));
+                                  }}
+                                  className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 p-1 rounded transition-colors"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                          
+                          <div className="flex justify-end pt-2">
+                            <Button
+                              onClick={() => {
+                                selectedIVs.forEach(iv => {
+                                  for (let i = 0; i < iv.quantity; i++) {
+                                    const billId = `${iv.item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                                    const billItem = {
+                                      ...iv.item,
+                                      id: iv.item.id.toString(),
+                                      price: parseFloat(iv.item.price),
+                                      billId,
+                                      quantity: 1
+                                    };
+                                    setBillItems(prev => [...prev, billItem]);
+                                  }
+                                });
+                                setSelectedIVs([]);
+                              }}
+                              variant="outline"
+                              size="sm"
+                              className="border-blue-500/20 text-blue-600 hover:bg-blue-500/10"
+                            >
+                              Add to Bill
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* IV Dropdown */}
+                      <div className="space-y-2">
+                        <div className="text-sm font-medium text-muted-foreground">
+                          Select IV fluids and medications:
+                        </div>
+                        
+                        <div className="relative" ref={ivDropdownRef}>
+                          <Button
+                            ref={ivDropdownButtonRef}
+                            variant="outline"
+                            onClick={() => setIsIvDropdownOpen(!isIvDropdownOpen)}
+                            onKeyDown={handleIvDropdownKeyDown}
+                            className="w-full justify-between h-10 border-blue-500/20"
+                          >
+                            <span className="text-left truncate">
+                              {ivDropdownFilterQuery 
+                                ? `Filter: "${ivDropdownFilterQuery}" (${categoryItems.filter((item: MedicalItem) => 
+                                    item.name.toLowerCase().includes(ivDropdownFilterQuery.toLowerCase())
+                                  ).length} matches)`
+                                : 'Select IV items...'
+                              }
+                            </span>
+                            <ChevronDown className={`h-4 w-4 transition-transform ${isIvDropdownOpen ? 'rotate-180' : ''}`} />
+                          </Button>
+                          
+                          {isIvDropdownOpen && (
+                            <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                              {categoryItems
+                                .filter((item: MedicalItem) => 
+                                  item.name.toLowerCase().includes(ivDropdownFilterQuery.toLowerCase())
+                                )
+                                .map((item: MedicalItem, index) => {
+                                  const alreadySelected = selectedIVs.find(iv => iv.item.id === item.id);
+                                  const alreadyInBill = billItems.find(billItem => billItem.id === item.id.toString());
+                                  const isHighlighted = index === ivHighlightedDropdownIndex;
+                                  
+                                  return (
+                                    <div
+                                      key={item.id}
+                                      onClick={() => {
+                                        if (!alreadySelected && !alreadyInBill) {
+                                          setSelectedIVs(prev => [...prev, { item, quantity: 1 }]);
+                                        }
+                                      }}
+                                      className={`flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-muted/40 ${
+                                        isHighlighted ? 'bg-blue-100 dark:bg-blue-900/30 border-l-4 border-blue-500' :
+                                        alreadySelected ? 'bg-green-100 dark:bg-green-900/20 text-green-600' :
+                                        alreadyInBill ? 'bg-red-100 dark:bg-red-900/20 text-red-600 cursor-not-allowed' :
+                                        'hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                                      }`}
+                                    >
+                                      <div className="flex-1">
+                                        <span className="text-sm font-medium">{item.name}</span>
+                                        {alreadyInBill && (
+                                          <span className="ml-2 text-red-600 text-xs">● Already in Bill</span>
+                                        )}
+                                        {alreadySelected && !alreadyInBill && (
+                                          <span className="ml-2 text-green-600 text-xs">✓ Selected (Qty: {alreadySelected.quantity})</span>
+                                        )}
+                                        {isHighlighted && (
+                                          <span className="ml-2 text-blue-600 text-xs">← Highlighted</span>
+                                        )}
+                                      </div>
+                                      <span className="text-blue-600 font-semibold">
+                                        {format(item.price)}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              {categoryItems.filter((item: MedicalItem) => 
+                                item.name.toLowerCase().includes(ivDropdownFilterQuery.toLowerCase())
+                              ).length === 0 && (
+                                <div className="px-3 py-2 text-sm text-muted-foreground">
+                                  No IV items available
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="text-sm text-muted-foreground">
+                        • Select IV items from dropdown<br/>
+                        • Use quantity controls (+ / -) to adjust amounts<br/>
+                        • Multiple quantities of same item will be added as separate entries<br/>
+                        • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
                       </div>
                     </div>
                   ) : ['Physical Therapy', 'Limb and Brace', 'Blood', 'Food'].includes(selectedCategory) ? (
