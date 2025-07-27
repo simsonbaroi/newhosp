@@ -160,6 +160,18 @@ export default function Inpatient() {
   const [selectedPatientType, setSelectedPatientType] = useState<'MW/FW' | 'OB' | null>('MW/FW'); // Default to MW/FW
   const [typeChangeIndicator, setTypeChangeIndicator] = useState<boolean>(false);
   
+  // Baby-specific state for OB patients
+  const [showBabyInfo, setShowBabyInfo] = useState<boolean>(false);
+  const [babies, setBabies] = useState<Array<{
+    id: string;
+    name: string;
+    opdNumber: string;
+    hospitalNumber: string;
+    billNumber: string;
+    admissionDate: string;
+    dischargeDate: string;
+  }>>([]);
+  
   // Orthopedic search and dropdown state
   const [orthopedicSearchSuggestions, setOrthopedicSearchSuggestions] = useState<MedicalItem[]>([]);
   const [orthopedicHighlightedSearchIndex, setOrthopedicHighlightedSearchIndex] = useState(-1);
@@ -210,6 +222,32 @@ export default function Inpatient() {
   // Cupertino Date picker modal state
   const [showCupertinoDatePicker, setShowCupertinoDatePicker] = useState(false);
   const [cupertinoDatePickerType, setCupertinoDatePickerType] = useState<'admission' | 'discharge'>('admission');
+  
+  // Function to add a new baby
+  const addNewBaby = () => {
+    const newBaby = {
+      id: Date.now().toString(),
+      name: '',
+      opdNumber: opdNumber, // Same as mother
+      hospitalNumber: hospitalNumber, // Same as mother
+      billNumber: billNumber, // Same as mother
+      admissionDate: admissionDate, // Same as mother
+      dischargeDate: dischargeDate, // Same as mother
+    };
+    setBabies(prev => [...prev, newBaby]);
+  };
+  
+  // Function to update baby information
+  const updateBaby = (babyId: string, field: string, value: string) => {
+    setBabies(prev => prev.map(baby => 
+      baby.id === babyId ? { ...baby, [field]: value } : baby
+    ));
+  };
+  
+  // Initialize first baby when Baby button is clicked for the first time
+  if (showBabyInfo && babies.length === 0) {
+    addNewBaby();
+  }
 
   // Parse DD/MM/YY date format
   const parseCustomDate = (dateStr: string): Date | null => {
@@ -1610,6 +1648,7 @@ export default function Inpatient() {
                         onClick={(e) => {
                           e.stopPropagation();
                           setSelectedPatientType('MW/FW');
+                          setShowBabyInfo(false);
                           setTypeChangeIndicator(true);
                           setTimeout(() => setTypeChangeIndicator(false), 1000);
                         }}
@@ -1636,6 +1675,21 @@ export default function Inpatient() {
                       >
                         OB
                       </span>
+                      {selectedPatientType === 'OB' && (
+                        <span 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowBabyInfo(!showBabyInfo);
+                          }}
+                          className={`text-sm cursor-pointer transition-colors ${
+                            showBabyInfo 
+                              ? 'text-medical-primary font-semibold' 
+                              : 'text-muted-foreground hover:text-medical-primary'
+                          }`}
+                        >
+                          Baby
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center">
                       {isPatientInfoExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -1748,6 +1802,97 @@ export default function Inpatient() {
                       </div>
                     </div>
                   </div>
+                  
+                  {/* Baby Admission Information - Only show when Baby is selected */}
+                  {showBabyInfo && (
+                    <div className="space-y-4 mt-4 p-4 bg-blue-50/50 dark:bg-blue-900/10 rounded-lg border border-blue-200/50">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-semibold text-blue-700 dark:text-blue-300">Baby Admission Information</h4>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={addNewBaby}
+                          className="h-6 px-2 text-xs border-blue-300 text-blue-600 hover:bg-blue-100"
+                        >
+                          Add More
+                        </Button>
+                      </div>
+                      
+                      {babies.map((baby, index) => (
+                        <div key={baby.id} className="space-y-3 p-3 bg-white/70 dark:bg-gray-800/50 rounded border border-blue-200/30">
+                          <div className="text-xs font-medium text-blue-600 mb-2">Baby {index + 1}</div>
+                          
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <Label className="text-xs text-foreground font-medium">Name</Label>
+                              <Input
+                                type="text"
+                                value={baby.name}
+                                onChange={(e) => updateBaby(baby.id, 'name', e.target.value)}
+                                placeholder="Enter baby name"
+                                className="h-7 text-xs"
+                              />
+                            </div>
+                            
+                            <div className="space-y-1">
+                              <Label className="text-xs text-foreground font-medium">OPD Number</Label>
+                              <Input
+                                type="text"
+                                value={baby.opdNumber}
+                                onChange={(e) => updateBaby(baby.id, 'opdNumber', e.target.value)}
+                                placeholder="Same as mother"
+                                className="h-7 text-xs"
+                              />
+                            </div>
+                            
+                            <div className="space-y-1">
+                              <Label className="text-xs text-foreground font-medium">Hospital Number</Label>
+                              <Input
+                                type="text"
+                                value={baby.hospitalNumber}
+                                onChange={(e) => updateBaby(baby.id, 'hospitalNumber', e.target.value)}
+                                placeholder="Same as mother"
+                                className="h-7 text-xs"
+                              />
+                            </div>
+                            
+                            <div className="space-y-1">
+                              <Label className="text-xs text-foreground font-medium">Bill Number</Label>
+                              <Input
+                                type="text"
+                                value={baby.billNumber}
+                                onChange={(e) => updateBaby(baby.id, 'billNumber', e.target.value)}
+                                placeholder="Same as mother"
+                                className="h-7 text-xs"
+                              />
+                            </div>
+                            
+                            <div className="space-y-1">
+                              <Label className="text-xs text-foreground font-medium">Admission Date</Label>
+                              <Input
+                                type="text"
+                                value={baby.admissionDate}
+                                onChange={(e) => updateBaby(baby.id, 'admissionDate', e.target.value)}
+                                placeholder="DD/MM/YY"
+                                className="h-7 text-xs"
+                              />
+                            </div>
+                            
+                            <div className="space-y-1">
+                              <Label className="text-xs text-foreground font-medium">Discharge Date</Label>
+                              <Input
+                                type="text"
+                                value={baby.dischargeDate}
+                                onChange={(e) => updateBaby(baby.id, 'dischargeDate', e.target.value)}
+                                placeholder="DD/MM/YY"
+                                className="h-7 text-xs"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               )}
             </Card>
