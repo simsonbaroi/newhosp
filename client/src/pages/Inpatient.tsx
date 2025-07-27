@@ -152,6 +152,10 @@ export default function Inpatient() {
   const [plasterDropdownFilterQuery, setPlasterDropdownFilterQuery] = useState<string>('');
   const [plasterChargeChecked, setPlasterChargeChecked] = useState<boolean>(false);
   const [milkQuantity, setMilkQuantity] = useState<number>(1);
+
+  // Patient classification checkboxes
+  const [mwFwChecked, setMwFwChecked] = useState<boolean>(false);
+  const [obChecked, setObChecked] = useState<boolean>(false);
   
   // Orthopedic search and dropdown state
   const [orthopedicSearchSuggestions, setOrthopedicSearchSuggestions] = useState<MedicalItem[]>([]);
@@ -1570,6 +1574,45 @@ export default function Inpatient() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Patient Information Panel */}
           <div className="space-y-6">
+            {/* Patient Classification Checkboxes */}
+            <Card className="glass-card">
+              <CardContent className="py-4">
+                <div className="flex items-center justify-center space-x-8">
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="mw-fw-checkbox"
+                      checked={mwFwChecked}
+                      onChange={(e) => setMwFwChecked(e.target.checked)}
+                      className="h-5 w-5 text-medical-primary border-medical-primary/30 rounded focus:ring-medical-primary focus:ring-2"
+                    />
+                    <label 
+                      htmlFor="mw-fw-checkbox" 
+                      className="text-lg font-semibold text-medical-primary cursor-pointer select-none"
+                    >
+                      MW/FW
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="ob-checkbox"
+                      checked={obChecked}
+                      onChange={(e) => setObChecked(e.target.checked)}
+                      className="h-5 w-5 text-medical-primary border-medical-primary/30 rounded focus:ring-medical-primary focus:ring-2"
+                    />
+                    <label 
+                      htmlFor="ob-checkbox" 
+                      className="text-lg font-semibold text-medical-primary cursor-pointer select-none"
+                    >
+                      OB
+                    </label>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card className="glass-card">
               <CardHeader className="pb-2">
                 <CardTitle 
