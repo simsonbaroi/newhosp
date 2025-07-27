@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
 import { useTakaFormat } from '../hooks/useCurrencyFormat';
@@ -1574,20 +1575,19 @@ export default function Inpatient() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Patient Information Panel */}
           <div className="space-y-6">
-            {/* Patient Classification Checkboxes */}
+            {/* Patient Classification Toggle Switches */}
             <Card className="glass-card">
               <CardContent className="py-4">
                 <div className="flex items-center justify-center space-x-8">
                   <div className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      id="mw-fw-checkbox"
+                    <Switch
+                      id="mw-fw-switch"
                       checked={mwFwChecked}
-                      onChange={(e) => setMwFwChecked(e.target.checked)}
-                      className="h-5 w-5 text-medical-primary border-medical-primary/30 rounded focus:ring-medical-primary focus:ring-2"
+                      onCheckedChange={setMwFwChecked}
+                      className="data-[state=checked]:bg-medical-primary"
                     />
                     <label 
-                      htmlFor="mw-fw-checkbox" 
+                      htmlFor="mw-fw-switch" 
                       className="text-lg font-semibold text-medical-primary cursor-pointer select-none"
                     >
                       MW/FW
@@ -1595,15 +1595,14 @@ export default function Inpatient() {
                   </div>
                   
                   <div className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      id="ob-checkbox"
+                    <Switch
+                      id="ob-switch"
                       checked={obChecked}
-                      onChange={(e) => setObChecked(e.target.checked)}
-                      className="h-5 w-5 text-medical-primary border-medical-primary/30 rounded focus:ring-medical-primary focus:ring-2"
+                      onCheckedChange={setObChecked}
+                      className="data-[state=checked]:bg-medical-primary"
                     />
                     <label 
-                      htmlFor="ob-checkbox" 
+                      htmlFor="ob-switch" 
                       className="text-lg font-semibold text-medical-primary cursor-pointer select-none"
                     >
                       OB
