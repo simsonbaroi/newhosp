@@ -3261,12 +3261,8 @@ export default function Inpatient() {
                             setPlasterMilkMode('plaster');
                             setMilkQuantity(1);
                           }}
-                          variant={plasterMilkMode === 'plaster' ? 'default' : 'outline'}
-                          className={`h-12 font-medium ${
-                            plasterMilkMode === 'plaster' 
-                              ? 'bg-purple-600 hover:bg-purple-700 text-white' 
-                              : 'border-purple-500/20 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20'
-                          }`}
+                          variant={plasterMilkMode === 'plaster' ? 'medical' : 'medical-outline'}
+                          className="h-12 font-medium"
                         >
                           Plaster
                         </Button>
@@ -3277,12 +3273,8 @@ export default function Inpatient() {
                             setSelectedPlasters([]);
                             setPlasterChargeChecked(false);
                           }}
-                          variant={plasterMilkMode === 'milk' ? 'default' : 'outline'}
-                          className={`h-12 font-medium ${
-                            plasterMilkMode === 'milk' 
-                              ? 'bg-amber-600 hover:bg-amber-700 text-white' 
-                              : 'border-amber-500/20 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20'
-                          }`}
+                          variant={plasterMilkMode === 'milk' ? 'medical' : 'medical-outline'}
+                          className="h-12 font-medium"
                         >
                           Milk
                         </Button>
@@ -3293,13 +3285,13 @@ export default function Inpatient() {
                         <div className="space-y-4">
                           {/* Selected Plasters Display */}
                           {selectedPlasters.length > 0 && (
-                            <div className="space-y-2 p-4 bg-purple-50/50 dark:bg-purple-900/10 rounded-lg border border-purple-200/50">
+                            <div className="space-y-2 p-4 bg-medical-primary/5 dark:bg-medical-primary/10 rounded-lg border border-medical-primary/20">
                               <div className="flex items-center justify-between mb-3">
-                                <span className="text-sm font-semibold text-purple-600 flex items-center">
+                                <span className="text-sm font-semibold text-medical-primary flex items-center">
                                   <Calculator className="h-4 w-4 mr-2" />
                                   Selected: {selectedPlasters.length} plaster item{selectedPlasters.length !== 1 ? 's' : ''}
                                 </span>
-                                <span className="text-sm font-bold text-purple-600 bg-purple-100/80 px-2 py-1 rounded-md">
+                                <span className="text-sm font-bold text-medical-primary bg-medical-primary/10 px-2 py-1 rounded-md">
                                   {format(selectedPlasters.reduce((sum, plaster) => sum + (parseFloat(plaster.item.price) * plaster.quantity), 0))}
                                 </span>
                               </div>
@@ -3361,15 +3353,15 @@ export default function Inpatient() {
                               ))}
 
                               {/* Plaster Charge Checkbox */}
-                              <div className="flex items-center space-x-2 pt-2 border-t border-purple-200/50">
+                              <div className="flex items-center space-x-2 pt-2 border-t border-medical-primary/20">
                                 <input
                                   type="checkbox"
                                   id="plaster-charge"
                                   checked={plasterChargeChecked}
                                   onChange={(e) => setPlasterChargeChecked(e.target.checked)}
-                                  className="h-4 w-4 text-purple-600 border-purple-300 rounded focus:ring-purple-500"
+                                  className="h-4 w-4 text-medical-primary border-medical-primary/30 rounded focus:ring-medical-primary"
                                 />
-                                <label htmlFor="plaster-charge" className="text-sm font-medium text-purple-700">
+                                <label htmlFor="plaster-charge" className="text-sm font-medium text-medical-primary">
                                   Plaster Charge
                                 </label>
                               </div>
@@ -3408,9 +3400,8 @@ export default function Inpatient() {
                                     setSelectedPlasters([]);
                                     setPlasterChargeChecked(false);
                                   }}
-                                  variant="outline"
+                                  variant="medical-outline"
                                   size="sm"
-                                  className="border-purple-500/20 text-purple-600 hover:bg-purple-500/10"
                                 >
                                   Add to Bill
                                 </Button>
@@ -3430,7 +3421,7 @@ export default function Inpatient() {
                                 variant="outline"
                                 onClick={() => setIsPlasterDropdownOpen(!isPlasterDropdownOpen)}
                                 onKeyDown={handlePlasterDropdownKeyDown}
-                                className="w-full justify-between h-10 border-purple-500/20"
+                                className="w-full justify-between h-10 border-medical-primary/20"
                               >
                                 <span className="text-left truncate">
                                   {plasterDropdownFilterQuery 
@@ -3465,10 +3456,10 @@ export default function Inpatient() {
                                             }
                                           }}
                                           className={`flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-muted/40 ${
-                                            isHighlighted ? 'bg-purple-100 dark:bg-purple-900/30 border-l-4 border-purple-500' :
+                                            isHighlighted ? 'bg-medical-primary/10 dark:bg-medical-primary/20 border-l-4 border-medical-primary' :
                                             alreadySelected ? 'bg-green-100 dark:bg-green-900/20 text-green-600' :
                                             alreadyInBill ? 'bg-red-100 dark:bg-red-900/20 text-red-600 cursor-not-allowed' :
-                                            'hover:bg-purple-50 dark:hover:bg-purple-900/20'
+                                            'hover:bg-medical-primary/5 dark:hover:bg-medical-primary/10'
                                           }`}
                                         >
                                           <div className="flex-1">
@@ -3480,10 +3471,10 @@ export default function Inpatient() {
                                               <span className="ml-2 text-green-600 text-xs">✓ Selected (Qty: {alreadySelected.quantity})</span>
                                             )}
                                             {isHighlighted && (
-                                              <span className="ml-2 text-purple-600 text-xs">← Highlighted</span>
+                                              <span className="ml-2 text-medical-primary text-xs">← Highlighted</span>
                                             )}
                                           </div>
-                                          <span className="text-purple-600 font-semibold">
+                                          <span className="text-medical-primary font-semibold">
                                             {format(item.price)}
                                           </span>
                                         </div>
@@ -3507,10 +3498,10 @@ export default function Inpatient() {
                       {/* Milk Interface */}
                       {plasterMilkMode === 'milk' && (
                         <div className="space-y-4">
-                          <div className="p-4 bg-amber-50/50 dark:bg-amber-900/10 rounded-lg border border-amber-200/50">
+                          <div className="p-4 bg-medical-primary/5 dark:bg-medical-primary/10 rounded-lg border border-medical-primary/20">
                             <div className="flex items-center justify-between mb-4">
-                              <span className="text-sm font-semibold text-amber-700">Milk Quantity</span>
-                              <span className="text-sm font-bold text-amber-700 bg-amber-100/80 px-2 py-1 rounded-md">
+                              <span className="text-sm font-semibold text-medical-primary">Milk Quantity</span>
+                              <span className="text-sm font-bold text-medical-primary bg-medical-primary/10 px-2 py-1 rounded-md">
                                 {format(milkQuantity * 25)} {/* Assuming milk costs 25 BDT per unit */}
                               </span>
                             </div>
@@ -3519,19 +3510,19 @@ export default function Inpatient() {
                             <div className="flex items-center justify-center space-x-4">
                               <button
                                 onClick={() => setMilkQuantity(prev => Math.max(1, prev - 1))}
-                                className="h-10 w-10 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center justify-center text-amber-600 border border-amber-200"
+                                className="h-10 w-10 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center justify-center text-medical-primary border border-medical-primary/20"
                               >
                                 <Minus className="h-4 w-4" />
                               </button>
                               
                               <div className="text-center">
-                                <div className="text-2xl font-bold text-amber-700">{milkQuantity}</div>
-                                <div className="text-xs text-amber-600">bottles</div>
+                                <div className="text-2xl font-bold text-medical-primary">{milkQuantity}</div>
+                                <div className="text-xs text-medical-primary">bottles</div>
                               </div>
                               
                               <button
                                 onClick={() => setMilkQuantity(prev => prev + 1)}
-                                className="h-10 w-10 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center justify-center text-amber-600 border border-amber-200"
+                                className="h-10 w-10 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center justify-center text-medical-primary border border-medical-primary/20"
                               >
                                 <Plus className="h-4 w-4" />
                               </button>
@@ -3554,9 +3545,8 @@ export default function Inpatient() {
                                   }
                                   setMilkQuantity(1);
                                 }}
-                                variant="outline"
+                                variant="medical-outline"
                                 size="sm"
-                                className="border-amber-500/20 text-amber-600 hover:bg-amber-500/10"
                               >
                                 Add to Bill
                               </Button>
