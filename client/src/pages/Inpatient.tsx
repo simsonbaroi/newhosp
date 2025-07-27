@@ -312,18 +312,7 @@ export default function Inpatient() {
     setDaysAdmitted(days);
   }, [admissionDate, dischargeDate]);
 
-  // Validation function to check if patient type is selected
-  const validatePatientTypeSelected = (): boolean => {
-    if (!selectedPatientType) {
-      toast({
-        title: "Patient Type Required",
-        description: "Please select either MW/FW or OB before adding items to the bill.",
-        variant: "destructive"
-      });
-      return false;
-    }
-    return true;
-  };
+
 
   // Add item to bill function
   // Medicine dosage configuration for inpatient
@@ -774,11 +763,6 @@ export default function Inpatient() {
   }, [plasterDropdownFilterQuery, selectedPlasters.length]);
 
   const addItemToBill = (item: MedicalItem) => {
-    // Validate patient type is selected before adding items
-    if (!validatePatientTypeSelected()) {
-      return;
-    }
-    
     const existingItem = billItems.find(billItem => billItem.id === item.id.toString());
     if (existingItem) {
       setDuplicateDialog({ open: true, item });
@@ -795,11 +779,6 @@ export default function Inpatient() {
 
   // Handle manual entry for Physical Therapy, Limb and Brace, and Blood
   const addManualEntryToBill = () => {
-    // Validate patient type is selected before adding items
-    if (!validatePatientTypeSelected()) {
-      return;
-    }
-    
     if (!categorySearchQuery.trim() || !manualEntryPrice.trim()) {
       return; // Don't add if name or price is empty
     }
@@ -1766,12 +1745,17 @@ export default function Inpatient() {
             </Card>
 
             {/* Category Buttons */}
-            <Card className="glass-card">
+            <Card className={`glass-card ${!selectedPatientType ? 'opacity-50' : ''}`}>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between text-medical-primary">
                   <span className="flex items-center">
                     <Grid3X3 className="mr-2 h-5 w-5" />
                     Inpatient Categories
+                    {!selectedPatientType && (
+                      <span className="ml-2 text-xs text-destructive font-normal">
+                        (Select MW/FW or OB to unlock)
+                      </span>
+                    )}
                   </span>
                   {isCarouselMode && (
                     <div className="flex items-center space-x-2">
@@ -1791,7 +1775,7 @@ export default function Inpatient() {
                   )}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className={!selectedPatientType ? 'pointer-events-none' : ''}>
                 {!isCarouselMode ? (
                   // Normal grid mode
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -1801,8 +1785,9 @@ export default function Inpatient() {
                         <Button
                           key={category}
                           variant="medical-outline"
-                          className="h-auto p-2 sm:p-3 text-left justify-start min-h-[60px] max-w-full"
-                          onClick={() => handleCategoryClick(category)}
+                          className={`h-auto p-2 sm:p-3 text-left justify-start min-h-[60px] max-w-full ${!selectedPatientType ? 'cursor-not-allowed' : ''}`}
+                          onClick={() => selectedPatientType && handleCategoryClick(category)}
+                          disabled={!selectedPatientType}
                         >
                           <div className="flex flex-col items-start w-full overflow-hidden">
                             <span className="font-medium text-xs leading-tight w-full break-words hyphens-auto line-clamp-2">{category}</span>
