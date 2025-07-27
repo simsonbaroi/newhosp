@@ -1756,27 +1756,20 @@ export default function Inpatient() {
                       <div className="text-lg font-bold text-medical-primary mb-3">
                         Select Patient Type to unlock categories
                       </div>
-                      <div className="flex gap-3 justify-center">
-                        <Button
+                      <div className="flex gap-6 justify-center">
+                        <button
                           onClick={() => setSelectedPatientType('MW/FW')}
-                          className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-                            selectedPatientType === 'MW/FW'
-                              ? 'bg-medical-primary text-white shadow-md'
-                              : 'bg-white/20 text-medical-primary border border-medical-primary/40 hover:bg-medical-primary/20'
-                          }`}
+                          className="text-lg font-bold text-medical-primary hover:text-medical-primary/80 underline decoration-2 underline-offset-4 transition-colors cursor-pointer"
                         >
                           MW/FW
-                        </Button>
-                        <Button
+                        </button>
+                        <span className="text-lg text-medical-primary/60">or</span>
+                        <button
                           onClick={() => setSelectedPatientType('OB')}
-                          className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-                            selectedPatientType === 'OB'
-                              ? 'bg-medical-primary text-white shadow-md'
-                              : 'bg-white/20 text-medical-primary border border-medical-primary/40 hover:bg-medical-primary/20'
-                          }`}
+                          className="text-lg font-bold text-medical-primary hover:text-medical-primary/80 underline decoration-2 underline-offset-4 transition-colors cursor-pointer"
                         >
                           OB
-                        </Button>
+                        </button>
                       </div>
                     </div>
                   </div>
