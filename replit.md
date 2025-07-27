@@ -8,7 +8,7 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-27**: ENHANCED: Replaced MW/FW and OB checkboxes with left-aligned toggle buttons inside Patient Information section
 - **2025-01-27**: IMPROVED: Made MW/FW and OB buttons mutually exclusive with labels inside buttons for cleaner UX
 - **2025-01-27**: ADDED: Categories section is locked/disabled until patient type is selected, then unlocks all categories
-- **2025-01-27**: ENHANCED: Text-style clickable buttons (MW/FW or OB) in overlay with underline styling for natural appearance
+- **2025-01-27**: ENHANCED: Animated pointing finger with bouncing animation and styled message block with backdrop blur design
 - **2025-01-27**: COMPLETED: Final migration from Replit Agent to standard Replit environment
 - **2025-01-27**: FIXED: Patient Information section now starts collapsed by default in Inpatient calculator
 - **2025-01-26**: IMPLEMENTED: Complete AI and Machine Learning system for medical billing analytics
