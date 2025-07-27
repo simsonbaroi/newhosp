@@ -152,6 +152,13 @@ export default function Inpatient() {
   const [plasterDropdownFilterQuery, setPlasterDropdownFilterQuery] = useState<string>('');
   const [plasterChargeChecked, setPlasterChargeChecked] = useState<boolean>(false);
   const [milkQuantity, setMilkQuantity] = useState<number>(1);
+
+  // Seat & Ad. Fee state
+  const [seatAdFeeMode, setSeatAdFeeMode] = useState<'MW' | 'FW' | null>(null);
+  const [seatAdFeeSubMode, setSeatAdFeeSubMode] = useState<'general' | 'private' | null>(null);
+  const [roomType, setRoomType] = useState<string>('');
+  const [generalQuantity, setGeneralQuantity] = useState<number>(1);
+  const [privateQuantity, setPrivateQuantity] = useState<number>(1);
   
   // Orthopedic search and dropdown state
   const [orthopedicSearchSuggestions, setOrthopedicSearchSuggestions] = useState<MedicalItem[]>([]);
@@ -3565,6 +3572,270 @@ export default function Inpatient() {
                       <div className="text-sm text-muted-foreground">
                         • <strong>Plaster:</strong> Select items from dropdown, set quantities, optional plaster charge<br/>
                         • <strong>Milk:</strong> Simple quantity counter for milk bottles<br/>
+                        • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
+                      </div>
+                    </div>
+                  ) : selectedCategory === 'Seat & Ad. Fee' ? (
+                    /* Seat & Ad. Fee dual interface */
+                    <div className="space-y-4">
+                      {/* MW/FW Mode Selection Buttons */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <Button
+                          onClick={() => {
+                            setSeatAdFeeMode('MW');
+                            setSeatAdFeeSubMode(null);
+                            setRoomType('');
+                          }}
+                          variant={seatAdFeeMode === 'MW' ? 'medical' : 'medical-outline'}
+                          className="h-12 font-medium"
+                        >
+                          MW (Male Ward)
+                        </Button>
+                        
+                        <Button
+                          onClick={() => {
+                            setSeatAdFeeMode('FW');
+                            setSeatAdFeeSubMode(null);
+                            setRoomType('');
+                          }}
+                          variant={seatAdFeeMode === 'FW' ? 'medical' : 'medical-outline'}
+                          className="h-12 font-medium"
+                        >
+                          FW (Female Ward)
+                        </Button>
+                      </div>
+
+                      {/* Sub-system Selection (General/Private) */}
+                      {seatAdFeeMode && (
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-3">
+                            <Button
+                              onClick={() => {
+                                setSeatAdFeeSubMode('general');
+                                setRoomType('');
+                              }}
+                              variant={seatAdFeeSubMode === 'general' ? 'medical' : 'medical-outline'}
+                              className="h-10 font-medium"
+                            >
+                              General
+                            </Button>
+                            
+                            <Button
+                              onClick={() => {
+                                setSeatAdFeeSubMode('private');
+                              }}
+                              variant={seatAdFeeSubMode === 'private' ? 'medical' : 'medical-outline'}
+                              className="h-10 font-medium"
+                            >
+                              Private
+                            </Button>
+                          </div>
+
+                          {/* General Interface */}
+                          {seatAdFeeSubMode === 'general' && (
+                            <div className="space-y-4">
+                              {/* Patient Information Display */}
+                              <div className="p-3 bg-medical-primary/5 dark:bg-medical-primary/10 rounded-lg border border-medical-primary/20">
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                  <div>
+                                    <span className="text-medical-primary font-medium">Total Days Admitted: </span>
+                                    <span className="font-bold text-medical-primary">{totalAdmittedDays}</span>
+                                  </div>
+                                  <div>
+                                    <span className="text-medical-primary font-medium">Total Visitation: </span>
+                                    <span className="font-bold text-medical-primary">{patientInfo.totalVisitation || 0}</span>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="p-4 bg-medical-primary/5 dark:bg-medical-primary/10 rounded-lg border border-medical-primary/20">
+                                <div className="flex items-center justify-between mb-4">
+                                  <span className="text-sm font-semibold text-medical-primary">General Ward ({seatAdFeeMode})</span>
+                                  <span className="text-sm font-bold text-medical-primary bg-medical-primary/10 px-2 py-1 rounded-md">
+                                    {format(generalQuantity * 100)} {/* Assuming general ward costs 100 BDT per day */}
+                                  </span>
+                                </div>
+                                
+                                {/* General Quantity Controls */}
+                                <div className="flex items-center justify-center space-x-4">
+                                  <button
+                                    onClick={() => setGeneralQuantity(prev => Math.max(1, prev - 1))}
+                                    className="h-10 w-10 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center justify-center text-medical-primary border border-medical-primary/20"
+                                  >
+                                    <Minus className="h-4 w-4" />
+                                  </button>
+                                  
+                                  <div className="text-center">
+                                    <div className="text-2xl font-bold text-medical-primary">{generalQuantity}</div>
+                                    <div className="text-xs text-medical-primary">days</div>
+                                  </div>
+                                  
+                                  <button
+                                    onClick={() => setGeneralQuantity(prev => prev + 1)}
+                                    className="h-10 w-10 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center justify-center text-medical-primary border border-medical-primary/20"
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                  </button>
+                                </div>
+                                
+                                <div className="flex justify-end mt-4">
+                                  <Button
+                                    onClick={() => {
+                                      for (let i = 0; i < generalQuantity; i++) {
+                                        const billId = `seat-general-${seatAdFeeMode}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                                        const generalItem = {
+                                          id: `seat-general-${seatAdFeeMode}`,
+                                          name: `General Ward (${seatAdFeeMode}) - Day ${i + 1}`,
+                                          category: 'Seat & Ad. Fee',
+                                          price: 100, // General ward price per day
+                                          billId,
+                                          quantity: 1
+                                        };
+                                        setBillItems(prev => [...prev, generalItem]);
+                                      }
+                                      setGeneralQuantity(1);
+                                    }}
+                                    variant="medical-outline"
+                                    size="sm"
+                                  >
+                                    Add to Bill
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Private Interface */}
+                          {seatAdFeeSubMode === 'private' && (
+                            <div className="space-y-4">
+                              {/* Patient Information Display */}
+                              <div className="p-3 bg-medical-primary/5 dark:bg-medical-primary/10 rounded-lg border border-medical-primary/20">
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                  <div>
+                                    <span className="text-medical-primary font-medium">Total Days Admitted: </span>
+                                    <span className="font-bold text-medical-primary">{totalAdmittedDays}</span>
+                                  </div>
+                                  <div>
+                                    <span className="text-medical-primary font-medium">Total Visitation: </span>
+                                    <span className="font-bold text-medical-primary">{patientInfo.totalVisitation || 0}</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Room Type Selection */}
+                              <div className="space-y-2">
+                                <div className="text-sm font-medium text-muted-foreground">
+                                  Room Type:
+                                </div>
+                                <select
+                                  value={roomType}
+                                  onChange={(e) => setRoomType(e.target.value)}
+                                  className="w-full p-2 border border-medical-primary/20 rounded-lg bg-background text-foreground focus:ring-2 focus:ring-medical-primary focus:border-medical-primary"
+                                >
+                                  <option value="">Select Room Type...</option>
+                                  <option value="private1">Private 1 (Non A/C)</option>
+                                  <option value="private2">Private 2 (A/C)</option>
+                                  <option value="private3">Private 3 (A/C, TV, Fridge)</option>
+                                </select>
+                              </div>
+                              
+                              {roomType && (
+                                <div className="p-4 bg-medical-primary/5 dark:bg-medical-primary/10 rounded-lg border border-medical-primary/20">
+                                  <div className="flex items-center justify-between mb-4">
+                                    <span className="text-sm font-semibold text-medical-primary">
+                                      {roomType === 'private1' ? 'Private 1 (Non A/C)' :
+                                       roomType === 'private2' ? 'Private 2 (A/C)' :
+                                       roomType === 'private3' ? 'Private 3 (A/C, TV, Fridge)' : ''}
+                                      {' '}({seatAdFeeMode})
+                                    </span>
+                                    <span className="text-sm font-bold text-medical-primary bg-medical-primary/10 px-2 py-1 rounded-md">
+                                      {format(privateQuantity * (
+                                        roomType === 'private1' ? 200 :
+                                        roomType === 'private2' ? 300 :
+                                        roomType === 'private3' ? 400 : 0
+                                      ))}
+                                    </span>
+                                  </div>
+                                  
+                                  {/* Private Quantity Controls */}
+                                  <div className="flex items-center justify-center space-x-4">
+                                    <button
+                                      onClick={() => setPrivateQuantity(prev => Math.max(1, prev - 1))}
+                                      className="h-10 w-10 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center justify-center text-medical-primary border border-medical-primary/20"
+                                    >
+                                      <Minus className="h-4 w-4" />
+                                    </button>
+                                    
+                                    <div className="text-center">
+                                      <div className="text-2xl font-bold text-medical-primary">{privateQuantity}</div>
+                                      <div className="text-xs text-medical-primary">days</div>
+                                    </div>
+                                    
+                                    <button
+                                      onClick={() => setPrivateQuantity(prev => prev + 1)}
+                                      className="h-10 w-10 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center justify-center text-medical-primary border border-medical-primary/20"
+                                    >
+                                      <Plus className="h-4 w-4" />
+                                    </button>
+                                  </div>
+                                  
+                                  <div className="flex justify-end mt-4">
+                                    <Button
+                                      onClick={() => {
+                                        const roomPrice = roomType === 'private1' ? 200 :
+                                                         roomType === 'private2' ? 300 :
+                                                         roomType === 'private3' ? 400 : 0;
+                                        const roomName = roomType === 'private1' ? 'Private 1 (Non A/C)' :
+                                                        roomType === 'private2' ? 'Private 2 (A/C)' :
+                                                        roomType === 'private3' ? 'Private 3 (A/C, TV, Fridge)' : '';
+                                        
+                                        for (let i = 0; i < privateQuantity; i++) {
+                                          const billId = `seat-private-${roomType}-${seatAdFeeMode}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                                          const privateItem = {
+                                            id: `seat-private-${roomType}-${seatAdFeeMode}`,
+                                            name: `${roomName} (${seatAdFeeMode}) - Day ${i + 1}`,
+                                            category: 'Seat & Ad. Fee',
+                                            price: roomPrice,
+                                            billId,
+                                            quantity: 1
+                                          };
+                                          setBillItems(prev => [...prev, privateItem]);
+                                        }
+                                        setPrivateQuantity(1);
+                                        setRoomType('');
+                                      }}
+                                      variant="medical-outline"
+                                      size="sm"
+                                    >
+                                      Add to Bill
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {!seatAdFeeMode && (
+                        <div className="text-center text-muted-foreground py-8">
+                          <div className="text-lg font-medium mb-2">Select Ward Type</div>
+                          <div className="text-sm">Choose MW (Male Ward) or FW (Female Ward) to continue</div>
+                        </div>
+                      )}
+
+                      {seatAdFeeMode && !seatAdFeeSubMode && (
+                        <div className="text-center text-muted-foreground py-6">
+                          <div className="text-lg font-medium mb-2">Select System Type</div>
+                          <div className="text-sm">Choose General or Private for {seatAdFeeMode}</div>
+                        </div>
+                      )}
+                      
+                      <div className="text-sm text-muted-foreground">
+                        • <strong>MW/FW:</strong> Select ward type (Male Ward/Female Ward)<br/>
+                        • <strong>General:</strong> Simple daily rate with quantity controls<br/>
+                        • <strong>Private:</strong> Choose room type with different pricing tiers<br/>
+                        • <strong>Patient Info:</strong> Total Days Admitted and Total Visitation displayed for reference<br/>
                         • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
                       </div>
                     </div>
