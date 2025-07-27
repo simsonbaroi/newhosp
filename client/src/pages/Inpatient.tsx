@@ -1754,7 +1754,21 @@ export default function Inpatient() {
                     </div>
                     <div className="bg-medical-primary/10 border border-medical-primary/30 rounded-xl p-4 backdrop-blur-md">
                       <div className="text-lg font-bold text-medical-primary mb-1">
-                        Select MW/FW or OB above
+                        Select{' '}
+                        <button 
+                          onClick={() => setSelectedPatientType('MW/FW')}
+                          className="underline hover:bg-medical-primary/20 px-1 rounded transition-colors"
+                        >
+                          MW/FW
+                        </button>
+                        {' '}or{' '}
+                        <button 
+                          onClick={() => setSelectedPatientType('OB')}
+                          className="underline hover:bg-medical-primary/20 px-1 rounded transition-colors"
+                        >
+                          OB
+                        </button>
+                        {' '}above
                       </div>
                       <div className="text-base text-medical-primary/80">
                         to unlock the categories
