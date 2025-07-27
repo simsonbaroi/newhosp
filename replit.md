@@ -5,7 +5,7 @@ A professional medical billing calculator application for hospitals and clinics.
 
 ## Recent Changes
 - **2025-01-27**: IMPLEMENTED: Mandatory patient type selection - billing cannot start without selecting MW/FW or OB
-- **2025-01-27**: ENHANCED: Replaced MW/FW and OB checkboxes with left-aligned toggle buttons inside Patient Information section
+- **2025-01-27**: REMOVED: MW/FW and OB buttons from Patient Information section - now only available in overlay unlock message
 - **2025-01-27**: IMPROVED: Made MW/FW and OB buttons mutually exclusive with labels inside buttons for cleaner UX
 - **2025-01-27**: ADDED: Categories section is locked/disabled until patient type is selected, then unlocks all categories
 - **2025-01-27**: ENHANCED: Animated pointing finger with bouncing animation, styled message block, and clickable MW/FW and OB buttons in overlay
