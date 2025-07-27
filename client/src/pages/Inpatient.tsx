@@ -1756,15 +1756,6 @@ export default function Inpatient() {
                     <Grid3X3 className="mr-2 h-5 w-5" />
                     Inpatient Categories
                   </span>
-                  {selectedPatientType && (
-                    <button
-                      onClick={() => setSelectedPatientType(null)}
-                      className="text-sm font-normal text-medical-primary/80 hover:text-medical-primary hover:bg-medical-primary/10 px-2 py-1 rounded transition-colors"
-                      title="Click to change admission type"
-                    >
-                      Admission Type: <span className="font-semibold">{selectedPatientType}</span>
-                    </button>
-                  )}
                   {isCarouselMode && (
                     <div className="flex items-center space-x-2">
                       <div className="text-xs text-muted-foreground hidden sm:block">
