@@ -244,6 +244,11 @@ export default function Inpatient() {
     ));
   };
   
+  // Function to remove a baby
+  const removeBaby = (babyId: string) => {
+    setBabies(prev => prev.filter(baby => baby.id !== babyId));
+  };
+  
   // Initialize first baby when Baby button is clicked for the first time
   if (showBabyInfo && babies.length === 0) {
     addNewBaby();
@@ -1819,8 +1824,17 @@ export default function Inpatient() {
                       </div>
                       
                       {babies.map((baby, index) => (
-                        <div key={baby.id} className="space-y-3 p-3 bg-background/70 dark:bg-background/50 rounded border border-medical-primary/20">
-                          <div className="text-xs font-medium text-medical-primary mb-2">Baby {index + 1}</div>
+                        <div key={baby.id} className="space-y-3 p-3 bg-background/70 dark:bg-background/50 rounded border border-medical-primary/20 relative">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="text-xs font-medium text-medical-primary">Baby {index + 1}</div>
+                            <button
+                              onClick={() => removeBaby(baby.id)}
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 w-5 h-5 rounded-full flex items-center justify-center transition-colors text-xs"
+                              title="Remove baby"
+                            >
+                              ✕
+                            </button>
+                          </div>
                           
                           <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1">
