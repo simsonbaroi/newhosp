@@ -1604,8 +1604,42 @@ export default function Inpatient() {
                     <Calculator className="mr-2 h-5 w-5" />
                     Patient Information
                   </div>
-                  <div className="flex items-center">
-                    {isPatientInfoExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <span 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedPatientType('MW/FW');
+                          setTypeChangeIndicator(true);
+                          setTimeout(() => setTypeChangeIndicator(false), 1000);
+                        }}
+                        className={`text-sm cursor-pointer transition-colors ${
+                          selectedPatientType === 'MW/FW' 
+                            ? 'text-medical-primary font-semibold' 
+                            : 'text-muted-foreground hover:text-medical-primary'
+                        }`}
+                      >
+                        MW/FW
+                      </span>
+                      <span 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedPatientType('OB');
+                          setTypeChangeIndicator(true);
+                          setTimeout(() => setTypeChangeIndicator(false), 1000);
+                        }}
+                        className={`text-sm cursor-pointer transition-colors ${
+                          selectedPatientType === 'OB' 
+                            ? 'text-medical-primary font-semibold' 
+                            : 'text-muted-foreground hover:text-medical-primary'
+                        }`}
+                      >
+                        OB
+                      </span>
+                    </div>
+                    <div className="flex items-center">
+                      {isPatientInfoExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </div>
                   </div>
                 </CardTitle>
               </CardHeader>
