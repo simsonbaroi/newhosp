@@ -1757,20 +1757,13 @@ export default function Inpatient() {
                     Inpatient Categories
                   </span>
                   {selectedPatientType && (
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm font-normal text-medical-primary/80">
-                        Admission Type: <span className="font-semibold">{selectedPatientType}</span>
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedPatientType(null)}
-                        className="h-6 px-2 text-xs text-medical-primary/60 hover:text-medical-primary hover:bg-medical-primary/10"
-                        title="Change admission type"
-                      >
-                        Change
-                      </Button>
-                    </div>
+                    <button
+                      onClick={() => setSelectedPatientType(null)}
+                      className="text-sm font-normal text-medical-primary/80 hover:text-medical-primary hover:bg-medical-primary/10 px-2 py-1 rounded transition-colors"
+                      title="Click to change admission type"
+                    >
+                      Admission Type: <span className="font-semibold">{selectedPatientType}</span>
+                    </button>
                   )}
                   {isCarouselMode && (
                     <div className="flex items-center space-x-2">
