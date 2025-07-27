@@ -1745,12 +1745,18 @@ export default function Inpatient() {
             </Card>
 
             {/* Category Buttons */}
-            <Card className={`glass-card ${!selectedPatientType ? 'opacity-50' : ''}`}>
+            <Card className="glass-card relative">
               {!selectedPatientType && (
-                <div className="text-center py-4 border-b border-border/50">
-                  <span className="text-lg font-semibold text-medical-primary">
-                    Select MW/FW or OB to unlock categories
-                  </span>
+                <div className="absolute inset-0 z-10 bg-background/80 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center">
+                  <div className="text-center space-y-3">
+                    <div className="text-2xl">👆</div>
+                    <div className="text-lg font-semibold text-medical-primary">
+                      Select MW/FW or OB above
+                    </div>
+                    <div className="text-base text-medical-primary">
+                      to unlock the categories
+                    </div>
+                  </div>
                 </div>
               )}
               <CardHeader>
