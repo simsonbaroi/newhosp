@@ -3686,6 +3686,59 @@ export default function Inpatient() {
                         • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
                       </div>
                     </div>
+                  ) : selectedCategory === 'Seat & Ad. Fee' ? (
+                    /* Seat & Ad. Fee with General and Private buttons */
+                    <div className="space-y-4">
+                      <div className="text-center space-y-4">
+                        <div className="text-lg font-medium text-medical-primary mb-6">
+                          Select Seat & Ad. Fee Type
+                        </div>
+                        
+                        <div className="flex space-x-4 justify-center">
+                          <Button
+                            onClick={() => {
+                              const generalFeeItem = {
+                                id: 'seat-general',
+                                name: 'Seat & Ad. Fee - General',
+                                category: 'Seat & Ad. Fee',
+                                price: 500, // You can adjust this price as needed
+                                billId: `seat-general-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+                              };
+                              setBillItems(prev => [...prev, generalFeeItem]);
+                            }}
+                            variant="medical"
+                            size="lg"
+                            className="px-8 py-4 text-lg font-medium"
+                          >
+                            General
+                          </Button>
+                          
+                          <Button
+                            onClick={() => {
+                              const privateFeeItem = {
+                                id: 'seat-private',
+                                name: 'Seat & Ad. Fee - Private',
+                                category: 'Seat & Ad. Fee',
+                                price: 1000, // You can adjust this price as needed
+                                billId: `seat-private-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+                              };
+                              setBillItems(prev => [...prev, privateFeeItem]);
+                            }}
+                            variant="medical"
+                            size="lg"
+                            className="px-8 py-4 text-lg font-medium"
+                          >
+                            Private
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <div className="text-sm text-muted-foreground text-center">
+                        • Click <strong>General</strong> or <strong>Private</strong> to add seat and additional fees<br/>
+                        • Each button adds the appropriate fee type to the bill<br/>
+                        • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
+                      </div>
+                    </div>
                   ) : ['Registration Fees'].includes(selectedCategory) ? (
                     /* Compact interface for Registration Fees matching outpatient */
                     <div className="space-y-2">

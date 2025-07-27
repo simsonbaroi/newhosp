@@ -10,6 +10,7 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-27**: ADDED: Categories section is locked/disabled until patient type is selected, then unlocks all categories
 - **2025-01-27**: ENHANCED: Animated pointing finger with bouncing animation, styled message block, and clickable MW/FW and OB buttons in overlay
 - **2025-01-27**: ADDED: "Admission Type" toggle button with visual feedback - shows checkmark and highlight animation when clicked
+- **2025-01-27**: ADDED: General and Private buttons side by side for "Seat & Ad. Fee" category with different pricing
 - **2025-01-27**: COMPLETED: Final migration from Replit Agent to standard Replit environment
 - **2025-01-27**: FIXED: Patient Information section now starts collapsed by default in Inpatient calculator
 - **2025-01-26**: IMPLEMENTED: Complete AI and Machine Learning system for medical billing analytics
