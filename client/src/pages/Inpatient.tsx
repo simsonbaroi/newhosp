@@ -11,6 +11,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
 import { useTakaFormat } from '../hooks/useCurrencyFormat';
 import { useSwipeGesture } from '../hooks/useSwipeGesture';
+import { useToast } from '@/hooks/use-toast';
 import { CupertinoDateTimePicker } from '@/components/CupertinoDateTimePicker';
 import type { MedicalItem } from '../../../shared/schema';
 import { calculateMedicineDosage, formatDosageForBill, MEDICINE_RULES } from '../../../shared/medicineCalculations';
@@ -30,6 +31,7 @@ interface BillItem {
 
 export default function Inpatient() {
   const { format } = useTakaFormat();
+  const { toast } = useToast();
   
   // Get current date and time
   const getCurrentDateTime = () => {
@@ -310,6 +312,19 @@ export default function Inpatient() {
     setDaysAdmitted(days);
   }, [admissionDate, dischargeDate]);
 
+  // Validation function to check if patient type is selected
+  const validatePatientTypeSelected = (): boolean => {
+    if (!selectedPatientType) {
+      toast({
+        title: "Patient Type Required",
+        description: "Please select either MW/FW or OB before adding items to the bill.",
+        variant: "destructive"
+      });
+      return false;
+    }
+    return true;
+  };
+
   // Add item to bill function
   // Medicine dosage configuration for inpatient
   const medTypeOptions = Object.keys(MEDICINE_RULES);
@@ -391,6 +406,11 @@ export default function Inpatient() {
 
   const addAllTempMedicinesToBill = () => {
     if (tempSelectedMedicines.length === 0) return;
+    
+    // Validate patient type is selected before adding items
+    if (!validatePatientTypeSelected()) {
+      return;
+    }
 
     const billItemsToAdd = tempSelectedMedicines.map(medicine => ({
       ...medicine,
@@ -754,6 +774,11 @@ export default function Inpatient() {
   }, [plasterDropdownFilterQuery, selectedPlasters.length]);
 
   const addItemToBill = (item: MedicalItem) => {
+    // Validate patient type is selected before adding items
+    if (!validatePatientTypeSelected()) {
+      return;
+    }
+    
     const existingItem = billItems.find(billItem => billItem.id === item.id.toString());
     if (existingItem) {
       setDuplicateDialog({ open: true, item });
@@ -770,6 +795,11 @@ export default function Inpatient() {
 
   // Handle manual entry for Physical Therapy, Limb and Brace, and Blood
   const addManualEntryToBill = () => {
+    // Validate patient type is selected before adding items
+    if (!validatePatientTypeSelected()) {
+      return;
+    }
+    
     if (!categorySearchQuery.trim() || !manualEntryPrice.trim()) {
       return; // Don't add if name or price is empty
     }
@@ -944,6 +974,11 @@ export default function Inpatient() {
   };
 
   const addSelectedLabItemsToBill = () => {
+    // Validate patient type is selected before adding items
+    if (!validatePatientTypeSelected()) {
+      return;
+    }
+    
     const newItems: MedicalItem[] = [];
     const duplicateItems: MedicalItem[] = [];
     
@@ -1007,6 +1042,11 @@ export default function Inpatient() {
   };
 
   const addDropdownSelectedItemsToBill = () => {
+    // Validate patient type is selected before adding items
+    if (!validatePatientTypeSelected()) {
+      return;
+    }
+    
     const newItems: MedicalItem[] = [];
     const duplicateItems: MedicalItem[] = [];
     
