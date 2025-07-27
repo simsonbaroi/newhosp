@@ -70,7 +70,7 @@ export default function Inpatient() {
   const [isCarouselMode, setIsCarouselMode] = useState<boolean>(false);
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState<number>(0);
   const [duplicateDialog, setDuplicateDialog] = useState<{open: boolean, item: MedicalItem | null}>({open: false, item: null});
-  const [isPatientInfoExpanded, setIsPatientInfoExpanded] = useState<boolean>(true);
+  const [isPatientInfoExpanded, setIsPatientInfoExpanded] = useState<boolean>(false);
   const [isBillFormHeaderExpanded, setIsBillFormHeaderExpanded] = useState<boolean>(false);
   
   // Advanced category functionality states (matching outpatient)
