@@ -4,13 +4,9 @@
 A professional medical billing calculator application for hospitals and clinics. The app allows users to calculate bills for both outpatient and inpatient services, with comprehensive database management for medical items and procedures.
 
 ## Recent Changes
-- **2025-01-27**: IMPLEMENTED: Mandatory patient type selection - billing cannot start without selecting MW/FW or OB
-- **2025-01-27**: REMOVED: MW/FW and OB buttons from Patient Information section - now only available in overlay unlock message
-- **2025-01-27**: IMPROVED: Made MW/FW and OB buttons mutually exclusive with labels inside buttons for cleaner UX
-- **2025-01-27**: ADDED: Categories section is locked/disabled until patient type is selected, then unlocks all categories
-- **2025-01-27**: ENHANCED: Animated pointing finger with bouncing animation, styled message block, and clickable MW/FW and OB buttons in overlay
-- **2025-01-27**: ADDED: "Admission Type" toggle button with visual feedback - shows checkmark and highlight animation when clicked
-- **2025-01-27**: ADDED: General and Private buttons side by side for "Seat & Ad. Fee" category with different pricing
+- **2025-01-27**: REMOVED: Overlay requirement from Inpatient calculator - categories now immediately accessible without patient type selection
+- **2025-01-27**: SIMPLIFIED: Patient type defaults to MW/FW, users can still toggle between MW/FW and OB using "Admission Type" button
+- **2025-01-27**: ENHANCED: Inpatient categories are now fully unlocked by default for immediate use
 - **2025-01-27**: COMPLETED: Final migration from Replit Agent to standard Replit environment
 - **2025-01-27**: FIXED: Patient Information section now starts collapsed by default in Inpatient calculator
 - **2025-01-26**: IMPLEMENTED: Complete AI and Machine Learning system for medical billing analytics

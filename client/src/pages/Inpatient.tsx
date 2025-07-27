@@ -156,8 +156,8 @@ export default function Inpatient() {
   const [plasterChargeChecked, setPlasterChargeChecked] = useState<boolean>(false);
   const [milkQuantity, setMilkQuantity] = useState<number>(1);
 
-  // Patient classification - only one can be selected
-  const [selectedPatientType, setSelectedPatientType] = useState<'MW/FW' | 'OB' | null>(null);
+  // Patient classification - removed overlay requirement
+  const [selectedPatientType, setSelectedPatientType] = useState<'MW/FW' | 'OB' | null>('MW/FW'); // Default to MW/FW
   const [typeChangeIndicator, setTypeChangeIndicator] = useState<boolean>(false);
   
   // Orthopedic search and dropdown state
@@ -1720,37 +1720,6 @@ export default function Inpatient() {
 
             {/* Category Buttons */}
             <Card className="glass-card relative">
-              {!selectedPatientType && (
-                <div className="absolute inset-0 z-10 bg-background/80 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center">
-                  <div className="text-center space-y-4">
-                    <div className="text-6xl text-medical-primary animate-bounce" style={{ animationDuration: '2s' }}>
-                      ☝️
-                    </div>
-                    <div className="bg-medical-primary/10 border border-medical-primary/30 rounded-xl p-4 backdrop-blur-md">
-                      <div className="text-lg font-bold text-medical-primary mb-1">
-                        Select{' '}
-                        <button 
-                          onClick={() => setSelectedPatientType('MW/FW')}
-                          className="hover:bg-medical-primary/20 px-1 rounded transition-colors"
-                        >
-                          MW/FW
-                        </button>
-                        {' '}or{' '}
-                        <button 
-                          onClick={() => setSelectedPatientType('OB')}
-                          className="hover:bg-medical-primary/20 px-1 rounded transition-colors"
-                        >
-                          OB
-                        </button>
-                        {' '}above
-                      </div>
-                      <div className="text-base text-medical-primary/80">
-                        to unlock the categories
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
               <CardHeader>
                 <CardTitle className="flex items-center justify-between text-medical-primary">
                   <span className="flex items-center">
@@ -1792,7 +1761,7 @@ export default function Inpatient() {
                   )}
                 </CardTitle>
               </CardHeader>
-              <CardContent className={!selectedPatientType ? 'pointer-events-none' : ''}>
+              <CardContent>
                 {!isCarouselMode ? (
                   // Normal grid mode
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -1802,9 +1771,8 @@ export default function Inpatient() {
                         <Button
                           key={category}
                           variant="medical-outline"
-                          className={`h-auto p-2 sm:p-3 text-left justify-start min-h-[60px] max-w-full ${!selectedPatientType ? 'cursor-not-allowed' : ''}`}
-                          onClick={() => selectedPatientType && handleCategoryClick(category)}
-                          disabled={!selectedPatientType}
+                          className="h-auto p-2 sm:p-3 text-left justify-start min-h-[60px] max-w-full"
+                          onClick={() => handleCategoryClick(category)}
                         >
                           <div className="flex flex-col items-start w-full overflow-hidden">
                             <span className="font-medium text-xs leading-tight w-full break-words hyphens-auto line-clamp-2">{category}</span>
