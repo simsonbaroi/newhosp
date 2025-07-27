@@ -1757,14 +1757,14 @@ export default function Inpatient() {
                         Select{' '}
                         <button 
                           onClick={() => setSelectedPatientType('MW/FW')}
-                          className="underline hover:bg-medical-primary/20 px-1 rounded transition-colors"
+                          className="hover:bg-medical-primary/20 px-1 rounded transition-colors"
                         >
                           MW/FW
                         </button>
                         {' '}or{' '}
                         <button 
                           onClick={() => setSelectedPatientType('OB')}
-                          className="underline hover:bg-medical-primary/20 px-1 rounded transition-colors"
+                          className="hover:bg-medical-primary/20 px-1 rounded transition-colors"
                         >
                           OB
                         </button>
