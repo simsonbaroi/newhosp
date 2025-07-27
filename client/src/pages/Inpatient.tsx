@@ -1887,6 +1887,17 @@ export default function Inpatient() {
                     </div>
                   </div>
                   
+                  {/* Save Button for Patient Info */}
+                  <div className="flex justify-end pt-2">
+                    <Button
+                      onClick={savePatientInfo}
+                      size="sm"
+                      className="bg-medical-primary hover:bg-medical-primary/90 text-white px-4 py-1 h-7 text-xs"
+                    >
+                      Save Patient Info
+                    </Button>
+                  </div>
+                  
                   {/* Baby Admission Information - Only show when Baby is selected */}
                   {showBabyInfo && (
                     <div className="space-y-4 mt-4 p-4 bg-medical-primary/5 dark:bg-medical-primary/10 rounded-lg border border-medical-primary/20">
@@ -1994,6 +2005,17 @@ export default function Inpatient() {
                           </div>
                         </div>
                       ))}
+                      
+                      {/* Save Button for Baby Info */}
+                      <div className="flex justify-end pt-2">
+                        <Button
+                          onClick={saveBabyInfo}
+                          size="sm"
+                          className="bg-medical-primary hover:bg-medical-primary/90 text-white px-4 py-1 h-7 text-xs"
+                        >
+                          Save Baby Info
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </CardContent>
