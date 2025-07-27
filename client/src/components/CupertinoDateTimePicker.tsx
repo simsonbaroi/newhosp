@@ -58,7 +58,7 @@ export const CupertinoDateTimePicker: React.FC<CupertinoDateTimePickerProps> = (
   // Smooth scroll to selected item
   const scrollToItem = (containerRef: React.RefObject<HTMLDivElement>, index: number) => {
     if (containerRef.current) {
-      const itemHeight = 44; // Height of each picker item
+      const itemHeight = 36; // Height of each picker item (smaller)
       const containerHeight = containerRef.current.clientHeight;
       const scrollTop = (index * itemHeight) - (containerHeight / 2) + (itemHeight / 2);
       
