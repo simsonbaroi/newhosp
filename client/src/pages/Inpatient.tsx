@@ -1758,9 +1758,9 @@ export default function Inpatient() {
                   </span>
                   {selectedPatientType && (
                     <button
-                      onClick={() => setSelectedPatientType(null)}
+                      onClick={() => setSelectedPatientType(selectedPatientType === 'MW/FW' ? 'OB' : 'MW/FW')}
                       className="text-sm text-medical-primary/60 hover:text-medical-primary hover:bg-medical-primary/10 px-2 py-1 rounded transition-colors"
-                      title="Click to change admission type"
+                      title="Click to toggle between MW/FW and OB"
                     >
                       Admission Type
                     </button>
