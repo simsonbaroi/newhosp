@@ -1805,22 +1805,22 @@ export default function Inpatient() {
                   
                   {/* Baby Admission Information - Only show when Baby is selected */}
                   {showBabyInfo && (
-                    <div className="space-y-4 mt-4 p-4 bg-blue-50/50 dark:bg-blue-900/10 rounded-lg border border-blue-200/50">
+                    <div className="space-y-4 mt-4 p-4 bg-medical-primary/5 dark:bg-medical-primary/10 rounded-lg border border-medical-primary/20">
                       <div className="flex items-center justify-between">
-                        <h4 className="text-sm font-semibold text-blue-700 dark:text-blue-300">Baby Admission Information</h4>
+                        <h4 className="text-sm font-semibold text-medical-primary">Baby Admission Information</h4>
                         <Button
                           size="sm"
-                          variant="outline"
+                          variant="medical-outline"
                           onClick={addNewBaby}
-                          className="h-6 px-2 text-xs border-blue-300 text-blue-600 hover:bg-blue-100"
+                          className="h-6 px-2 text-xs"
                         >
                           Add More
                         </Button>
                       </div>
                       
                       {babies.map((baby, index) => (
-                        <div key={baby.id} className="space-y-3 p-3 bg-white/70 dark:bg-gray-800/50 rounded border border-blue-200/30">
-                          <div className="text-xs font-medium text-blue-600 mb-2">Baby {index + 1}</div>
+                        <div key={baby.id} className="space-y-3 p-3 bg-background/70 dark:bg-background/50 rounded border border-medical-primary/20">
+                          <div className="text-xs font-medium text-medical-primary mb-2">Baby {index + 1}</div>
                           
                           <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1">
