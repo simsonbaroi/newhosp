@@ -1,10 +1,9 @@
 /* Cupertino Date Time Picker Styles */
 .cupertino-picker {
-  background: hsl(220, 15%, 8%);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
   border-radius: 12px;
-  border: 1px solid hsl(160, 25%, 20%);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(77, 166, 122, 0.1);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
   overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   max-width: 350px;
@@ -12,8 +11,8 @@
 }
 
 .picker-header {
-  background: linear-gradient(135deg, hsl(160, 60%, 30%) 0%, hsl(160, 65%, 45%) 100%);
-  border-bottom: 1px solid hsl(160, 25%, 20%);
+  background: linear-gradient(135deg, hsl(142, 76%, 36%) 0%, hsl(142, 76%, 32%) 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
   padding: 12px 16px;
   text-align: center;
 }
@@ -22,13 +21,13 @@
   margin: 0 0 6px 0;
   font-size: 16px;
   font-weight: 600;
-  color: hsl(160, 20%, 95%);
+  color: white;
 }
 
 .selected-datetime {
   font-size: 14px;
   font-weight: 500;
-  color: hsl(160, 20%, 85%);
+  color: rgba(255, 255, 255, 0.9);
   margin-bottom: 8px;
 }
 
@@ -39,25 +38,25 @@
 }
 
 .nav-button {
-  background: hsl(160, 25%, 15%);
-  border: 1px solid hsl(160, 25%, 20%);
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 16px;
   padding: 6px 12px;
   font-size: 12px;
   font-weight: 500;
-  color: hsl(160, 20%, 85%);
+  color: white;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .nav-button:hover {
-  background: hsl(160, 60%, 35%);
+  background: rgba(255, 255, 255, 0.25);
   transform: translateY(-1px);
 }
 
 .nav-button.active {
-  background: hsl(160, 60%, 45%);
-  color: hsl(0, 0%, 100%);
+  background: rgba(255, 255, 255, 0.9);
+  color: hsl(142, 76%, 36%);
 }
 
 .date-time-picker {
@@ -74,19 +73,19 @@
 .picker-column {
   flex: 1;
   position: relative;
-  background: hsl(220, 15%, 12%);
+  background: rgba(247, 247, 247, 0.8);
   border-radius: 8px;
   overflow: hidden;
 }
 
 .picker-column-header {
-  background: hsl(160, 25%, 15%);
+  background: rgba(255, 255, 255, 0.9);
   padding: 6px;
   text-align: center;
   font-size: 11px;
   font-weight: 600;
-  color: hsl(160, 10%, 65%);
-  border-bottom: 1px solid hsl(160, 25%, 20%);
+  color: #666;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   position: sticky;
   top: 0;
   z-index: 2;
@@ -110,12 +109,12 @@
 }
 
 .picker-scroll-container::-webkit-scrollbar-thumb {
-  background: hsl(160, 60%, 45%, 0.3);
+  background: rgba(16, 185, 129, 0.3);
   border-radius: 2px;
 }
 
 .picker-scroll-container::-webkit-scrollbar-thumb:hover {
-  background: hsl(160, 60%, 45%, 0.5);
+  background: rgba(16, 185, 129, 0.5);
 }
 
 .picker-item {
@@ -125,20 +124,20 @@
   justify-content: center;
   font-size: 14px;
   font-weight: 500;
-  color: hsl(160, 20%, 85%);
+  color: #333;
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
 }
 
 .picker-item:hover {
-  background: hsl(160, 60%, 35%, 0.15);
-  color: hsl(160, 60%, 45%);
+  background: rgba(16, 185, 129, 0.08);
+  color: hsl(142, 76%, 36%);
 }
 
 .picker-item.selected {
-  background: hsl(160, 60%, 45%, 0.2);
-  color: hsl(160, 60%, 45%);
+  background: rgba(16, 185, 129, 0.15);
+  color: hsl(142, 76%, 36%);
   font-weight: 600;
 }
 
@@ -149,7 +148,7 @@
   right: 6px;
   top: 0;
   bottom: 0;
-  background: linear-gradient(135deg, hsl(160, 60%, 45%, 0.1) 0%, hsl(160, 60%, 45%, 0.05) 100%);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
   border-radius: 6px;
   z-index: -1;
 }
@@ -169,13 +168,13 @@
 }
 
 .picker-column::before {
-  border-top: 1px solid hsl(160, 60%, 45%, 0.3);
-  border-bottom: 1px solid hsl(160, 60%, 45%, 0.3);
+  border-top: 1px solid rgba(16, 185, 129, 0.3);
+  border-bottom: 1px solid rgba(16, 185, 129, 0.3);
 }
 
 .picker-actions {
-  background: hsl(220, 15%, 8%);
-  border-top: 1px solid hsl(160, 25%, 20%);
+  background: rgba(248, 249, 250, 0.9);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
   padding: 12px 16px;
   display: flex;
   gap: 8px;
@@ -194,21 +193,21 @@
 }
 
 .picker-button.cancel {
-  background: hsl(160, 25%, 15%);
-  color: hsl(160, 10%, 65%);
+  background: rgba(142, 142, 147, 0.12);
+  color: #8E8E93;
 }
 
 .picker-button.cancel:hover {
-  background: hsl(160, 25%, 20%);
+  background: rgba(142, 142, 147, 0.2);
 }
 
 .picker-button.confirm {
-  background: hsl(160, 60%, 45%);
-  color: hsl(0, 0%, 100%);
+  background: hsl(142, 76%, 36%);
+  color: white;
 }
 
 .picker-button.confirm:hover {
-  background: hsl(160, 65%, 50%);
+  background: hsl(142, 76%, 32%);
   transform: translateY(-1px);
 }
 
