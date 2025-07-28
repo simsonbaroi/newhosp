@@ -4950,8 +4950,18 @@ export default function Inpatient() {
 
                       return Object.entries(categorizedItems).map(([category, items]) => (
                         <div key={category} className="space-y-2">
-                          <div className="font-semibold text-medical-primary text-sm border-b border-medical-primary/20 pb-1">
-                            {category}
+                          <div className="flex justify-between items-center font-semibold text-medical-primary text-sm border-b border-medical-primary/20 pb-1">
+                            <span>{category}</span>
+                            <Button
+                              onClick={() => {
+                                setBillItems(prev => prev.filter(item => item.category !== category));
+                              }}
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-500 hover:bg-red-100 text-xs px-2 py-1 h-auto"
+                            >
+                              Clear All
+                            </Button>
                           </div>
                           <div className="space-y-1">
                             {items.map((item) => (
