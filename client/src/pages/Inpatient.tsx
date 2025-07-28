@@ -4938,10 +4938,64 @@ export default function Inpatient() {
               <CardContent>
                 {billItems.length > 0 ? (
                   <div className="space-y-4">
-                    <div className="text-center text-muted-foreground py-8">
-                      <Calculator className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>Bill calculation will be implemented here.</p>
-                      <p className="text-sm">Total items: {billItems.length}</p>
+                    {/* Group items by category */}
+                    {(() => {
+                      const categorizedItems = billItems.reduce((acc, item) => {
+                        if (!acc[item.category]) {
+                          acc[item.category] = [];
+                        }
+                        acc[item.category].push(item);
+                        return acc;
+                      }, {} as Record<string, typeof billItems>);
+
+                      return Object.entries(categorizedItems).map(([category, items]) => (
+                        <div key={category} className="space-y-2">
+                          <div className="font-semibold text-medical-primary text-sm border-b border-medical-primary/20 pb-1">
+                            {category}
+                          </div>
+                          <div className="space-y-1">
+                            {items.map((item) => (
+                              <div key={item.billId} className="flex justify-between items-center text-sm py-1 px-2 bg-muted/20 rounded">
+                                <div className="flex items-center space-x-2">
+                                  <span>{item.name}</span>
+                                  {item.quantity && item.quantity > 1 && (
+                                    <span className="text-xs text-muted-foreground">x{item.quantity}</span>
+                                  )}
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <span className="font-medium text-medical-primary">
+                                    {format(item.price * (item.quantity || 1))}
+                                  </span>
+                                  <button
+                                    onClick={() => {
+                                      setBillItems(prev => prev.filter(billItem => billItem.billId !== item.billId));
+                                    }}
+                                    className="text-red-500 hover:bg-red-100 rounded p-1"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="text-right text-sm font-medium text-medical-primary">
+                            Category Total: {format(items.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0))}
+                          </div>
+                        </div>
+                      ));
+                    })()}
+                    
+                    {/* Grand Total */}
+                    <div className="border-t border-medical-primary/20 pt-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-lg font-bold text-medical-primary">Grand Total:</span>
+                        <span className="text-xl font-bold text-medical-primary">
+                          {format(billItems.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0))}
+                        </span>
+                      </div>
+                      <div className="text-right text-sm text-muted-foreground">
+                        {billItems.length} item{billItems.length !== 1 ? 's' : ''}
+                      </div>
                     </div>
                   </div>
                 ) : (

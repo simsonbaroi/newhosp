@@ -9,6 +9,8 @@ A professional medical billing calculator application for hospitals and clinics.
 - **2025-01-28**: ENHANCED: Inpatient system now has full Laboratory-style dropdown functionality matching Outpatient system
 - **2025-01-28**: SECURED: Application follows robust security practices with proper frontend/backend separation
 - **2025-01-28**: ENHANCED: Blood category manual entry interface supports multiple entries with keyboard shortcuts and auto-clearing fields
+- **2025-01-28**: IMPLEMENTED: Dynamic manual entry system for Blood category - auto-expanding rows with batch "Add All to Bill" functionality
+- **2025-01-28**: COMPLETED: Full bill summary display with categorized items, individual totals, remove functionality, and grand total calculation
 - **2025-01-27**: REMOVED: Overlay requirement from Inpatient calculator - categories now immediately accessible without patient type selection
 - **2025-01-27**: SIMPLIFIED: Patient type defaults to MW/FW, users can still toggle between MW/FW and OB using "Admission Type" button
 - **2025-01-27**: ENHANCED: Inpatient categories are now fully unlocked by default for immediate use
