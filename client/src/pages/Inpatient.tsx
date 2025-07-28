@@ -4154,128 +4154,134 @@ export default function Inpatient() {
                   ) : selectedCategory === 'Blood' ? (
                     /* Blood category with dropdown and quantity controls */
                     <div className="space-y-4">
-                      {/* Selected Blood items with quantity controls */}
+                      {/* Selected Blood items - matching outpatient Laboratory design */}
                       {bloodDropdownSelectedItems.length > 0 && (
                         <div className="space-y-2">
-                          <div className="text-sm font-medium text-medical-primary mb-2">Selected Blood Items:</div>
-                          {bloodDropdownSelectedItems.map((item) => {
-                            const quantity = bloodQuantities[item.id.toString()] || 1;
-                            return (
-                              <div key={item.id} className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
-                                <div className="flex-1">
-                                  <div className="font-medium text-sm">{item.name}</div>
-                                  <div className="text-xs text-muted-foreground">{format(parseFloat(item.price.toString()))} per unit</div>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                  <div className="flex items-center space-x-1">
+                          <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md">
+                            {bloodDropdownSelectedItems.map((item) => {
+                              const quantity = bloodQuantities[item.id.toString()] || 1;
+                              return (
+                                <div key={item.id} className="inline-flex items-center bg-blue-500/10 text-blue-600 px-2 py-1 rounded text-xs">
+                                  <span className="mr-2">{item.name}</span>
+                                  {/* Quantity controls */}
+                                  <div className="flex items-center space-x-1 mr-2">
                                     <button
                                       onClick={() => updateBloodQuantity(item.id.toString(), -1)}
-                                      className="h-8 w-8 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center justify-center text-medical-primary border border-medical-primary/20"
+                                      className="h-4 w-4 rounded bg-blue-500/20 hover:bg-blue-500/30 flex items-center justify-center text-blue-600"
                                     >
-                                      <Minus className="h-3 w-3" />
+                                      <Minus className="h-2 w-2" />
                                     </button>
-                                    <div className="text-center min-w-[2rem]">
-                                      <div className="text-lg font-bold text-medical-primary">{quantity}</div>
-                                    </div>
+                                    <span className="text-xs font-medium min-w-[1rem] text-center">{quantity}</span>
                                     <button
                                       onClick={() => updateBloodQuantity(item.id.toString(), 1)}
-                                      className="h-8 w-8 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center justify-center text-medical-primary border border-medical-primary/20"
+                                      className="h-4 w-4 rounded bg-blue-500/20 hover:bg-blue-500/30 flex items-center justify-center text-blue-600"
                                     >
-                                      <Plus className="h-3 w-3" />
+                                      <Plus className="h-2 w-2" />
                                     </button>
                                   </div>
                                   <button
                                     onClick={() => removeBloodDropdownItem(item.id)}
-                                    className="text-red-500 hover:text-red-700 p-1"
+                                    className="hover:bg-blue-500/20 rounded-full p-0.5"
                                   >
-                                    <X className="h-4 w-4" />
+                                    <X className="h-3 w-3" />
                                   </button>
                                 </div>
-                              </div>
-                            );
-                          })}
-                          
-                          {/* Total price and Add to Bill button */}
-                          <div className="flex items-center justify-between pt-2 border-t border-blue-200 dark:border-blue-800">
-                            <div className="text-sm font-medium text-medical-primary">
-                              Total: {format(bloodDropdownSelectedItems.reduce((sum, item) => {
-                                const quantity = bloodQuantities[item.id.toString()] || 1;
-                                return sum + (parseFloat(item.price.toString()) * quantity);
-                              }, 0))}
+                              );
+                            })}
+                          </div>
+                          {/* Price counter on left, Add to Bill button on right */}
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-4 p-2 bg-blue-500/5 rounded-md border border-blue-500/20">
+                              <span className="text-sm font-medium text-blue-600">
+                                Total Price: {format(bloodDropdownSelectedItems.reduce((sum, item) => {
+                                  const quantity = bloodQuantities[item.id.toString()] || 1;
+                                  return sum + (parseFloat(item.price.toString()) * quantity);
+                                }, 0))}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {bloodDropdownSelectedItems.length} item{bloodDropdownSelectedItems.length !== 1 ? 's' : ''}
+                              </span>
                             </div>
-                            <Button
-                              onClick={addBloodDropdownSelectedItemsToBill}
+                            <Button 
+                              onClick={addBloodDropdownSelectedItemsToBill} 
                               variant="outline"
-                              size="sm"
-                              className="text-xs font-medium border-blue-500 text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 px-3 py-1"
+                              className="border-blue-500/20 text-blue-600 hover:bg-blue-500/10"
                             >
-                              Add to Bill
+                              Add {bloodDropdownSelectedItems.length} Item{bloodDropdownSelectedItems.length !== 1 ? 's' : ''} to Bill
                             </Button>
                           </div>
                         </div>
                       )}
 
-                      {/* Blood dropdown */}
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-foreground">Select Blood Items:</label>
+                      {/* Blood dropdown - matching outpatient Laboratory design */}
+                      <div className="space-y-2 border-t pt-4">
+                        <div className="text-sm font-medium text-muted-foreground">
+                          Select from dropdown
+                        </div>
                         <div className="relative" ref={bloodDropdownRef}>
-                          <Button
+                          <button
                             ref={bloodDropdownButtonRef}
-                            variant="outline"
-                            onClick={() => setIsBloodDropdownOpen(!isBloodDropdownOpen)}
+                            type="button"
+                            onClick={() => {
+                              setIsBloodDropdownOpen(!isBloodDropdownOpen);
+                              setBloodHighlightedDropdownIndex(-1);
+                            }}
                             onKeyDown={handleBloodDropdownKeyDown}
-                            className="w-full justify-between text-left h-10"
+                            className="w-full flex items-center justify-between px-3 py-2 border border-border rounded-md bg-background hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-medical-primary focus:ring-offset-2"
                           >
-                            <span className="text-sm">
-                              {bloodDropdownFilterQuery ? (
-                                <span>
-                                  Filter: "{bloodDropdownFilterQuery}" ({getBloodFilteredDropdownItems().length} matches)
-                                </span>
-                              ) : (
-                                'Select blood items...'
-                              )}
+                            <span className="text-sm text-muted-foreground">
+                              {bloodDropdownFilterQuery ? `Filtering: "${bloodDropdownFilterQuery}" (${getBloodFilteredDropdownItems().length} matches)` : 'Select blood items from dropdown... (Type to filter)'}
                             </span>
-                            <ChevronDown className="h-4 w-4 opacity-50" />
-                          </Button>
-
+                            <ChevronRight className={`h-4 w-4 transition-transform ${isBloodDropdownOpen ? 'rotate-90' : ''}`} />
+                          </button>
+                          
                           {isBloodDropdownOpen && (
-                            <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-auto">
-                              {getBloodFilteredDropdownItems().map((item, index) => {
-                                const isSelected = bloodDropdownSelectedItems.find(selected => selected.id === item.id);
-                                const isInBill = billItems.find(billItem => billItem.id === item.id.toString());
-                                const isHighlighted = index === bloodHighlightedDropdownIndex;
-                                
-                                return (
-                                  <div
-                                    key={item.id}
-                                    className={`px-3 py-2 cursor-pointer text-sm flex items-center justify-between ${
-                                      isHighlighted ? 'bg-blue-100 dark:bg-blue-900/30 border-l-4 border-blue-500' : 
-                                      isInBill ? 'bg-red-50 dark:bg-red-900/20 text-red-600' :
-                                      isSelected ? 'bg-green-50 dark:bg-green-900/20 text-green-600' :
-                                      'hover:bg-gray-100 dark:hover:bg-gray-700'
-                                    }`}
-                                    onClick={() => {
-                                      if (!isSelected && !isInBill) {
-                                        handleBloodDropdownSelect(item.id.toString());
-                                      }
-                                    }}
-                                  >
-                                    <div>
-                                      <div className="font-medium">{item.name}</div>
-                                      <div className="text-xs text-muted-foreground">{format(parseFloat(item.price.toString()))}</div>
-                                    </div>
-                                    <div className="text-xs">
-                                      {isHighlighted && <span className="text-blue-600">← Highlighted</span>}
-                                      {isSelected && <span className="text-green-600">✓ Selected</span>}
-                                      {isInBill && <span className="text-red-600">● Already in Bill</span>}
-                                    </div>
+                            <div 
+                              className="absolute top-full left-0 right-0 z-50 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-y-auto"
+                            >
+                              {getBloodFilteredDropdownItems().map((item: MedicalItem, index) => (
+                                <div
+                                  key={item.id}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    const isSelected = bloodDropdownSelectedItems.find(selected => selected.id === item.id);
+                                    const isInBill = billItems.find(billItem => billItem.id === item.id.toString());
+                                    if (!isSelected && !isInBill) {
+                                      handleBloodDropdownSelect(item.id.toString());
+                                    }
+                                  }}
+                                  className={`px-3 py-2 text-sm flex items-center justify-between ${
+                                    index === bloodHighlightedDropdownIndex 
+                                      ? 'bg-medical-primary/10 border-l-4 border-medical-primary' 
+                                      : ''
+                                  } ${
+                                    bloodDropdownSelectedItems.find(selected => selected.id === item.id)
+                                      ? 'bg-blue-500/10 text-blue-600'
+                                      : billItems.find(billItem => billItem.id === item.id.toString())
+                                        ? 'bg-red-100 text-red-600 cursor-not-allowed'
+                                        : 'cursor-pointer hover:bg-muted/50'
+                                  }`}
+                                >
+                                  <div className="flex items-center">
+                                    <span>{item.name}</span>
+                                    {bloodDropdownSelectedItems.find(selected => selected.id === item.id) && (
+                                      <span className="ml-2 text-blue-600 text-xs">✓ Selected</span>
+                                    )}
+                                    {billItems.find(billItem => billItem.id === item.id.toString()) && !bloodDropdownSelectedItems.find(selected => selected.id === item.id) && (
+                                      <span className="ml-2 text-red-600 text-xs">● Already in Bill</span>
+                                    )}
+                                    {index === bloodHighlightedDropdownIndex && (
+                                      <span className="ml-2 text-medical-primary text-xs">← Highlighted</span>
+                                    )}
                                   </div>
-                                );
-                              })}
-                              
+                                  <span className="text-medical-primary font-semibold">
+                                    {format(parseFloat(item.price.toString()))}
+                                  </span>
+                                </div>
+                              ))}
                               {getBloodFilteredDropdownItems().length === 0 && (
                                 <div className="px-3 py-2 text-sm text-muted-foreground">
-                                  No items found{bloodDropdownFilterQuery && ` for "${bloodDropdownFilterQuery}"`}
+                                  No blood items available
                                 </div>
                               )}
                             </div>
