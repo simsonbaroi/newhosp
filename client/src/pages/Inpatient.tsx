@@ -4548,31 +4548,18 @@ export default function Inpatient() {
                       {/* Manual entry section below dropdown */}
                       <div className="space-y-2 border-t pt-4">
                         <div className="text-sm font-medium text-muted-foreground">
-                          Manual Entry
+                          Manual Entry - Add Custom Blood Services
                         </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="space-y-1">
-                            <label className="text-xs font-medium text-muted-foreground">Service Name:</label>
-                            <Input
-                              placeholder="Enter blood service name..."
-                              value={bloodManualServiceName}
-                              onChange={(e) => setBloodManualServiceName(e.target.value)}
-                              className="text-sm"
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <label className="text-xs font-medium text-muted-foreground">Price:</label>
-                            <div className="flex">
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-1">
+                              <label className="text-xs font-medium text-muted-foreground">Service Name:</label>
                               <Input
-                                placeholder="0"
-                                value={bloodManualPrice}
-                                onChange={(e) => setBloodManualPrice(e.target.value)}
-                                className="text-sm"
-                                type="number"
-                              />
-                              <Button
-                                onClick={() => {
-                                  if (bloodManualServiceName.trim() && bloodManualPrice && parseFloat(bloodManualPrice) > 0) {
+                                placeholder="Enter blood service name..."
+                                value={bloodManualServiceName}
+                                onChange={(e) => setBloodManualServiceName(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && bloodManualServiceName.trim() && bloodManualPrice && parseFloat(bloodManualPrice) > 0) {
                                     const billId = `blood-manual-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
                                     const manualItem = {
                                       id: `blood-manual-${Date.now()}`,
@@ -4587,23 +4574,75 @@ export default function Inpatient() {
                                     setBloodManualPrice('');
                                   }
                                 }}
-                                variant="medical-outline"
-                                size="sm"
-                                className="ml-2 px-2"
-                                disabled={!bloodManualServiceName.trim() || !bloodManualPrice || parseFloat(bloodManualPrice) <= 0}
-                              >
-                                Add
-                              </Button>
+                                className="text-sm"
+                              />
                             </div>
+                            <div className="space-y-1">
+                              <label className="text-xs font-medium text-muted-foreground">Price:</label>
+                              <div className="flex">
+                                <Input
+                                  placeholder="0"
+                                  value={bloodManualPrice}
+                                  onChange={(e) => setBloodManualPrice(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && bloodManualServiceName.trim() && bloodManualPrice && parseFloat(bloodManualPrice) > 0) {
+                                      const billId = `blood-manual-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                                      const manualItem = {
+                                        id: `blood-manual-${Date.now()}`,
+                                        name: bloodManualServiceName.trim(),
+                                        category: 'Blood',
+                                        price: parseFloat(bloodManualPrice),
+                                        billId,
+                                        quantity: 1
+                                      };
+                                      setBillItems(prev => [...prev, manualItem]);
+                                      setBloodManualServiceName('');
+                                      setBloodManualPrice('');
+                                    }
+                                  }}
+                                  className="text-sm"
+                                  type="number"
+                                />
+                                <Button
+                                  onClick={() => {
+                                    if (bloodManualServiceName.trim() && bloodManualPrice && parseFloat(bloodManualPrice) > 0) {
+                                      const billId = `blood-manual-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                                      const manualItem = {
+                                        id: `blood-manual-${Date.now()}`,
+                                        name: bloodManualServiceName.trim(),
+                                        category: 'Blood',
+                                        price: parseFloat(bloodManualPrice),
+                                        billId,
+                                        quantity: 1
+                                      };
+                                      setBillItems(prev => [...prev, manualItem]);
+                                      setBloodManualServiceName('');
+                                      setBloodManualPrice('');
+                                    }
+                                  }}
+                                  variant="medical-outline"
+                                  size="sm"
+                                  className="ml-2 px-3"
+                                  disabled={!bloodManualServiceName.trim() || !bloodManualPrice || parseFloat(bloodManualPrice) <= 0}
+                                >
+                                  Add to Bill
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Quick help text for multiple entries */}
+                          <div className="text-xs text-muted-foreground bg-muted/20 p-2 rounded">
+                            💡 <strong>For multiple entries:</strong> Fill both fields and click "Add to Bill" or press Enter. Fields will clear automatically for the next entry.
                           </div>
                         </div>
                       </div>
 
                       <div className="text-sm text-muted-foreground">
-                        • Select blood items from dropdown<br/>
-                        • Use quantity controls to set amounts<br/>
-                        • Type to filter items in dropdown<br/>
-                        • Use manual entry for custom blood services<br/>
+                        • <strong>Dropdown:</strong> Select predefined blood items with quantity controls<br/>
+                        • <strong>Manual Entry:</strong> Add custom blood services with your own pricing<br/>
+                        • <strong>Multiple Entries:</strong> Add as many manual entries as needed - fields clear after each addition<br/>
+                        • <strong>Quick Add:</strong> Press Enter in either field to add item quickly<br/>
                         • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
                       </div>
                     </div>
