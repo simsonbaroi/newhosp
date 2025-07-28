@@ -382,6 +382,10 @@ export default function Inpatient() {
   const bloodDropdownRef = useRef<HTMLDivElement>(null);
   const bloodDropdownButtonRef = useRef<HTMLButtonElement>(null);
   const bloodSearchInputRef = useRef<HTMLInputElement>(null);
+  
+  // Limb and Brace refs
+  const limbBraceDropdownRef = useRef<HTMLDivElement>(null);
+  const limbBraceDropdownButtonRef = useRef<HTMLButtonElement>(null);
 
   // Patient classification - removed overlay requirement
   const [selectedPatientType, setSelectedPatientType] = useState<'MW/FW' | 'OB' | null>('MW/FW'); // Default to MW/FW
@@ -456,6 +460,11 @@ export default function Inpatient() {
     { id: '1', serviceName: '', price: '' }
   ]);
   
+  // Limb and Brace manual entry state - dynamic multiple entries
+  const [limbBraceManualEntries, setLimbBraceManualEntries] = useState<{id: string, serviceName: string, price: string}[]>([
+    { id: '1', serviceName: '', price: '' }
+  ]);
+  
   // Blood category dropdown and quantity state
   const [selectedBloodItems, setSelectedBloodItems] = useState<MedicalItem[]>([]);
   const [bloodDropdownSelectedItems, setBloodDropdownSelectedItems] = useState<MedicalItem[]>([]);
@@ -464,6 +473,15 @@ export default function Inpatient() {
   const [isBloodDropdownOpen, setIsBloodDropdownOpen] = useState<boolean>(false);
   const [bloodDropdownFilterQuery, setBloodDropdownFilterQuery] = useState<string>('');
   const [bloodQuantities, setBloodQuantities] = useState<{[key: string]: number}>({});
+  
+  // Limb and Brace category dropdown and quantity state
+  const [selectedLimbBraceItems, setSelectedLimbBraceItems] = useState<MedicalItem[]>([]);
+  const [limbBraceDropdownSelectedItems, setLimbBraceDropdownSelectedItems] = useState<MedicalItem[]>([]);
+  const [limbBraceDropdownValue, setLimbBraceDropdownValue] = useState<string>('');
+  const [limbBraceHighlightedDropdownIndex, setLimbBraceHighlightedDropdownIndex] = useState<number>(-1);
+  const [isLimbBraceDropdownOpen, setIsLimbBraceDropdownOpen] = useState<boolean>(false);
+  const [limbBraceDropdownFilterQuery, setLimbBraceDropdownFilterQuery] = useState<string>('');
+  const [limbBraceQuantities, setLimbBraceQuantities] = useState<{[key: string]: number}>({});
 
 
   
@@ -1555,6 +1573,146 @@ export default function Inpatient() {
       const aName = a.name.toLowerCase();
       const bName = b.name.toLowerCase();
       const query = bloodDropdownFilterQuery.toLowerCase();
+      
+      if (aName === query && bName !== query) return -1;
+      if (bName === query && aName !== query) return 1;
+      if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
+      if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
+      
+      return aName.localeCompare(bName);
+    });
+  };
+
+  // Limb and Brace helper functions
+  const removeLimbBraceDropdownItem = (itemId: number) => {
+    setLimbBraceDropdownSelectedItems(prev => prev.filter(item => item.id !== itemId));
+    setLimbBraceQuantities(prev => {
+      const newQuantities = { ...prev };
+      delete newQuantities[itemId.toString()];
+      return newQuantities;
+    });
+  };
+
+  const updateLimbBraceQuantity = (itemId: string, change: number) => {
+    setLimbBraceQuantities(prev => {
+      const currentQuantity = prev[itemId] || 1;
+      const newQuantity = Math.max(1, currentQuantity + change);
+      return {
+        ...prev,
+        [itemId]: newQuantity
+      };
+    });
+  };
+
+  const handleLimbBraceDropdownSelect = (itemId: string) => {
+    const selectedItem = categoryItems?.find(item => item.id.toString() === itemId);
+    if (selectedItem) {
+      setLimbBraceDropdownSelectedItems(prev => [...prev, selectedItem]);
+      setLimbBraceQuantities(prev => ({ ...prev, [itemId]: 1 }));
+      setLimbBraceDropdownFilterQuery('');
+      setLimbBraceHighlightedDropdownIndex(-1);
+    }
+  };
+
+  const addLimbBraceDropdownSelectedItemsToBill = () => {
+    const newItems: MedicalItem[] = [];
+    const duplicateItems: MedicalItem[] = [];
+    
+    limbBraceDropdownSelectedItems.forEach(item => {
+      const existingItem = billItems.find(billItem => billItem.id === item.id.toString());
+      if (existingItem) {
+        duplicateItems.push(item);
+      } else {
+        newItems.push(item);
+      }
+    });
+    
+    if (newItems.length > 0) {
+      const billItemsToAdd: BillItem[] = [];
+      
+      newItems.forEach(item => {
+        const quantity = limbBraceQuantities[item.id.toString()] || 1;
+        for (let i = 0; i < quantity; i++) {
+          billItemsToAdd.push({
+            id: item.id.toString(),
+            name: item.name,
+            category: item.category,
+            price: parseFloat(item.price.toString()),
+            billId: `${item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+          });
+        }
+      });
+      
+      setBillItems(prevBillItems => [...prevBillItems, ...billItemsToAdd]);
+    }
+    
+    if (duplicateItems.length > 0) {
+      setDuplicateDialog({ open: true, item: duplicateItems[0] });
+    }
+    
+    setLimbBraceDropdownSelectedItems([]);
+    setLimbBraceQuantities({});
+    setIsLimbBraceDropdownOpen(false);
+    setLimbBraceHighlightedDropdownIndex(-1);
+    setLimbBraceDropdownFilterQuery('');
+  };
+
+  // Handle keyboard navigation for Limb and Brace dropdown
+  const handleLimbBraceDropdownKeyDown = (e: React.KeyboardEvent) => {
+    const orderedItems = getLimbBraceFilteredDropdownItems();
+    
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setLimbBraceHighlightedDropdownIndex(prev => 
+        prev < orderedItems.length - 1 ? prev + 1 : 0
+      );
+      if (!isLimbBraceDropdownOpen) setIsLimbBraceDropdownOpen(true);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setLimbBraceHighlightedDropdownIndex(prev => 
+        prev > 0 ? prev - 1 : orderedItems.length - 1
+      );
+      if (!isLimbBraceDropdownOpen) setIsLimbBraceDropdownOpen(true);
+    } else if (e.key === 'Enter' && limbBraceHighlightedDropdownIndex >= 0) {
+      e.preventDefault();
+      const selectedItem = orderedItems[limbBraceHighlightedDropdownIndex];
+      if (selectedItem) {
+        handleLimbBraceDropdownSelect(selectedItem.id.toString());
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setIsLimbBraceDropdownOpen(false);
+      setLimbBraceHighlightedDropdownIndex(-1);
+      setLimbBraceDropdownFilterQuery('');
+    } else if (e.key.length === 1 && e.key.match(/[a-zA-Z0-9\s]/)) {
+      e.preventDefault();
+      const newQuery = limbBraceDropdownFilterQuery + e.key.toLowerCase();
+      setLimbBraceDropdownFilterQuery(newQuery);
+      setLimbBraceHighlightedDropdownIndex(0);
+      if (!isLimbBraceDropdownOpen) setIsLimbBraceDropdownOpen(true);
+    } else if (e.key === 'Backspace') {
+      e.preventDefault();
+      setLimbBraceDropdownFilterQuery(prev => prev.slice(0, -1));
+      setLimbBraceHighlightedDropdownIndex(0);
+    }
+  };
+
+  // Get filtered Limb and Brace dropdown items
+  const getLimbBraceFilteredDropdownItems = () => {
+    if (!categoryItems) return [];
+    
+    const filtered = categoryItems.filter(item => 
+      !limbBraceDropdownFilterQuery || 
+      item.name.toLowerCase().includes(limbBraceDropdownFilterQuery.toLowerCase())
+    );
+    
+    if (!limbBraceDropdownFilterQuery) return filtered.sort((a, b) => a.name.localeCompare(b.name));
+    
+    // Sort by relevance: exact matches first, then starts with, then contains
+    return filtered.sort((a, b) => {
+      const aName = a.name.toLowerCase();
+      const bName = b.name.toLowerCase();
+      const query = limbBraceDropdownFilterQuery.toLowerCase();
       
       if (aName === query && bName !== query) return -1;
       if (bName === query && aName !== query) return 1;
@@ -4408,6 +4566,262 @@ export default function Inpatient() {
                       </div>
                     </div>
 
+                  ) : selectedCategory === 'Limb and Brace' ? (
+                    /* Limb and Brace category with dropdown and manual entry */
+                    <div className="space-y-4">
+                      {/* Selected Limb and Brace items - matching Blood design */}
+                      {limbBraceDropdownSelectedItems.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md">
+                            {limbBraceDropdownSelectedItems.map((item) => {
+                              const quantity = limbBraceQuantities[item.id.toString()] || 1;
+                              return (
+                                <div key={item.id} className="inline-flex items-center bg-blue-500/10 text-blue-600 px-2 py-1 rounded text-xs">
+                                  <span className="mr-2">{item.name}</span>
+                                  {/* Quantity controls */}
+                                  <div className="flex items-center space-x-1 mr-2">
+                                    <button
+                                      onClick={() => updateLimbBraceQuantity(item.id.toString(), -1)}
+                                      className="h-4 w-4 rounded bg-blue-500/20 hover:bg-blue-500/30 flex items-center justify-center text-blue-600"
+                                    >
+                                      <Minus className="h-2 w-2" />
+                                    </button>
+                                    <span className="text-xs font-medium min-w-[1rem] text-center">{quantity}</span>
+                                    <button
+                                      onClick={() => updateLimbBraceQuantity(item.id.toString(), 1)}
+                                      className="h-4 w-4 rounded bg-blue-500/20 hover:bg-blue-500/30 flex items-center justify-center text-blue-600"
+                                    >
+                                      <Plus className="h-2 w-2" />
+                                    </button>
+                                  </div>
+                                  <button
+                                    onClick={() => removeLimbBraceDropdownItem(item.id)}
+                                    className="hover:bg-blue-500/20 rounded-full p-0.5"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          {/* Price counter on left, Add to Bill button on right */}
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-4 p-2 bg-blue-500/5 rounded-md border border-blue-500/20">
+                              <span className="text-sm font-medium text-blue-600">
+                                Total Price: {format(limbBraceDropdownSelectedItems.reduce((sum, item) => {
+                                  const quantity = limbBraceQuantities[item.id.toString()] || 1;
+                                  return sum + (parseFloat(item.price.toString()) * quantity);
+                                }, 0))}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {limbBraceDropdownSelectedItems.length} item{limbBraceDropdownSelectedItems.length !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+                            <Button 
+                              onClick={addLimbBraceDropdownSelectedItemsToBill} 
+                              variant="outline"
+                              className="border-blue-500/20 text-blue-600 hover:bg-blue-500/10"
+                            >
+                              Add {limbBraceDropdownSelectedItems.length} Item{limbBraceDropdownSelectedItems.length !== 1 ? 's' : ''} to Bill
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Limb and Brace dropdown */}
+                      <div className="space-y-2 border-t pt-4">
+                        <div className="text-sm font-medium text-muted-foreground">
+                          Select from dropdown
+                        </div>
+                        <div className="relative" ref={limbBraceDropdownRef}>
+                          <button
+                            ref={limbBraceDropdownButtonRef}
+                            type="button"
+                            onClick={() => {
+                              setIsLimbBraceDropdownOpen(!isLimbBraceDropdownOpen);
+                              setLimbBraceHighlightedDropdownIndex(-1);
+                            }}
+                            onKeyDown={handleLimbBraceDropdownKeyDown}
+                            className="w-full flex items-center justify-between px-3 py-2 border border-border rounded-md bg-background hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-medical-primary focus:ring-offset-2"
+                          >
+                            <span className="text-sm text-muted-foreground">
+                              {limbBraceDropdownFilterQuery ? `Filtering: "${limbBraceDropdownFilterQuery}" (${getLimbBraceFilteredDropdownItems().length} matches)` : 'Select limb & brace items from dropdown... (Type to filter)'}
+                            </span>
+                            <ChevronRight className={`h-4 w-4 transition-transform ${isLimbBraceDropdownOpen ? 'rotate-90' : ''}`} />
+                          </button>
+                          
+                          {isLimbBraceDropdownOpen && (
+                            <div 
+                              className="absolute top-full left-0 right-0 z-50 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-y-auto"
+                            >
+                              {getLimbBraceFilteredDropdownItems().map((item: MedicalItem, index) => (
+                                <div
+                                  key={item.id}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    const isSelected = limbBraceDropdownSelectedItems.find(selected => selected.id === item.id);
+                                    const isInBill = billItems.find(billItem => billItem.id === item.id.toString());
+                                    if (!isSelected && !isInBill) {
+                                      handleLimbBraceDropdownSelect(item.id.toString());
+                                    }
+                                  }}
+                                  className={`px-3 py-2 text-sm flex items-center justify-between ${
+                                    index === limbBraceHighlightedDropdownIndex 
+                                      ? 'bg-medical-primary/10 border-l-4 border-medical-primary' 
+                                      : ''
+                                  } ${
+                                    limbBraceDropdownSelectedItems.find(selected => selected.id === item.id)
+                                      ? 'bg-blue-500/10 text-blue-600'
+                                      : billItems.find(billItem => billItem.id === item.id.toString())
+                                        ? 'bg-red-100 text-red-600 cursor-not-allowed'
+                                        : 'cursor-pointer hover:bg-muted/50'
+                                  }`}
+                                >
+                                  <div className="flex items-center">
+                                    <span>{item.name}</span>
+                                    {limbBraceDropdownSelectedItems.find(selected => selected.id === item.id) && (
+                                      <span className="ml-2 text-blue-600 text-xs">✓ Selected</span>
+                                    )}
+                                    {billItems.find(billItem => billItem.id === item.id.toString()) && !limbBraceDropdownSelectedItems.find(selected => selected.id === item.id) && (
+                                      <span className="ml-2 text-red-600 text-xs">● Already in Bill</span>
+                                    )}
+                                    {index === limbBraceHighlightedDropdownIndex && (
+                                      <span className="ml-2 text-medical-primary text-xs">← Highlighted</span>
+                                    )}
+                                  </div>
+                                  <span className="text-medical-primary font-semibold">
+                                    {format(parseFloat(item.price.toString()))}
+                                  </span>
+                                </div>
+                              ))}
+                              {getLimbBraceFilteredDropdownItems().length === 0 && (
+                                <div className="px-3 py-2 text-sm text-muted-foreground">
+                                  No limb & brace items available
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Dynamic Manual entry section below dropdown */}
+                      <div className="space-y-2 border-t pt-4">
+                        <div className="text-sm font-medium text-muted-foreground">
+                          Manual Entry - Add Custom Limb & Brace Services
+                        </div>
+                        <div className="space-y-3">
+                          {/* Dynamic entry fields */}
+                          <div className="space-y-2">
+                            <div className="grid grid-cols-2 gap-2 text-xs font-medium text-muted-foreground">
+                              <div>Service Name</div>
+                              <div>Price</div>
+                            </div>
+                            
+                            {limbBraceManualEntries.map((entry, index) => (
+                              <div key={entry.id} className="grid grid-cols-2 gap-2">
+                                <Input
+                                  placeholder="Enter limb/brace service name..."
+                                  value={entry.serviceName}
+                                  onChange={(e) => {
+                                    const newEntries = [...limbBraceManualEntries];
+                                    newEntries[index].serviceName = e.target.value;
+                                    setLimbBraceManualEntries(newEntries);
+                                    
+                                    // Auto-add new row if both fields are filled and this is the last row
+                                    if (e.target.value.trim() && entry.price.trim() && index === limbBraceManualEntries.length - 1) {
+                                      setLimbBraceManualEntries(prev => [...prev, { 
+                                        id: Date.now().toString(), 
+                                        serviceName: '', 
+                                        price: '' 
+                                      }]);
+                                    }
+                                  }}
+                                  className="text-sm"
+                                />
+                                <div className="flex">
+                                  <Input
+                                    placeholder="0"
+                                    value={entry.price}
+                                    onChange={(e) => {
+                                      const newEntries = [...limbBraceManualEntries];
+                                      newEntries[index].price = e.target.value;
+                                      setLimbBraceManualEntries(newEntries);
+                                      
+                                      // Auto-add new row if both fields are filled and this is the last row
+                                      if (e.target.value.trim() && entry.serviceName.trim() && index === limbBraceManualEntries.length - 1) {
+                                        setLimbBraceManualEntries(prev => [...prev, { 
+                                          id: Date.now().toString(), 
+                                          serviceName: '', 
+                                          price: '' 
+                                        }]);
+                                      }
+                                    }}
+                                    className="text-sm"
+                                    type="number"
+                                  />
+                                  {limbBraceManualEntries.length > 1 && (
+                                    <Button
+                                      onClick={() => {
+                                        setLimbBraceManualEntries(prev => prev.filter(e => e.id !== entry.id));
+                                      }}
+                                      variant="ghost"
+                                      size="sm"
+                                      className="ml-1 px-2 text-red-500 hover:bg-red-100"
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          
+                          {/* Add All to Bill Button */}
+                          <div className="flex justify-end">
+                            <Button
+                              onClick={() => {
+                                const validEntries = limbBraceManualEntries.filter(entry => 
+                                  entry.serviceName.trim() && entry.price.trim() && !isNaN(parseFloat(entry.price)) && parseFloat(entry.price) > 0
+                                );
+                                
+                                if (validEntries.length === 0) return;
+                                
+                                validEntries.forEach(entry => {
+                                  const billId = `limb-brace-manual-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                                  const billItem = {
+                                    id: `limb-brace-manual-${entry.serviceName}`,
+                                    name: entry.serviceName,
+                                    category: 'Limb and Brace',
+                                    price: parseFloat(entry.price),
+                                    billId,
+                                    quantity: 1
+                                  };
+                                  setBillItems(prev => [...prev, billItem]);
+                                });
+                                
+                                // Reset to single empty row
+                                setLimbBraceManualEntries([{ id: '1', serviceName: '', price: '' }]);
+                              }}
+                              variant="medical-outline"
+                              size="sm"
+                              className="text-blue-600 border-blue-500/20 hover:bg-blue-500/10"
+                            >
+                              Add All to Bill ({limbBraceManualEntries.filter(entry => 
+                                entry.serviceName.trim() && entry.price.trim() && !isNaN(parseFloat(entry.price)) && parseFloat(entry.price) > 0
+                              ).length})
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-sm text-muted-foreground">
+                        • <strong>Dropdown:</strong> Select predefined limb & brace items from database<br/>
+                        • <strong>Manual Entry:</strong> Add custom services with auto-expanding rows<br/>
+                        • Fill both name and price to automatically add new entry row<br/>
+                        • Click "Add All to Bill" to add all valid entries at once<br/>
+                        • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
+                      </div>
+                    </div>
                   ) : selectedCategory === 'Blood' ? (
                     /* Blood category with dropdown and quantity controls */
                     <div className="space-y-4">
