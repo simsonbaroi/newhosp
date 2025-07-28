@@ -4,6 +4,10 @@
 A professional medical billing calculator application for hospitals and clinics. The app allows users to calculate bills for both outpatient and inpatient services, with comprehensive database management for medical items and procedures.
 
 ## Recent Changes
+- **2025-01-28**: COMPLETED: Migration from Replit Agent to standard Replit environment with secure client/server separation
+- **2025-01-28**: FIXED: Critical JavaScript errors in Inpatient component - resolved missing dropdown helper functions and duplicate ref declarations
+- **2025-01-28**: ENHANCED: Inpatient system now has full Laboratory-style dropdown functionality matching Outpatient system
+- **2025-01-28**: SECURED: Application follows robust security practices with proper frontend/backend separation
 - **2025-01-27**: REMOVED: Overlay requirement from Inpatient calculator - categories now immediately accessible without patient type selection
 - **2025-01-27**: SIMPLIFIED: Patient type defaults to MW/FW, users can still toggle between MW/FW and OB using "Admission Type" button
 - **2025-01-27**: ENHANCED: Inpatient categories are now fully unlocked by default for immediate use

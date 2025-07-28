@@ -50,6 +50,201 @@ export default function Inpatient() {
     };
   };
 
+  // Session ID for API calls
+  const sessionId = 'browser-session';
+
+  // Helper functions for dropdown functionality
+  const getDropdownSelectedItems = () => {
+    switch (selectedCategory) {
+      case 'Laboratory':
+        return dropdownSelectedItems;
+      case 'X-Ray':
+        return xRayDropdownSelectedItems;
+      case 'Registration Fee':
+        return registrationDropdownSelectedItems;
+      case 'Orthopedic, S.Roll, etc.':
+        return orthopedicDropdownSelectedItems;
+      case 'Surgery':
+        return surgeryDropdownSelectedItems;
+      case 'Procedures':
+        return proceduresDropdownSelectedItems;
+      default:
+        return [];
+    }
+  };
+
+  const getIsDropdownOpen = () => {
+    switch (selectedCategory) {
+      case 'Laboratory':
+        return isDropdownOpen;
+      case 'X-Ray':
+        return isXRayDropdownOpen;
+      case 'Registration Fee':
+        return isRegistrationDropdownOpen;
+      case 'Orthopedic, S.Roll, etc.':
+        return isOrthopedicDropdownOpen;
+      case 'Surgery':
+        return isSurgeryDropdownOpen;
+      case 'Procedures':
+        return isProceduresDropdownOpen;
+      default:
+        return false;
+    }
+  };
+
+  const setIsDropdownOpenFn = () => {
+    switch (selectedCategory) {
+      case 'Laboratory':
+        return setIsDropdownOpen;
+      case 'X-Ray':
+        return setIsXRayDropdownOpen;
+      case 'Registration Fee':
+        return setIsRegistrationDropdownOpen;
+      case 'Orthopedic, S.Roll, etc.':
+        return setIsOrthopedicDropdownOpen;
+      case 'Surgery':
+        return setIsSurgeryDropdownOpen;
+      case 'Procedures':
+        return setIsProceduresDropdownOpen;
+      default:
+        return setIsDropdownOpen;
+    }
+  };
+
+  const getFilteredDropdownItemsFn = () => {
+    // Implementation will be added below
+    return categoryItems;
+  };
+
+  const getHandleDropdownSelect = () => {
+    // Implementation will be added below
+    return () => {};
+  };
+
+  const getDropdownFilterQuery = () => {
+    switch (selectedCategory) {
+      case 'Laboratory':
+        return dropdownFilterQuery;
+      case 'X-Ray':
+        return xRayDropdownFilterQuery;
+      case 'Registration Fee':
+        return registrationDropdownFilterQuery;
+      case 'Orthopedic, S.Roll, etc.':
+        return orthopedicDropdownFilterQuery;
+      case 'Surgery':
+        return surgeryDropdownFilterQuery;
+      case 'Procedures':
+        return proceduresDropdownFilterQuery;
+      default:
+        return '';
+    }
+  };
+
+  const getHighlightedDropdownIndex = () => {
+    switch (selectedCategory) {
+      case 'Laboratory':
+        return highlightedDropdownIndex;
+      case 'X-Ray':
+        return xRayHighlightedDropdownIndex;
+      case 'Registration Fee':
+        return registrationHighlightedDropdownIndex;
+      case 'Orthopedic, S.Roll, etc.':
+        return orthopedicHighlightedDropdownIndex;
+      case 'Surgery':
+        return surgeryHighlightedDropdownIndex;
+      case 'Procedures':
+        return proceduresHighlightedDropdownIndex;
+      default:
+        return -1;
+    }
+  };
+
+  const setHighlightedDropdownIndexFn = () => {
+    switch (selectedCategory) {
+      case 'Laboratory':
+        return setHighlightedDropdownIndex;
+      case 'X-Ray':
+        return setXRayHighlightedDropdownIndex;
+      case 'Registration Fee':
+        return setRegistrationHighlightedDropdownIndex;
+      case 'Orthopedic, S.Roll, etc.':
+        return setOrthopedicHighlightedDropdownIndex;
+      case 'Surgery':
+        return setSurgeryHighlightedDropdownIndex;
+      case 'Procedures':
+        return setProceduresHighlightedDropdownIndex;
+      default:
+        return setHighlightedDropdownIndex;
+    }
+  };
+
+  const validatePatientTypeSelected = () => {
+    // For inpatient, always return true as patient type is not required
+    return true;
+  };
+
+  const getItemTypeName = (category = selectedCategory) => {
+    switch (category) {
+      case 'Laboratory':
+        return 'test';
+      case 'X-Ray':
+        return 'x-ray';
+      case 'Registration Fee':
+        return 'fee';
+      case 'Orthopedic, S.Roll, etc.':
+        return 'item';
+      case 'Surgery':
+        return 'procedure';
+      case 'Procedures':
+        return 'procedure';
+      default:
+        return 'item';
+    }
+  };
+
+  const getDropdownRef = () => {
+    switch (selectedCategory) {
+      case 'Laboratory':
+        return dropdownRef;
+      case 'X-Ray':
+        return xRayDropdownRef;
+      case 'Registration Fee':
+        return registrationDropdownRef;
+      case 'Orthopedic, S.Roll, etc.':
+        return orthopedicDropdownRef;
+      case 'Surgery':
+        return surgeryDropdownRef;
+      case 'Procedures':
+        return proceduresDropdownRef;
+      default:
+        return dropdownRef;
+    }
+  };
+
+  const getDropdownButtonRef = () => {
+    switch (selectedCategory) {
+      case 'Laboratory':
+        return dropdownButtonRef;
+      case 'X-Ray':
+        return xRayDropdownButtonRef;
+      case 'Registration Fee':
+        return registrationDropdownButtonRef;
+      case 'Orthopedic, S.Roll, etc.':
+        return orthopedicDropdownButtonRef;
+      case 'Surgery':
+        return surgeryDropdownButtonRef;
+      case 'Procedures':
+        return proceduresDropdownButtonRef;
+      default:
+        return dropdownButtonRef;
+    }
+  };
+
+  const getPlaceholderText = () => {
+    const itemType = getItemTypeName();
+    return `Type to search ${itemType}s...`;
+  };
+
   const currentDateTime = getCurrentDateTime();
 
   // Patient information state
@@ -156,6 +351,38 @@ export default function Inpatient() {
   const [plasterChargeChecked, setPlasterChargeChecked] = useState<boolean>(false);
   const [milkQuantity, setMilkQuantity] = useState<number>(1);
 
+  // Refs for dropdown functionality
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const dropdownButtonRef = useRef<HTMLButtonElement>(null);
+  const xRayDropdownRef = useRef<HTMLDivElement>(null);
+  const xRayDropdownButtonRef = useRef<HTMLButtonElement>(null);
+  const registrationDropdownRef = useRef<HTMLDivElement>(null);
+  const registrationDropdownButtonRef = useRef<HTMLButtonElement>(null);
+  const orthopedicDropdownRef = useRef<HTMLDivElement>(null);
+  const orthopedicDropdownButtonRef = useRef<HTMLButtonElement>(null);
+  const surgeryDropdownRef = useRef<HTMLDivElement>(null);
+  const surgeryDropdownButtonRef = useRef<HTMLButtonElement>(null);
+  const proceduresDropdownRef = useRef<HTMLDivElement>(null);
+  const proceduresDropdownButtonRef = useRef<HTMLButtonElement>(null);
+  const doseInputRef = useRef<HTMLInputElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const xRaySearchInputRef = useRef<HTMLInputElement>(null);
+  const medicineDropdownRef = useRef<HTMLDivElement>(null);
+  const medicineDropdownButtonRef = useRef<HTMLButtonElement>(null);
+  const medicineSearchInputRef = useRef<HTMLInputElement>(null);
+  const orthopedicSearchInputRef = useRef<HTMLInputElement>(null);
+  const surgerySearchInputRef = useRef<HTMLInputElement>(null);
+  const proceduresSearchInputRef = useRef<HTMLInputElement>(null);
+  const swipeElementRef = useRef<HTMLDivElement>(null);
+  const registrationSearchInputRef = useRef<HTMLInputElement>(null);
+  const ivDropdownRef = useRef<HTMLDivElement>(null);
+  const ivDropdownButtonRef = useRef<HTMLButtonElement>(null);
+  const plasterDropdownRef = useRef<HTMLDivElement>(null);
+  const plasterDropdownButtonRef = useRef<HTMLButtonElement>(null);
+  const bloodDropdownRef = useRef<HTMLDivElement>(null);
+  const bloodDropdownButtonRef = useRef<HTMLButtonElement>(null);
+  const bloodSearchInputRef = useRef<HTMLInputElement>(null);
+
   // Patient classification - removed overlay requirement
   const [selectedPatientType, setSelectedPatientType] = useState<'MW/FW' | 'OB' | null>('MW/FW'); // Default to MW/FW
   const [typeChangeIndicator, setTypeChangeIndicator] = useState<boolean>(false);
@@ -232,36 +459,7 @@ export default function Inpatient() {
   const [bloodDropdownFilterQuery, setBloodDropdownFilterQuery] = useState<string>('');
   const [bloodQuantities, setBloodQuantities] = useState<{[key: string]: number}>({});
 
-  // Refs for advanced functionality
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const dropdownButtonRef = useRef<HTMLButtonElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const xRayDropdownRef = useRef<HTMLDivElement>(null);
-  const xRayDropdownButtonRef = useRef<HTMLButtonElement>(null);
-  const xRaySearchInputRef = useRef<HTMLInputElement>(null);
-  const registrationDropdownRef = useRef<HTMLDivElement>(null);
-  const registrationDropdownButtonRef = useRef<HTMLButtonElement>(null);
-  const registrationSearchInputRef = useRef<HTMLInputElement>(null);
-  const medicineDropdownRef = useRef<HTMLDivElement>(null);
-  const medicineDropdownButtonRef = useRef<HTMLButtonElement>(null);
-  const medicineSearchInputRef = useRef<HTMLInputElement>(null);
-  const doseInputRef = useRef<HTMLInputElement>(null);
-  const orthopedicDropdownRef = useRef<HTMLDivElement>(null);
-  const orthopedicDropdownButtonRef = useRef<HTMLButtonElement>(null);
-  const orthopedicSearchInputRef = useRef<HTMLInputElement>(null);
-  const surgeryDropdownRef = useRef<HTMLDivElement>(null);
-  const surgeryDropdownButtonRef = useRef<HTMLButtonElement>(null);
-  const surgerySearchInputRef = useRef<HTMLInputElement>(null);
-  const proceduresDropdownRef = useRef<HTMLDivElement>(null);
-  const proceduresDropdownButtonRef = useRef<HTMLButtonElement>(null);
-  const proceduresSearchInputRef = useRef<HTMLInputElement>(null);
-  const ivDropdownRef = useRef<HTMLDivElement>(null);
-  const ivDropdownButtonRef = useRef<HTMLButtonElement>(null);
-  const plasterDropdownRef = useRef<HTMLDivElement>(null);
-  const plasterDropdownButtonRef = useRef<HTMLButtonElement>(null);
-  const bloodDropdownRef = useRef<HTMLDivElement>(null);
-  const bloodDropdownButtonRef = useRef<HTMLButtonElement>(null);
-  const bloodSearchInputRef = useRef<HTMLInputElement>(null);
+
   
   // Cupertino Date picker modal state
   const [showCupertinoDatePicker, setShowCupertinoDatePicker] = useState(false);
