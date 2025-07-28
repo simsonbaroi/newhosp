@@ -26,7 +26,7 @@ export const OUTPATIENT_CATEGORIES: CategoryConfig[] = [
 
 // Inpatient Categories - permanent configuration
 export const INPATIENT_CATEGORIES: CategoryConfig[] = [
-  { name: 'Blood', order: 1, interface: 'manual', hasManualEntry: true, description: 'Blood services and transfusions' },
+  { name: 'Blood', order: 1, interface: 'dropdown', hasDropdown: true, description: 'Blood services and transfusions with quantity controls' },
   { name: 'Laboratory', order: 2, interface: 'search', hasSearch: true, hasDropdown: true, description: 'Lab tests with search and dropdown' },
   { name: 'Limb and Brace', order: 3, interface: 'manual', hasManualEntry: true, description: 'Orthopedic devices and braces' },
   { name: 'Food', order: 4, interface: 'manual', hasManualEntry: true, description: 'Hospital meal services' },
@@ -101,7 +101,16 @@ export const DEFAULT_OUTPATIENT_ITEMS = {
 };
 
 export const DEFAULT_INPATIENT_ITEMS = {
-  'Blood': [],
+  'Blood': [
+    { name: 'Whole Blood (1 unit)', description: 'Complete blood transfusion' },
+    { name: 'Packed Red Blood Cells (1 unit)', description: 'Concentrated red blood cells' },
+    { name: 'Fresh Frozen Plasma (1 unit)', description: 'Plasma for clotting factors' },
+    { name: 'Platelet Concentrate (1 unit)', description: 'Concentrated platelets' },
+    { name: 'Cryoprecipitate (1 unit)', description: 'Clotting factor concentrate' },
+    { name: 'Blood Cross-Match Test', description: 'Compatibility testing' },
+    { name: 'Blood Typing & Rh Factor', description: 'Blood group determination' },
+    { name: 'Direct Coombs Test', description: 'Antibody detection test' },
+  ],
   'Laboratory': [
     { name: 'Complete Blood Count', description: 'CBC test - inpatient' },
     { name: 'Blood Chemistry Panel', description: 'Comprehensive metabolic panel' },

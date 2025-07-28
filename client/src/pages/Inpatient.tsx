@@ -220,8 +220,17 @@ export default function Inpatient() {
   const [isMedicineDropdownOpen, setIsMedicineDropdownOpen] = useState<boolean>(false);
   const [medicineDropdownFilterQuery, setMedicineDropdownFilterQuery] = useState<string>('');
 
-  // Manual entry state for Physical Therapy, Limb and Brace, and Blood
+  // Manual entry state for Physical Therapy, Limb and Brace, and Food
   const [manualEntryPrice, setManualEntryPrice] = useState<string>('');
+  
+  // Blood category dropdown and quantity state
+  const [selectedBloodItems, setSelectedBloodItems] = useState<MedicalItem[]>([]);
+  const [bloodDropdownSelectedItems, setBloodDropdownSelectedItems] = useState<MedicalItem[]>([]);
+  const [bloodDropdownValue, setBloodDropdownValue] = useState<string>('');
+  const [bloodHighlightedDropdownIndex, setBloodHighlightedDropdownIndex] = useState<number>(-1);
+  const [isBloodDropdownOpen, setIsBloodDropdownOpen] = useState<boolean>(false);
+  const [bloodDropdownFilterQuery, setBloodDropdownFilterQuery] = useState<string>('');
+  const [bloodQuantities, setBloodQuantities] = useState<{[key: string]: number}>({});
 
   // Refs for advanced functionality
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -250,6 +259,9 @@ export default function Inpatient() {
   const ivDropdownButtonRef = useRef<HTMLButtonElement>(null);
   const plasterDropdownRef = useRef<HTMLDivElement>(null);
   const plasterDropdownButtonRef = useRef<HTMLButtonElement>(null);
+  const bloodDropdownRef = useRef<HTMLDivElement>(null);
+  const bloodDropdownButtonRef = useRef<HTMLButtonElement>(null);
+  const bloodSearchInputRef = useRef<HTMLInputElement>(null);
   
   // Cupertino Date picker modal state
   const [showCupertinoDatePicker, setShowCupertinoDatePicker] = useState(false);
@@ -969,6 +981,25 @@ export default function Inpatient() {
     };
   }, [isXRayDropdownOpen]);
 
+  // Blood dropdown click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (bloodDropdownRef.current && !bloodDropdownRef.current.contains(event.target as Node)) {
+        setIsBloodDropdownOpen(false);
+        setBloodHighlightedDropdownIndex(-1);
+        setBloodDropdownFilterQuery('');
+      }
+    };
+
+    if (isBloodDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isBloodDropdownOpen]);
+
   // Get permanent inpatient categories (already filtered for inpatient use)
   const categories = getCategoryNames(false); // Use permanent inpatient categories
 
@@ -1170,6 +1201,164 @@ export default function Inpatient() {
     setIsDropdownOpen(false);
     setHighlightedDropdownIndex(-1);
     setDropdownFilterQuery('');
+  };
+
+  // Blood dropdown functionality
+  const handleBloodDropdownSelect = (value: string) => {
+    const selectedItem = categoryItems.find(item => item.id.toString() === value);
+    
+    const alreadyInDropdown = bloodDropdownSelectedItems.find(item => item.id === selectedItem?.id);
+    const alreadyInBill = billItems.find(billItem => billItem.id === selectedItem?.id.toString());
+    
+    if (selectedItem && !alreadyInDropdown && !alreadyInBill) {
+      setBloodDropdownSelectedItems(prev => [...prev, selectedItem]);
+      // Initialize quantity to 1 for new item
+      setBloodQuantities(prev => ({
+        ...prev,
+        [selectedItem.id.toString()]: 1
+      }));
+      setSelectedBloodItems([]);
+      setCategorySearchQuery('');
+    }
+    
+    setBloodDropdownValue('');
+    setBloodHighlightedDropdownIndex(-1);
+    setBloodDropdownFilterQuery('');
+    
+    setTimeout(() => {
+      if (bloodDropdownButtonRef.current) {
+        bloodDropdownButtonRef.current.focus();
+      }
+    }, 0);
+  };
+
+  const removeBloodDropdownItem = (itemId: number) => {
+    setBloodDropdownSelectedItems(prev => prev.filter(item => item.id !== itemId));
+    setBloodQuantities(prev => {
+      const newQuantities = { ...prev };
+      delete newQuantities[itemId.toString()];
+      return newQuantities;
+    });
+  };
+
+  const updateBloodQuantity = (itemId: string, change: number) => {
+    setBloodQuantities(prev => {
+      const currentQuantity = prev[itemId] || 1;
+      const newQuantity = Math.max(1, currentQuantity + change);
+      return {
+        ...prev,
+        [itemId]: newQuantity
+      };
+    });
+  };
+
+  const addBloodDropdownSelectedItemsToBill = () => {
+    const newItems: MedicalItem[] = [];
+    const duplicateItems: MedicalItem[] = [];
+    
+    bloodDropdownSelectedItems.forEach(item => {
+      const existingItem = billItems.find(billItem => billItem.id === item.id.toString());
+      if (existingItem) {
+        duplicateItems.push(item);
+      } else {
+        newItems.push(item);
+      }
+    });
+    
+    if (newItems.length > 0) {
+      const billItemsToAdd: BillItem[] = [];
+      
+      newItems.forEach(item => {
+        const quantity = bloodQuantities[item.id.toString()] || 1;
+        for (let i = 0; i < quantity; i++) {
+          billItemsToAdd.push({
+            id: item.id.toString(),
+            name: item.name,
+            category: item.category,
+            price: parseFloat(item.price.toString()),
+            billId: `${item.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+          });
+        }
+      });
+      
+      setBillItems(prevBillItems => [...prevBillItems, ...billItemsToAdd]);
+    }
+    
+    if (duplicateItems.length > 0) {
+      setDuplicateDialog({ open: true, item: duplicateItems[0] });
+    }
+    
+    setBloodDropdownSelectedItems([]);
+    setBloodQuantities({});
+    setIsBloodDropdownOpen(false);
+    setBloodHighlightedDropdownIndex(-1);
+    setBloodDropdownFilterQuery('');
+  };
+
+  // Handle keyboard navigation for Blood dropdown
+  const handleBloodDropdownKeyDown = (e: React.KeyboardEvent) => {
+    const orderedItems = getBloodFilteredDropdownItems();
+    
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setBloodHighlightedDropdownIndex(prev => 
+        prev < orderedItems.length - 1 ? prev + 1 : 0
+      );
+      if (!isBloodDropdownOpen) setIsBloodDropdownOpen(true);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setBloodHighlightedDropdownIndex(prev => 
+        prev > 0 ? prev - 1 : orderedItems.length - 1
+      );
+      if (!isBloodDropdownOpen) setIsBloodDropdownOpen(true);
+    } else if (e.key === 'Enter' && bloodHighlightedDropdownIndex >= 0) {
+      e.preventDefault();
+      const selectedItem = orderedItems[bloodHighlightedDropdownIndex];
+      if (selectedItem) {
+        handleBloodDropdownSelect(selectedItem.id.toString());
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setIsBloodDropdownOpen(false);
+      setBloodHighlightedDropdownIndex(-1);
+      setBloodDropdownFilterQuery('');
+    } else if (e.key.length === 1 && e.key.match(/[a-zA-Z0-9\s]/)) {
+      e.preventDefault();
+      const newQuery = bloodDropdownFilterQuery + e.key.toLowerCase();
+      setBloodDropdownFilterQuery(newQuery);
+      setBloodHighlightedDropdownIndex(0);
+      if (!isBloodDropdownOpen) setIsBloodDropdownOpen(true);
+    } else if (e.key === 'Backspace') {
+      e.preventDefault();
+      setBloodDropdownFilterQuery(prev => prev.slice(0, -1));
+      setBloodHighlightedDropdownIndex(0);
+    }
+  };
+
+  // Get filtered Blood dropdown items
+  const getBloodFilteredDropdownItems = () => {
+    if (!categoryItems) return [];
+    
+    const filtered = categoryItems.filter(item => 
+      !bloodDropdownFilterQuery || 
+      item.name.toLowerCase().includes(bloodDropdownFilterQuery.toLowerCase())
+    );
+    
+    if (!bloodDropdownFilterQuery) return filtered.sort((a, b) => a.name.localeCompare(b.name));
+    
+    // Sort by relevance: exact matches first, then starts with, then contains
+    return filtered.sort((a, b) => {
+      const aName = a.name.toLowerCase();
+      const bName = b.name.toLowerCase();
+      const query = bloodDropdownFilterQuery.toLowerCase();
+      
+      if (aName === query && bName !== query) return -1;
+      if (bName === query && aName !== query) return 1;
+      if (aName.startsWith(query) && !bName.startsWith(query)) return -1;
+      if (bName.startsWith(query) && !aName.startsWith(query)) return 1;
+      
+      return aName.localeCompare(bName);
+    });
   };
 
   // Handle keyboard navigation for dropdown
@@ -2462,6 +2651,7 @@ export default function Inpatient() {
                         const getDropdownSelectedItems = () => {
                           switch (selectedCategory) {
                             case 'Laboratory': return dropdownSelectedItems;
+                            case 'Blood': return bloodDropdownSelectedItems;
                             case 'Orthopedic, S.Roll, etc.': return orthopedicDropdownSelectedItems;
                             case 'Surgery': return surgeryDropdownSelectedItems;
                             case 'Procedures': return proceduresDropdownSelectedItems;
@@ -2472,6 +2662,7 @@ export default function Inpatient() {
                         const getRemoveDropdownItemFn = () => {
                           switch (selectedCategory) {
                             case 'Laboratory': return removeDropdownItem;
+                            case 'Blood': return removeBloodDropdownItem;
                             case 'Orthopedic, S.Roll, etc.': return (id: number) => setOrthopedicDropdownSelectedItems(prev => prev.filter(item => item.id !== id));
                             case 'Surgery': return (id: number) => setSurgeryDropdownSelectedItems(prev => prev.filter(item => item.id !== id));
                             case 'Procedures': return (id: number) => setProceduresDropdownSelectedItems(prev => prev.filter(item => item.id !== id));
@@ -2482,6 +2673,7 @@ export default function Inpatient() {
                         const getAddDropdownToBillFn = () => {
                           switch (selectedCategory) {
                             case 'Laboratory': return addDropdownSelectedItemsToBill;
+                            case 'Blood': return addBloodDropdownSelectedItemsToBill;
                             case 'Orthopedic, S.Roll, etc.': return () => {
                               const items = [...orthopedicDropdownSelectedItems];
                               setOrthopedicDropdownSelectedItems([]);
@@ -2516,6 +2708,7 @@ export default function Inpatient() {
                         const getItemTypeName = () => {
                           switch (selectedCategory) {
                             case 'Laboratory': return 'Test';
+                            case 'Blood': return 'Item';
                             case 'Orthopedic, S.Roll, etc.': return 'Item';
                             case 'Surgery': return 'Procedure';
                             case 'Procedures': return 'Procedure';
@@ -3913,7 +4106,7 @@ export default function Inpatient() {
                         • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
                       </div>
                     </div>
-                  ) : ['Physical Therapy', 'Limb and Brace', 'Blood', 'Food'].includes(selectedCategory) ? (
+                  ) : ['Physical Therapy', 'Limb and Brace', 'Food'].includes(selectedCategory) ? (
                     /* Manual entry interface for Physical Therapy, Limb and Brace, Blood, and Food matching outpatient */
                     <div className="space-y-4">
                       <div className="space-y-2">
@@ -3955,6 +4148,145 @@ export default function Inpatient() {
                       <div className="text-sm text-muted-foreground">
                         • Enter service name and price manually<br/>
                         • All entries are saved for future reference<br/>
+                        • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
+                      </div>
+                    </div>
+                  ) : selectedCategory === 'Blood' ? (
+                    /* Blood category with dropdown and quantity controls */
+                    <div className="space-y-4">
+                      {/* Selected Blood items with quantity controls */}
+                      {bloodDropdownSelectedItems.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="text-sm font-medium text-medical-primary mb-2">Selected Blood Items:</div>
+                          {bloodDropdownSelectedItems.map((item) => {
+                            const quantity = bloodQuantities[item.id.toString()] || 1;
+                            return (
+                              <div key={item.id} className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                                <div className="flex-1">
+                                  <div className="font-medium text-sm">{item.name}</div>
+                                  <div className="text-xs text-muted-foreground">{format(parseFloat(item.price.toString()))} per unit</div>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <div className="flex items-center space-x-1">
+                                    <button
+                                      onClick={() => updateBloodQuantity(item.id.toString(), -1)}
+                                      className="h-8 w-8 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center justify-center text-medical-primary border border-medical-primary/20"
+                                    >
+                                      <Minus className="h-3 w-3" />
+                                    </button>
+                                    <div className="text-center min-w-[2rem]">
+                                      <div className="text-lg font-bold text-medical-primary">{quantity}</div>
+                                    </div>
+                                    <button
+                                      onClick={() => updateBloodQuantity(item.id.toString(), 1)}
+                                      className="h-8 w-8 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center justify-center text-medical-primary border border-medical-primary/20"
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                  <button
+                                    onClick={() => removeBloodDropdownItem(item.id)}
+                                    className="text-red-500 hover:text-red-700 p-1"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                          
+                          {/* Total price and Add to Bill button */}
+                          <div className="flex items-center justify-between pt-2 border-t border-blue-200 dark:border-blue-800">
+                            <div className="text-sm font-medium text-medical-primary">
+                              Total: {format(bloodDropdownSelectedItems.reduce((sum, item) => {
+                                const quantity = bloodQuantities[item.id.toString()] || 1;
+                                return sum + (parseFloat(item.price.toString()) * quantity);
+                              }, 0))}
+                            </div>
+                            <Button
+                              onClick={addBloodDropdownSelectedItemsToBill}
+                              variant="outline"
+                              size="sm"
+                              className="text-xs font-medium border-blue-500 text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 px-3 py-1"
+                            >
+                              Add to Bill
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Blood dropdown */}
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-foreground">Select Blood Items:</label>
+                        <div className="relative" ref={bloodDropdownRef}>
+                          <Button
+                            ref={bloodDropdownButtonRef}
+                            variant="outline"
+                            onClick={() => setIsBloodDropdownOpen(!isBloodDropdownOpen)}
+                            onKeyDown={handleBloodDropdownKeyDown}
+                            className="w-full justify-between text-left h-10"
+                          >
+                            <span className="text-sm">
+                              {bloodDropdownFilterQuery ? (
+                                <span>
+                                  Filter: "{bloodDropdownFilterQuery}" ({getBloodFilteredDropdownItems().length} matches)
+                                </span>
+                              ) : (
+                                'Select blood items...'
+                              )}
+                            </span>
+                            <ChevronDown className="h-4 w-4 opacity-50" />
+                          </Button>
+
+                          {isBloodDropdownOpen && (
+                            <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-auto">
+                              {getBloodFilteredDropdownItems().map((item, index) => {
+                                const isSelected = bloodDropdownSelectedItems.find(selected => selected.id === item.id);
+                                const isInBill = billItems.find(billItem => billItem.id === item.id.toString());
+                                const isHighlighted = index === bloodHighlightedDropdownIndex;
+                                
+                                return (
+                                  <div
+                                    key={item.id}
+                                    className={`px-3 py-2 cursor-pointer text-sm flex items-center justify-between ${
+                                      isHighlighted ? 'bg-blue-100 dark:bg-blue-900/30 border-l-4 border-blue-500' : 
+                                      isInBill ? 'bg-red-50 dark:bg-red-900/20 text-red-600' :
+                                      isSelected ? 'bg-green-50 dark:bg-green-900/20 text-green-600' :
+                                      'hover:bg-gray-100 dark:hover:bg-gray-700'
+                                    }`}
+                                    onClick={() => {
+                                      if (!isSelected && !isInBill) {
+                                        handleBloodDropdownSelect(item.id.toString());
+                                      }
+                                    }}
+                                  >
+                                    <div>
+                                      <div className="font-medium">{item.name}</div>
+                                      <div className="text-xs text-muted-foreground">{format(parseFloat(item.price.toString()))}</div>
+                                    </div>
+                                    <div className="text-xs">
+                                      {isHighlighted && <span className="text-blue-600">← Highlighted</span>}
+                                      {isSelected && <span className="text-green-600">✓ Selected</span>}
+                                      {isInBill && <span className="text-red-600">● Already in Bill</span>}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                              
+                              {getBloodFilteredDropdownItems().length === 0 && (
+                                <div className="px-3 py-2 text-sm text-muted-foreground">
+                                  No items found{bloodDropdownFilterQuery && ` for "${bloodDropdownFilterQuery}"`}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="text-sm text-muted-foreground">
+                        • Select blood items from dropdown<br/>
+                        • Use quantity controls to set amounts<br/>
+                        • Type to filter items in dropdown<br/>
                         • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
                       </div>
                     </div>
