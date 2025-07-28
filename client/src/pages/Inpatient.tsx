@@ -451,9 +451,10 @@ export default function Inpatient() {
   const [manualEntryPrice, setManualEntryPrice] = useState<string>('');
   const [manualEntryServiceName, setManualEntryServiceName] = useState<string>('');
   
-  // Blood manual entry state
-  const [bloodManualServiceName, setBloodManualServiceName] = useState<string>('');
-  const [bloodManualPrice, setBloodManualPrice] = useState<string>('');
+  // Blood manual entry state - dynamic multiple entries
+  const [bloodManualEntries, setBloodManualEntries] = useState<{id: string, serviceName: string, price: string}[]>([
+    { id: '1', serviceName: '', price: '' }
+  ]);
   
   // Blood category dropdown and quantity state
   const [selectedBloodItems, setSelectedBloodItems] = useState<MedicalItem[]>([]);
@@ -4545,104 +4546,127 @@ export default function Inpatient() {
                         </div>
                       </div>
 
-                      {/* Manual entry section below dropdown */}
+                      {/* Dynamic Manual entry section below dropdown */}
                       <div className="space-y-2 border-t pt-4">
                         <div className="text-sm font-medium text-muted-foreground">
                           Manual Entry - Add Custom Blood Services
                         </div>
                         <div className="space-y-3">
-                          <div className="grid grid-cols-2 gap-2">
-                            <div className="space-y-1">
-                              <label className="text-xs font-medium text-muted-foreground">Service Name:</label>
-                              <Input
-                                placeholder="Enter blood service name..."
-                                value={bloodManualServiceName}
-                                onChange={(e) => setBloodManualServiceName(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter' && bloodManualServiceName.trim() && bloodManualPrice && parseFloat(bloodManualPrice) > 0) {
+                          {/* Dynamic entry fields */}
+                          <div className="space-y-2">
+                            <div className="grid grid-cols-2 gap-2 text-xs font-medium text-muted-foreground">
+                              <div>Service Name</div>
+                              <div>Price</div>
+                            </div>
+                            
+                            {bloodManualEntries.map((entry, index) => (
+                              <div key={entry.id} className="grid grid-cols-2 gap-2">
+                                <Input
+                                  placeholder="Enter blood service name..."
+                                  value={entry.serviceName}
+                                  onChange={(e) => {
+                                    const newEntries = [...bloodManualEntries];
+                                    newEntries[index].serviceName = e.target.value;
+                                    setBloodManualEntries(newEntries);
+                                    
+                                    // Auto-add new row if both fields are filled and this is the last row
+                                    if (e.target.value.trim() && entry.price.trim() && index === bloodManualEntries.length - 1) {
+                                      setBloodManualEntries(prev => [...prev, { 
+                                        id: Date.now().toString(), 
+                                        serviceName: '', 
+                                        price: '' 
+                                      }]);
+                                    }
+                                  }}
+                                  className="text-sm"
+                                />
+                                <div className="flex">
+                                  <Input
+                                    placeholder="0"
+                                    value={entry.price}
+                                    onChange={(e) => {
+                                      const newEntries = [...bloodManualEntries];
+                                      newEntries[index].price = e.target.value;
+                                      setBloodManualEntries(newEntries);
+                                      
+                                      // Auto-add new row if both fields are filled and this is the last row
+                                      if (e.target.value.trim() && entry.serviceName.trim() && index === bloodManualEntries.length - 1) {
+                                        setBloodManualEntries(prev => [...prev, { 
+                                          id: Date.now().toString(), 
+                                          serviceName: '', 
+                                          price: '' 
+                                        }]);
+                                      }
+                                    }}
+                                    className="text-sm"
+                                    type="number"
+                                  />
+                                  {bloodManualEntries.length > 1 && (
+                                    <Button
+                                      onClick={() => {
+                                        setBloodManualEntries(prev => prev.filter(e => e.id !== entry.id));
+                                      }}
+                                      variant="ghost"
+                                      size="sm"
+                                      className="ml-1 px-2 text-red-500 hover:bg-red-100"
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          
+                          {/* Add all to bill button */}
+                          {bloodManualEntries.some(entry => entry.serviceName.trim() && entry.price.trim() && parseFloat(entry.price) > 0) && (
+                            <div className="flex justify-between items-center pt-2 border-t">
+                              <div className="text-sm text-muted-foreground">
+                                {bloodManualEntries.filter(entry => entry.serviceName.trim() && entry.price.trim() && parseFloat(entry.price) > 0).length} entries ready
+                              </div>
+                              <Button
+                                onClick={() => {
+                                  const validEntries = bloodManualEntries.filter(entry => 
+                                    entry.serviceName.trim() && entry.price.trim() && parseFloat(entry.price) > 0
+                                  );
+                                  
+                                  validEntries.forEach(entry => {
                                     const billId = `blood-manual-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
                                     const manualItem = {
-                                      id: `blood-manual-${Date.now()}`,
-                                      name: bloodManualServiceName.trim(),
+                                      id: `blood-manual-${Date.now()}-${Math.random()}`,
+                                      name: entry.serviceName.trim(),
                                       category: 'Blood',
-                                      price: parseFloat(bloodManualPrice),
+                                      price: parseFloat(entry.price),
                                       billId,
                                       quantity: 1
                                     };
                                     setBillItems(prev => [...prev, manualItem]);
-                                    setBloodManualServiceName('');
-                                    setBloodManualPrice('');
-                                  }
+                                  });
+                                  
+                                  // Reset to single empty entry
+                                  setBloodManualEntries([{ id: '1', serviceName: '', price: '' }]);
                                 }}
-                                className="text-sm"
-                              />
+                                variant="medical"
+                                size="sm"
+                                className="px-4"
+                              >
+                                Add All to Bill
+                              </Button>
                             </div>
-                            <div className="space-y-1">
-                              <label className="text-xs font-medium text-muted-foreground">Price:</label>
-                              <div className="flex">
-                                <Input
-                                  placeholder="0"
-                                  value={bloodManualPrice}
-                                  onChange={(e) => setBloodManualPrice(e.target.value)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && bloodManualServiceName.trim() && bloodManualPrice && parseFloat(bloodManualPrice) > 0) {
-                                      const billId = `blood-manual-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-                                      const manualItem = {
-                                        id: `blood-manual-${Date.now()}`,
-                                        name: bloodManualServiceName.trim(),
-                                        category: 'Blood',
-                                        price: parseFloat(bloodManualPrice),
-                                        billId,
-                                        quantity: 1
-                                      };
-                                      setBillItems(prev => [...prev, manualItem]);
-                                      setBloodManualServiceName('');
-                                      setBloodManualPrice('');
-                                    }
-                                  }}
-                                  className="text-sm"
-                                  type="number"
-                                />
-                                <Button
-                                  onClick={() => {
-                                    if (bloodManualServiceName.trim() && bloodManualPrice && parseFloat(bloodManualPrice) > 0) {
-                                      const billId = `blood-manual-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-                                      const manualItem = {
-                                        id: `blood-manual-${Date.now()}`,
-                                        name: bloodManualServiceName.trim(),
-                                        category: 'Blood',
-                                        price: parseFloat(bloodManualPrice),
-                                        billId,
-                                        quantity: 1
-                                      };
-                                      setBillItems(prev => [...prev, manualItem]);
-                                      setBloodManualServiceName('');
-                                      setBloodManualPrice('');
-                                    }
-                                  }}
-                                  variant="medical-outline"
-                                  size="sm"
-                                  className="ml-2 px-3"
-                                  disabled={!bloodManualServiceName.trim() || !bloodManualPrice || parseFloat(bloodManualPrice) <= 0}
-                                >
-                                  Add to Bill
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
+                          )}
                           
-                          {/* Quick help text for multiple entries */}
+                          {/* Help text */}
                           <div className="text-xs text-muted-foreground bg-muted/20 p-2 rounded">
-                            💡 <strong>For multiple entries:</strong> Fill both fields and click "Add to Bill" or press Enter. Fields will clear automatically for the next entry.
+                            💡 <strong>Dynamic entries:</strong> Fill service name and price - new rows appear automatically. Click "Add All to Bill" when ready.
                           </div>
                         </div>
                       </div>
 
                       <div className="text-sm text-muted-foreground">
                         • <strong>Dropdown:</strong> Select predefined blood items with quantity controls<br/>
-                        • <strong>Manual Entry:</strong> Add custom blood services with your own pricing<br/>
-                        • <strong>Multiple Entries:</strong> Add as many manual entries as needed - fields clear after each addition<br/>
-                        • <strong>Quick Add:</strong> Press Enter in either field to add item quickly<br/>
+                        • <strong>Dynamic Manual Entry:</strong> Fill service name and price - new rows automatically appear<br/>
+                        • <strong>Remove Rows:</strong> Click X button to remove unwanted rows (first row cannot be removed)<br/>
+                        • <strong>Batch Add:</strong> Click "Add All to Bill" when ready to add all completed entries<br/>
                         • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
                       </div>
                     </div>
