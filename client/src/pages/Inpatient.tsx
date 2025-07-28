@@ -447,8 +447,13 @@ export default function Inpatient() {
   const [isMedicineDropdownOpen, setIsMedicineDropdownOpen] = useState<boolean>(false);
   const [medicineDropdownFilterQuery, setMedicineDropdownFilterQuery] = useState<string>('');
 
-  // Manual entry state for Physical Therapy, Limb and Brace, and Food
+  // Manual entry state for Physical Therapy, Limb and Brace, Food, and Blood
   const [manualEntryPrice, setManualEntryPrice] = useState<string>('');
+  const [manualEntryServiceName, setManualEntryServiceName] = useState<string>('');
+  
+  // Blood manual entry state
+  const [bloodManualServiceName, setBloodManualServiceName] = useState<string>('');
+  const [bloodManualPrice, setBloodManualPrice] = useState<string>('');
   
   // Blood category dropdown and quantity state
   const [selectedBloodItems, setSelectedBloodItems] = useState<MedicalItem[]>([]);
@@ -4540,10 +4545,65 @@ export default function Inpatient() {
                         </div>
                       </div>
 
+                      {/* Manual entry section below dropdown */}
+                      <div className="space-y-2 border-t pt-4">
+                        <div className="text-sm font-medium text-muted-foreground">
+                          Manual Entry
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <label className="text-xs font-medium text-muted-foreground">Service Name:</label>
+                            <Input
+                              placeholder="Enter blood service name..."
+                              value={bloodManualServiceName}
+                              onChange={(e) => setBloodManualServiceName(e.target.value)}
+                              className="text-sm"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-xs font-medium text-muted-foreground">Price:</label>
+                            <div className="flex">
+                              <Input
+                                placeholder="0"
+                                value={bloodManualPrice}
+                                onChange={(e) => setBloodManualPrice(e.target.value)}
+                                className="text-sm"
+                                type="number"
+                              />
+                              <Button
+                                onClick={() => {
+                                  if (bloodManualServiceName.trim() && bloodManualPrice && parseFloat(bloodManualPrice) > 0) {
+                                    const billId = `blood-manual-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                                    const manualItem = {
+                                      id: `blood-manual-${Date.now()}`,
+                                      name: bloodManualServiceName.trim(),
+                                      category: 'Blood',
+                                      price: parseFloat(bloodManualPrice),
+                                      billId,
+                                      quantity: 1
+                                    };
+                                    setBillItems(prev => [...prev, manualItem]);
+                                    setBloodManualServiceName('');
+                                    setBloodManualPrice('');
+                                  }
+                                }}
+                                variant="medical-outline"
+                                size="sm"
+                                className="ml-2 px-2"
+                                disabled={!bloodManualServiceName.trim() || !bloodManualPrice || parseFloat(bloodManualPrice) <= 0}
+                              >
+                                Add
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
                       <div className="text-sm text-muted-foreground">
                         • Select blood items from dropdown<br/>
                         • Use quantity controls to set amounts<br/>
                         • Type to filter items in dropdown<br/>
+                        • Use manual entry for custom blood services<br/>
                         • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
                       </div>
                     </div>
