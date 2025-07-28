@@ -2865,17 +2865,21 @@ export default function Inpatient() {
                               case 'Orthopedic, S.Roll, etc.': return orthopedicDropdownFilterQuery;
                               case 'Surgery': return surgeryDropdownFilterQuery;
                               case 'Procedures': return proceduresDropdownFilterQuery;
-                              default: return '';
+                              case 'Halo, O2, NO2, etc.': return orthopedicDropdownFilterQuery; // Reuse same state
+                              case 'Medicine, ORS & Anesthesia, Ket, Spinal': return surgeryDropdownFilterQuery; // Reuse same state
+                              default: return orthopedicDropdownFilterQuery; // Default fallback
                             }
                           };
                           
                           const getFilteredDropdownItemsFn = () => {
                             switch (selectedCategory) {
                               case 'Laboratory': return getFilteredDropdownItems();
-                              case 'Orthopedic, S.Roll, etc.': return categoryItems; // Simple filtering for new categories
+                              case 'Orthopedic, S.Roll, etc.': return categoryItems;
                               case 'Surgery': return categoryItems;
                               case 'Procedures': return categoryItems;
-                              default: return [];
+                              case 'Halo, O2, NO2, etc.': return categoryItems;
+                              case 'Medicine, ORS & Anesthesia, Ket, Spinal': return categoryItems;
+                              default: return categoryItems; // Show all items for other categories
                             }
                           };
                           
@@ -2885,7 +2889,9 @@ export default function Inpatient() {
                               case 'Orthopedic, S.Roll, etc.': return orthopedicDropdownSelectedItems;
                               case 'Surgery': return surgeryDropdownSelectedItems;
                               case 'Procedures': return proceduresDropdownSelectedItems;
-                              default: return [];
+                              case 'Halo, O2, NO2, etc.': return orthopedicDropdownSelectedItems; // Reuse same state
+                              case 'Medicine, ORS & Anesthesia, Ket, Spinal': return surgeryDropdownSelectedItems; // Reuse same state
+                              default: return orthopedicDropdownSelectedItems; // Default fallback
                             }
                           };
                           
@@ -2922,7 +2928,36 @@ export default function Inpatient() {
                                   }
                                 }
                               };
-                              default: return () => {};
+                              case 'Halo, O2, NO2, etc.': return (itemId: string) => {
+                                const item = categoryItems.find(item => item.id.toString() === itemId);
+                                if (item) {
+                                  const alreadySelected = orthopedicDropdownSelectedItems.find(selected => selected.id === item.id);
+                                  const alreadyInBill = billItems.find(billItem => billItem.id === item.id.toString());
+                                  if (!alreadySelected && !alreadyInBill) {
+                                    setOrthopedicDropdownSelectedItems(prev => [...prev, item]);
+                                  }
+                                }
+                              };
+                              case 'Medicine, ORS & Anesthesia, Ket, Spinal': return (itemId: string) => {
+                                const item = categoryItems.find(item => item.id.toString() === itemId);
+                                if (item) {
+                                  const alreadySelected = surgeryDropdownSelectedItems.find(selected => selected.id === item.id);
+                                  const alreadyInBill = billItems.find(billItem => billItem.id === item.id.toString());
+                                  if (!alreadySelected && !alreadyInBill) {
+                                    setSurgeryDropdownSelectedItems(prev => [...prev, item]);
+                                  }
+                                }
+                              };
+                              default: return (itemId: string) => {
+                                const item = categoryItems.find(item => item.id.toString() === itemId);
+                                if (item) {
+                                  const alreadySelected = orthopedicDropdownSelectedItems.find(selected => selected.id === item.id);
+                                  const alreadyInBill = billItems.find(billItem => billItem.id === item.id.toString());
+                                  if (!alreadySelected && !alreadyInBill) {
+                                    setOrthopedicDropdownSelectedItems(prev => [...prev, item]);
+                                  }
+                                }
+                              };
                             }
                           };
                           
@@ -2934,6 +2969,17 @@ export default function Inpatient() {
                               case 'Procedures': return 'Select procedure from dropdown... (Type to filter)';
                               case 'Halo, O2, NO2, etc.': return 'Select respiratory/traction item from dropdown... (Type to filter)';
                               case 'Medicine, ORS & Anesthesia, Ket, Spinal': return 'Select anesthesia/ORS item from dropdown... (Type to filter)';
+                              case 'Physical Therapy': return 'Select therapy service from dropdown... (Type to filter)';
+                              case 'Limb and Brace': return 'Select orthopedic device from dropdown... (Type to filter)';
+                              case 'Food': return 'Select meal service from dropdown... (Type to filter)';
+                              case 'Registration Fees': return 'Select registration fee from dropdown... (Type to filter)';
+                              case "IV.'s": return 'Select IV treatment from dropdown... (Type to filter)';
+                              case 'Plaster/Milk': return 'Select plaster/milk item from dropdown... (Type to filter)';
+                              case 'Seat & Ad. Fee': return 'Select seating fee from dropdown... (Type to filter)';
+                              case 'X-Ray': return 'Select X-ray service from dropdown... (Type to filter)';
+                              case 'Lost Laundry': return 'Select laundry charge from dropdown... (Type to filter)';
+                              case 'Travel': return 'Select travel service from dropdown... (Type to filter)';
+                              case 'Others': return 'Select miscellaneous item from dropdown... (Type to filter)';
                               default: return 'Select item from dropdown... (Type to filter)';
                             }
                           };
@@ -2946,6 +2992,17 @@ export default function Inpatient() {
                               case 'Procedures': return 'procedures';
                               case 'Halo, O2, NO2, etc.': return 'respiratory items';
                               case 'Medicine, ORS & Anesthesia, Ket, Spinal': return 'anesthesia items';
+                              case 'Physical Therapy': return 'therapy services';
+                              case 'Limb and Brace': return 'orthopedic devices';
+                              case 'Food': return 'meal services';
+                              case 'Registration Fees': return 'registration fees';
+                              case "IV.'s": return 'IV treatments';
+                              case 'Plaster/Milk': return 'plaster/milk items';
+                              case 'Seat & Ad. Fee': return 'seating fees';
+                              case 'X-Ray': return 'X-ray services';
+                              case 'Lost Laundry': return 'laundry charges';
+                              case 'Travel': return 'travel services';
+                              case 'Others': return 'miscellaneous items';
                               default: return 'items';
                             }
                           };
@@ -4146,51 +4203,7 @@ export default function Inpatient() {
                         • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
                       </div>
                     </div>
-                  ) : ['Physical Therapy', 'Limb and Brace', 'Food'].includes(selectedCategory) ? (
-                    /* Manual entry interface for Physical Therapy, Limb and Brace, Blood, and Food matching outpatient */
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-foreground">Service Name</label>
-                        <Input
-                          placeholder={`Enter ${selectedCategory} service name...`}
-                          value={categorySearchQuery}
-                          onChange={(e) => setCategorySearchQuery(e.target.value)}
-                          className="w-full"
-                        />
-                      </div>
 
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-foreground">Price (BDT)</label>
-                        <Input
-                          type="number"
-                          placeholder="Enter price..."
-                          value={manualEntryPrice}
-                          onChange={(e) => setManualEntryPrice(e.target.value)}
-                          className="w-full"
-                          min="0"
-                          step="0.01"
-                        />
-                      </div>
-
-                      <div className="flex justify-end">
-                        <Button
-                          onClick={addManualEntryToBill}
-                          variant="medical"
-                          size="sm"
-                          className="text-xs font-medium shadow-md hover:shadow-lg transition-shadow px-3 py-1"
-                          disabled={!categorySearchQuery.trim() || !manualEntryPrice.trim() || isNaN(parseFloat(manualEntryPrice)) || parseFloat(manualEntryPrice) <= 0}
-                        >
-                          <Plus className="h-3 w-3 mr-1" />
-                          Add to Bill
-                        </Button>
-                      </div>
-
-                      <div className="text-sm text-muted-foreground">
-                        • Enter service name and price manually<br/>
-                        • All entries are saved for future reference<br/>
-                        • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
-                      </div>
-                    </div>
                   ) : selectedCategory === 'Blood' ? (
                     /* Blood category with dropdown and quantity controls */
                     <div className="space-y-4">
@@ -4389,103 +4402,202 @@ export default function Inpatient() {
                         • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
                       </div>
                     </div>
-                  ) : ['Registration Fees'].includes(selectedCategory) ? (
-                    /* Compact interface for Registration Fees matching outpatient */
-                    <div className="space-y-2">
-                      {categoryItems.map((item: MedicalItem) => {
-                        const isInBill = billItems.some(billItem => billItem.id === item.id.toString());
-                        
-                        const handleItemClick = () => {
-                          if (isInBill) {
-                            // Remove from bill
-                            const billItem = billItems.find(billItem => billItem.id === item.id.toString());
-                            if (billItem) {
-                              setBillItems(prev => prev.filter(bi => bi.billId !== billItem.billId));
-                            }
-                          } else {
-                            // Add to bill
-                            addItemToBill(item);
-                          }
-                        };
-                        
+
+                  ) : (
+                    // Universal Laboratory-style dropdown interface for ALL categories
+                    <div className="space-y-4">
+                      {(() => {
+                        // Get the appropriate dropdown items and states based on category
+                        const dropdownItems = getDropdownSelectedItems();
+                        const isDropdownOpenValue = getIsDropdownOpen();
+                        const setIsDropdownOpenValue = setIsDropdownOpenFn();
+                        const filteredDropdownItems = getFilteredDropdownItemsFn();
+                        const handleDropdownSelectValue = getHandleDropdownSelect();
+                        const dropdownFilterQueryValue = getDropdownFilterQuery();
+                        const highlightedDropdownIndexValue = getHighlightedDropdownIndex();
+                        const setHighlightedDropdownIndexValue = setHighlightedDropdownIndexFn();
+
                         return (
-                          <div 
-                            key={item.id} 
-                            onClick={handleItemClick}
-                            className={`flex items-center justify-between p-2 ${
-                              isInBill 
-                                ? 'bg-medical-primary/20 border border-medical-primary/30' 
-                                : 'bg-muted/30'
-                            } rounded-lg hover:bg-muted/50 transition-colors cursor-pointer`}
-                          >
-                            <div className="flex-1">
-                              <div className={`font-medium text-sm ${isInBill ? 'text-medical-primary' : 'text-foreground'}`}>
-                                {item.name}
-                                {isInBill && <span className="ml-2 text-xs">✓ Added</span>}
+                          <>
+                            {/* Selected items display - consistent blue theme */}
+                            {dropdownItems.length > 0 && (
+                              <div className="space-y-2">
+                                <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md">
+                                  {dropdownItems.map((item) => (
+                                    <div key={item.id} className="inline-flex items-center bg-blue-500/10 text-blue-600 px-2 py-1 rounded text-xs">
+                                      <span className="mr-2">{item.name}</span>
+                                      <button
+                                        onClick={() => {
+                                          // Remove from selected items based on category
+                                          switch (selectedCategory) {
+                                            case 'Laboratory':
+                                              removeDropdownItem(item.id);
+                                              break;
+                                            case 'Orthopedic, S.Roll, etc.':
+                                              setOrthopedicDropdownSelectedItems(prev => prev.filter(i => i.id !== item.id));
+                                              break;
+                                            case 'Surgery':
+                                              setSurgeryDropdownSelectedItems(prev => prev.filter(i => i.id !== item.id));
+                                              break;
+                                            case 'Procedures':
+                                              setProceduresDropdownSelectedItems(prev => prev.filter(i => i.id !== item.id));
+                                              break;
+                                            case 'Halo, O2, NO2, etc.':
+                                              setOrthopedicDropdownSelectedItems(prev => prev.filter(i => i.id !== item.id));
+                                              break;
+                                            case 'Medicine, ORS & Anesthesia, Ket, Spinal':
+                                              setSurgeryDropdownSelectedItems(prev => prev.filter(i => i.id !== item.id));
+                                              break;
+                                            default:
+                                              // For other categories, use orthopedic as fallback
+                                              setOrthopedicDropdownSelectedItems(prev => prev.filter(i => i.id !== item.id));
+                                              break;
+                                          }
+                                        }}
+                                        className="hover:bg-blue-500/20 rounded-full p-0.5"
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                                <div className="flex items-center justify-between text-sm">
+                                  <span className="text-sm font-medium text-blue-600">
+                                    Total Price: {format(dropdownItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {dropdownItems.length} item{dropdownItems.length !== 1 ? 's' : ''}
+                                  </span>
+                                </div>
+                                <Button 
+                                  onClick={() => {
+                                    // Add all selected items to bill
+                                    dropdownItems.forEach(item => {
+                                      const billId = `${selectedCategory.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                                      const billItem = {
+                                        id: item.id.toString(),
+                                        name: item.name,
+                                        category: selectedCategory,
+                                        price: parseFloat(item.price),
+                                        billId,
+                                        quantity: 1
+                                      };
+                                      setBillItems(prev => [...prev, billItem]);
+                                    });
+                                    
+                                    // Clear selected items based on category
+                                    switch (selectedCategory) {
+                                      case 'Laboratory':
+                                        setDropdownSelectedItems([]);
+                                        break;
+                                      case 'Orthopedic, S.Roll, etc.':
+                                        setOrthopedicDropdownSelectedItems([]);
+                                        break;
+                                      case 'Surgery':
+                                        setSurgeryDropdownSelectedItems([]);
+                                        break;
+                                      case 'Procedures':
+                                        setProceduresDropdownSelectedItems([]);
+                                        break;
+                                      case 'Halo, O2, NO2, etc.':
+                                        setOrthopedicDropdownSelectedItems([]);
+                                        break;
+                                      case 'Medicine, ORS & Anesthesia, Ket, Spinal':
+                                        setSurgeryDropdownSelectedItems([]);
+                                        break;
+                                      default:
+                                        setOrthopedicDropdownSelectedItems([]);
+                                        break;
+                                    }
+                                  }} 
+                                  variant="outline"
+                                  className="border-blue-500/20 text-blue-600 hover:bg-blue-500/10"
+                                >
+                                  Add {dropdownItems.length} {getItemTypeName()}{dropdownItems.length !== 1 ? 's' : ''} to Bill
+                                </Button>
                               </div>
-                              {item.description && (
-                                <div className="text-muted-foreground text-xs">{item.description}</div>
-                              )}
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <span className="font-semibold text-medical-primary text-sm">
-                                {format(item.price)}
-                              </span>
-                              <div 
-                                className={`flex items-center justify-center h-7 w-7 rounded ${
-                                  isInBill 
-                                    ? 'bg-red-500/20 text-red-600 hover:bg-red-500/30' 
-                                    : 'bg-medical-primary/20 text-medical-primary hover:bg-medical-primary/30'
-                                } transition-colors`}
-                              >
-                                {isInBill ? (
-                                  <X className="h-3 w-3" />
-                                ) : (
-                                  <Plus className="h-3 w-3" />
+                            )}
+                            
+                            {/* Universal dropdown interface */}
+                            <div className="space-y-2 border-t pt-4">
+                              <div className="text-sm font-medium text-muted-foreground">
+                                Select from dropdown
+                              </div>
+                              <div className="relative" ref={getDropdownRef()}>
+                                <button
+                                  ref={getDropdownButtonRef()}
+                                  type="button"
+                                  onClick={() => {
+                                    setIsDropdownOpenValue(!isDropdownOpenValue);
+                                    setHighlightedDropdownIndexValue(-1);
+                                  }}
+                                  className="w-full flex items-center justify-between px-3 py-2 border border-border rounded-md bg-background hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-medical-primary focus:ring-offset-2"
+                                >
+                                  <span className="text-sm text-muted-foreground">
+                                    {dropdownFilterQueryValue ? `Filtering: "${dropdownFilterQueryValue}" (${filteredDropdownItems.length} matches)` : getPlaceholderText()}
+                                  </span>
+                                  <ChevronRight className={`h-4 w-4 transition-transform ${isDropdownOpenValue ? 'rotate-90' : ''}`} />
+                                </button>
+                                
+                                {isDropdownOpenValue && (
+                                  <div 
+                                    className="absolute top-full left-0 right-0 z-50 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-y-auto"
+                                  >
+                                    {filteredDropdownItems.map((item: MedicalItem, index) => (
+                                      <div
+                                        key={item.id}
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          handleDropdownSelectValue(item.id.toString());
+                                        }}
+                                        className={`px-3 py-2 text-sm flex items-center justify-between ${
+                                          index === highlightedDropdownIndexValue 
+                                            ? 'bg-medical-primary/10 border-l-4 border-medical-primary' 
+                                            : ''
+                                        } ${
+                                          dropdownItems.find(selected => selected.id === item.id)
+                                            ? 'bg-blue-500/10 text-blue-600'
+                                            : billItems.find(billItem => billItem.id === item.id.toString())
+                                              ? 'bg-red-100 text-red-600 cursor-not-allowed'
+                                              : 'cursor-pointer hover:bg-muted/50'
+                                        }`}
+                                      >
+                                        <div className="flex items-center">
+                                          <span>{item.name}</span>
+                                          {dropdownItems.find(selected => selected.id === item.id) && (
+                                            <span className="ml-2 text-blue-600 text-xs">✓ Selected</span>
+                                          )}
+                                          {billItems.find(billItem => billItem.id === item.id.toString()) && !dropdownItems.find(selected => selected.id === item.id) && (
+                                            <span className="ml-2 text-red-600 text-xs">● Already in Bill</span>
+                                          )}
+                                          {index === highlightedDropdownIndexValue && (
+                                            <span className="ml-2 text-medical-primary text-xs">← Highlighted</span>
+                                          )}
+                                        </div>
+                                        <span className="text-medical-primary font-semibold">
+                                          {format(parseFloat(item.price.toString()))}
+                                        </span>
+                                      </div>
+                                    ))}
+                                    {filteredDropdownItems.length === 0 && (
+                                      <div className="px-3 py-2 text-sm text-muted-foreground">
+                                        No {getItemTypeName()} available
+                                      </div>
+                                    )}
+                                  </div>
                                 )}
                               </div>
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    // Standard interface for other categories
-                    <div className="space-y-4">
-                      {/* Category Search */}
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                        <Input
-                          placeholder={`Search ${selectedCategory} items...`}
-                          value={categorySearchQuery}
-                          onChange={(e) => setCategorySearchQuery(e.target.value)}
-                          className="pl-10"
-                        />
-                      </div>
-
-                      {/* Filtered Results */}
-                      <div className="grid grid-cols-1 gap-2">
-                        {categoryItems
-                          .filter((item: MedicalItem) => 
-                            item.name.toLowerCase().includes(categorySearchQuery.toLowerCase())
-                          )
-                          .map((item: MedicalItem) => (
-                            <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
-                              <div>
-                                <div className="font-medium">{item.name}</div>
-                                <div className="text-sm text-muted-foreground">{format(parseFloat(item.price))}</div>
-                              </div>
-                              <Button
-                                size="sm"
-                                onClick={() => addItemToBill(item)}
-                                variant="medical-outline"
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
+                            
+                            <div className="text-sm text-muted-foreground">
+                              • Select {getItemTypeName()} from dropdown<br/>
+                              • Type to filter items in dropdown<br/>
+                              • Click selected items to remove them<br/>
+                              • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
                             </div>
-                          ))
-                        }
-                      </div>
+                          </>
+                        );
+                      })()}
                     </div>
                   )}
                 </CardContent>
