@@ -2646,7 +2646,7 @@ export default function Inpatient() {
                         })()}
                       </div>
 
-                      {/* Dynamic Dropdown selected items as tags */}
+                      {/* Dynamic Dropdown selected items as tags - matching Laboratory style */}
                       {(() => {
                         const getDropdownSelectedItems = () => {
                           switch (selectedCategory) {
@@ -2655,6 +2655,8 @@ export default function Inpatient() {
                             case 'Orthopedic, S.Roll, etc.': return orthopedicDropdownSelectedItems;
                             case 'Surgery': return surgeryDropdownSelectedItems;
                             case 'Procedures': return proceduresDropdownSelectedItems;
+                            case 'Halo, O2, NO2, etc.': return orthopedicDropdownSelectedItems; // Reuse same state
+                            case 'Medicine, ORS & Anesthesia, Ket, Spinal': return surgeryDropdownSelectedItems; // Reuse same state
                             default: return [];
                           }
                         };
@@ -2666,6 +2668,8 @@ export default function Inpatient() {
                             case 'Orthopedic, S.Roll, etc.': return (id: number) => setOrthopedicDropdownSelectedItems(prev => prev.filter(item => item.id !== id));
                             case 'Surgery': return (id: number) => setSurgeryDropdownSelectedItems(prev => prev.filter(item => item.id !== id));
                             case 'Procedures': return (id: number) => setProceduresDropdownSelectedItems(prev => prev.filter(item => item.id !== id));
+                            case 'Halo, O2, NO2, etc.': return (id: number) => setOrthopedicDropdownSelectedItems(prev => prev.filter(item => item.id !== id));
+                            case 'Medicine, ORS & Anesthesia, Ket, Spinal': return (id: number) => setSurgeryDropdownSelectedItems(prev => prev.filter(item => item.id !== id));
                             default: return () => {};
                           }
                         };
@@ -2701,6 +2705,24 @@ export default function Inpatient() {
                               });
                               toast({ title: "Items Added", description: `${items.length} item${items.length !== 1 ? 's' : ''} added to bill` });
                             };
+                            case 'Halo, O2, NO2, etc.': return () => {
+                              const items = [...orthopedicDropdownSelectedItems];
+                              setOrthopedicDropdownSelectedItems([]);
+                              items.forEach(item => {
+                                const billId = `${sessionId}-${Date.now()}-${Math.random()}`;
+                                addItemToBill({ id: billId, ...item, billId });
+                              });
+                              toast({ title: "Items Added", description: `${items.length} item${items.length !== 1 ? 's' : ''} added to bill` });
+                            };
+                            case 'Medicine, ORS & Anesthesia, Ket, Spinal': return () => {
+                              const items = [...surgeryDropdownSelectedItems];
+                              setSurgeryDropdownSelectedItems([]);
+                              items.forEach(item => {
+                                const billId = `${sessionId}-${Date.now()}-${Math.random()}`;
+                                addItemToBill({ id: billId, ...item, billId });
+                              });
+                              toast({ title: "Items Added", description: `${items.length} item${items.length !== 1 ? 's' : ''} added to bill` });
+                            };
                             default: return () => {};
                           }
                         };
@@ -2712,6 +2734,8 @@ export default function Inpatient() {
                             case 'Orthopedic, S.Roll, etc.': return 'Item';
                             case 'Surgery': return 'Procedure';
                             case 'Procedures': return 'Procedure';
+                            case 'Halo, O2, NO2, etc.': return 'Item';
+                            case 'Medicine, ORS & Anesthesia, Ket, Spinal': return 'Item';
                             default: return 'Item';
                           }
                         };
@@ -2769,6 +2793,8 @@ export default function Inpatient() {
                               case 'Orthopedic, S.Roll, etc.': return orthopedicDropdownRef;
                               case 'Surgery': return surgeryDropdownRef;
                               case 'Procedures': return proceduresDropdownRef;
+                              case 'Halo, O2, NO2, etc.': return orthopedicDropdownRef; // Reuse same ref
+                              case 'Medicine, ORS & Anesthesia, Ket, Spinal': return surgeryDropdownRef; // Reuse same ref
                               default: return dropdownRef;
                             }
                           };
@@ -2779,6 +2805,8 @@ export default function Inpatient() {
                               case 'Orthopedic, S.Roll, etc.': return orthopedicDropdownButtonRef;
                               case 'Surgery': return surgeryDropdownButtonRef;
                               case 'Procedures': return proceduresDropdownButtonRef;
+                              case 'Halo, O2, NO2, etc.': return orthopedicDropdownButtonRef; // Reuse same ref
+                              case 'Medicine, ORS & Anesthesia, Ket, Spinal': return surgeryDropdownButtonRef; // Reuse same ref
                               default: return dropdownButtonRef;
                             }
                           };
@@ -2789,6 +2817,8 @@ export default function Inpatient() {
                               case 'Orthopedic, S.Roll, etc.': return isOrthopedicDropdownOpen;
                               case 'Surgery': return isSurgeryDropdownOpen;
                               case 'Procedures': return isProceduresDropdownOpen;
+                              case 'Halo, O2, NO2, etc.': return isOrthopedicDropdownOpen; // Reuse same state
+                              case 'Medicine, ORS & Anesthesia, Ket, Spinal': return isSurgeryDropdownOpen; // Reuse same state
                               default: return false;
                             }
                           };
@@ -2799,6 +2829,8 @@ export default function Inpatient() {
                               case 'Orthopedic, S.Roll, etc.': return setIsOrthopedicDropdownOpen;
                               case 'Surgery': return setIsSurgeryDropdownOpen;
                               case 'Procedures': return setIsProceduresDropdownOpen;
+                              case 'Halo, O2, NO2, etc.': return setIsOrthopedicDropdownOpen; // Reuse same state
+                              case 'Medicine, ORS & Anesthesia, Ket, Spinal': return setIsSurgeryDropdownOpen; // Reuse same state
                               default: return () => {};
                             }
                           };
@@ -2809,6 +2841,8 @@ export default function Inpatient() {
                               case 'Orthopedic, S.Roll, etc.': return orthopedicHighlightedDropdownIndex;
                               case 'Surgery': return surgeryHighlightedDropdownIndex;
                               case 'Procedures': return proceduresHighlightedDropdownIndex;
+                              case 'Halo, O2, NO2, etc.': return orthopedicHighlightedDropdownIndex; // Reuse same state
+                              case 'Medicine, ORS & Anesthesia, Ket, Spinal': return surgeryHighlightedDropdownIndex; // Reuse same state
                               default: return -1;
                             }
                           };
@@ -2819,6 +2853,8 @@ export default function Inpatient() {
                               case 'Orthopedic, S.Roll, etc.': return setOrthopedicHighlightedDropdownIndex;
                               case 'Surgery': return setSurgeryHighlightedDropdownIndex;
                               case 'Procedures': return setProceduresHighlightedDropdownIndex;
+                              case 'Halo, O2, NO2, etc.': return setOrthopedicHighlightedDropdownIndex; // Reuse same state
+                              case 'Medicine, ORS & Anesthesia, Ket, Spinal': return setSurgeryHighlightedDropdownIndex; // Reuse same state
                               default: return () => {};
                             }
                           };
@@ -2896,6 +2932,8 @@ export default function Inpatient() {
                               case 'Orthopedic, S.Roll, etc.': return 'Select orthopedic item from dropdown... (Type to filter)';
                               case 'Surgery': return 'Select surgery from dropdown... (Type to filter)';
                               case 'Procedures': return 'Select procedure from dropdown... (Type to filter)';
+                              case 'Halo, O2, NO2, etc.': return 'Select respiratory/traction item from dropdown... (Type to filter)';
+                              case 'Medicine, ORS & Anesthesia, Ket, Spinal': return 'Select anesthesia/ORS item from dropdown... (Type to filter)';
                               default: return 'Select item from dropdown... (Type to filter)';
                             }
                           };
@@ -2906,6 +2944,8 @@ export default function Inpatient() {
                               case 'Orthopedic, S.Roll, etc.': return 'orthopedic items';
                               case 'Surgery': return 'surgeries';
                               case 'Procedures': return 'procedures';
+                              case 'Halo, O2, NO2, etc.': return 'respiratory items';
+                              case 'Medicine, ORS & Anesthesia, Ket, Spinal': return 'anesthesia items';
                               default: return 'items';
                             }
                           };
