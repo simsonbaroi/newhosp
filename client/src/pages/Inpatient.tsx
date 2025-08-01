@@ -1229,7 +1229,7 @@ export default function Inpatient() {
   const categoriesWithoutSearch = ['Registration Fees'];
   
   // Categories that use manual entry interface (service name + price)
-  const manualEntryCategories = ['Blood', 'Food', 'Others'];
+  const manualEntryCategories = ['Blood', 'Food', 'Others', 'Physical Therapy'];
 
   // Use categories directly since they're already in correct order from permanent config
   const orderedCategories = categories;
@@ -5091,8 +5091,8 @@ export default function Inpatient() {
                       </div>
                     </div>
 
-                  ) : ['Food', 'Others'].includes(selectedCategory) ? (
-                    /* Food & Others categories with manual entry only */
+                  ) : ['Food', 'Others', 'Physical Therapy'].includes(selectedCategory) ? (
+                    /* Food, Others & Physical Therapy categories with manual entry only */
                     <div className="space-y-4">
                       {/* Manual Entry Interface */}
                       <div className="space-y-4">
