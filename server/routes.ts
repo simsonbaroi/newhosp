@@ -4,6 +4,25 @@ import { storage } from "./storage";
 import aiRoutes from "./aiRoutes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check endpoints for deployment platforms
+  app.get('/health', (req, res) => {
+    res.json({ 
+      status: 'healthy', 
+      timestamp: new Date().toISOString(),
+      service: 'Hospital Bill Calculator',
+      version: '1.0.0'
+    });
+  });
+
+  app.get('/api/health', (req, res) => {
+    res.json({ 
+      status: 'healthy', 
+      timestamp: new Date().toISOString(),
+      service: 'Hospital Bill Calculator API',
+      database: 'connected'
+    });
+  });
+
   // Initialize database with default data
   await storage.initializeDatabase();
 
