@@ -245,6 +245,8 @@ export class SQLiteStorage implements IStorage {
       { category: 'Surgery, O.R. & Delivery', name: 'Operating Room Fee', price: 5000.00, currency: 'BDT', isOutpatient: false },
       { category: 'Surgery, O.R. & Delivery', name: 'Anesthesia Fee', price: 3000.00, currency: 'BDT', isOutpatient: false },
       
+      { category: 'Registration Fees', name: 'Outpatient Registration', price: 100.00, currency: 'BDT', isOutpatient: false },
+      { category: 'Registration Fees', name: 'Emergency Registration', price: 200.00, currency: 'BDT', isOutpatient: false },
       { category: 'Registration Fees', name: 'Admission Fee', price: 500.00, currency: 'BDT', isOutpatient: false },
       { category: 'Registration Fees', name: 'ICU Admission', price: 1000.00, currency: 'BDT', isOutpatient: false },
       { category: 'Registration Fees', name: 'Private Room Fee', price: 800.00, currency: 'BDT', isOutpatient: false },
