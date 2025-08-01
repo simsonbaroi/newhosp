@@ -688,7 +688,7 @@ export default function Inpatient() {
         medType,
         doseFrequency,
         totalDays: parseInt(totalDays),
-        basePrice: parseFloat(selectedMedicineForDosage.price),
+        basePrice: parseFloat(String(selectedMedicineForDosage.price)),
         isInpatient: true, // Inpatient logic
         isDischargeMedicine: medicineType === 'discharge'
       });

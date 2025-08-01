@@ -22,6 +22,10 @@ A professional medical billing calculator application for hospitals and clinics.
 - **Routing**: Wouter
 - **Styling**: Glass morphism effects with professional medical theme
 
+## 🚀 Live Demo
+
+**Try the application live:** [Coming Soon - Deploy to see live demo]
+
 ## Quick Start
 
 ### Prerequisites
@@ -48,6 +52,13 @@ npm run dev
 ```
 
 4. Open your browser and navigate to `http://localhost:5000`
+
+### One-Click Deploy
+
+Deploy instantly to these platforms:
+
+[![Deploy to Railway](https://railway.app/button.svg)](https://railway.app/new/template)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
 
 ### Building for Production
 

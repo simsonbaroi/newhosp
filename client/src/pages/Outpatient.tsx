@@ -1466,7 +1466,7 @@ const Outpatient = () => {
       return;
     }
 
-    const basePrice = parseFloat(selectedXRayForViews.price);
+    const basePrice = parseFloat(String(selectedXRayForViews.price));
     
     // Create main X-Ray item with views
     const xRayItem = {
@@ -1543,7 +1543,7 @@ const Outpatient = () => {
         medType,
         doseFrequency,
         totalDays: parseInt(totalDays),
-        basePrice: parseFloat(selectedMedicineForDosage.price),
+        basePrice: parseFloat(String(selectedMedicineForDosage.price)),
         isInpatient: false, // Outpatient logic
         isDischargeMedicine: false
       });
@@ -1899,7 +1899,7 @@ const Outpatient = () => {
                           <div className="flex justify-between items-center">
                             <div className="flex items-center gap-4 p-2 bg-medical-primary/5 rounded-md border border-medical-primary/20">
                               <span className="text-sm font-medium text-medical-primary">
-                                Total Price: {format(selectedLabItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
+                                Total Price: {format(selectedLabItems.reduce((sum, item) => sum + parseFloat(String(item.price)), 0))}
                               </span>
                               <span className="text-xs text-muted-foreground">
                                 {selectedLabItems.length} item{selectedLabItems.length !== 1 ? 's' : ''}
@@ -2005,7 +2005,7 @@ const Outpatient = () => {
                           <div className="flex justify-between items-center">
                             <div className="flex items-center gap-4 p-2 bg-blue-500/5 rounded-md border border-blue-500/20">
                               <span className="text-sm font-medium text-blue-600">
-                                Total Price: {format(dropdownSelectedItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
+                                Total Price: {format(dropdownSelectedItems.reduce((sum, item) => sum + parseFloat(String(item.price)), 0))}
                               </span>
                               <span className="text-xs text-muted-foreground">
                                 {dropdownSelectedItems.length} item{dropdownSelectedItems.length !== 1 ? 's' : ''}
@@ -2129,7 +2129,7 @@ const Outpatient = () => {
                           <div className="flex justify-between items-center">
                             <div className="flex items-center gap-4 p-2 bg-medical-primary/5 rounded-md border border-medical-primary/20">
                               <span className="text-sm font-medium text-medical-primary">
-                                Total Price: {format(selectedXRayItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
+                                Total Price: {format(selectedXRayItems.reduce((sum, item) => sum + parseFloat(String(item.price)), 0))}
                               </span>
                               <span className="text-xs text-muted-foreground">
                                 {selectedXRayItems.length} item{selectedXRayItems.length !== 1 ? 's' : ''}
@@ -2228,7 +2228,7 @@ const Outpatient = () => {
                           <div className="flex justify-between items-center">
                             <div className="flex items-center gap-4 p-2 bg-blue-500/5 rounded-md border border-blue-500/20">
                               <span className="text-sm font-medium text-blue-600">
-                                Total Price: {format(xRayDropdownSelectedItems.reduce((sum, item) => sum + parseFloat(item.price), 0))}
+                                Total Price: {format(xRayDropdownSelectedItems.reduce((sum, item) => sum + parseFloat(String(item.price)), 0))}
                               </span>
                               <span className="text-xs text-muted-foreground">
                                 {xRayDropdownSelectedItems.length} item{xRayDropdownSelectedItems.length !== 1 ? 's' : ''}
@@ -2419,7 +2419,7 @@ const Outpatient = () => {
                               
                               <div className="text-right">
                                 <div className="text-sm text-muted-foreground mb-1">
-                                  Total Price: {format(parseFloat(selectedXRayForViews.price) * (isOffChargePortable ? 1.5 : 1))}
+                                  Total Price: {format(parseFloat(String(selectedXRayForViews.price)) * (isOffChargePortable ? 1.5 : 1))}
                                 </div>
                                 <Button
                                   onClick={addXRayToBill}
@@ -2457,7 +2457,7 @@ const Outpatient = () => {
                               Selected: {tempSelectedMedicines.length} medicines
                             </span>
                             <span className="text-sm font-bold text-medical-primary bg-medical-primary/10 px-2 py-1 rounded-md">
-                              {format(tempSelectedMedicines.reduce((sum, medicine) => sum + parseFloat(medicine.price), 0))}
+                              {format(tempSelectedMedicines.reduce((sum, medicine) => sum + parseFloat(String(medicine.price)), 0))}
                             </span>
                           </div>
                           <div className="space-y-1">
@@ -2473,7 +2473,7 @@ const Outpatient = () => {
                                 </div>
                                 <div className="flex items-center space-x-2 flex-shrink-0">
                                   <span className="text-medical-primary font-semibold bg-medical-primary/10 px-2 py-1 rounded">
-                                    {format(parseFloat(medicine.price))}
+                                    {format(parseFloat(String(medicine.price)))}
                                   </span>
                                   <button
                                     onClick={() => editTempMedicine(medicine)}

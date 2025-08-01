@@ -212,7 +212,7 @@ export class MedicalCostPredictor {
     }
 
     // Category-specific recommendations
-    const categories = [...new Set(items.map(item => item.category))];
+    const categories = Array.from(new Set(items.map(item => item.category)));
     if (categories.includes('Laboratory')) {
       recommendations.push('Bundle laboratory tests to reduce processing costs');
     }

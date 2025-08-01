@@ -347,7 +347,7 @@ const AIAnalytics: React.FC = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {analytics?.costTrends?.length > 0 ? (
+                {analytics?.costTrends && analytics.costTrends.length > 0 ? (
                   <div className="space-y-3">
                     {analytics.costTrends.map((trend, index) => (
                       <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded">
@@ -380,7 +380,7 @@ const AIAnalytics: React.FC = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {analytics?.predictedDemand?.length > 0 ? (
+                {analytics?.predictedDemand && analytics.predictedDemand.length > 0 ? (
                   <div className="space-y-4">
                     {analytics.predictedDemand.map((demand, index) => (
                       <div key={index} className="space-y-2">
