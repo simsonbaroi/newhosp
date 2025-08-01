@@ -30,34 +30,25 @@ jobs:
       env:
         CI: false
 
-  deploy-railway:
+  # Deployment jobs are disabled by default
+  # Enable by setting repository secrets and variables
+  
+  deploy-info:
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Deploy to Railway
-      uses: railway-app/railway-deploy@v1
-      with:
-        service: ${{ secrets.RAILWAY_SERVICE_ID }}
-        token: ${{ secrets.RAILWAY_TOKEN }}
-
-  deploy-render:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Deploy to Render
-      uses: bounceapp/render-action@0.6.0
-      with:
-        render-token: ${{ secrets.RENDER_TOKEN }}
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        service-id: ${{ secrets.RENDER_SERVICE_ID }}
-        retries: 5
-        wait: true
-        sleep: 30000
+    - name: Deployment Instructions
+      run: |
+        echo "## 🚀 Ready for Deployment" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Your Hospital Bill Calculator is ready to deploy!" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Quick Deploy Options:" >> $GITHUB_STEP_SUMMARY
+        echo "1. **Railway**: Connect this repo to Railway for auto-deployment" >> $GITHUB_STEP_SUMMARY
+        echo "2. **Render**: Import this repo to Render with build command \`npm run build\`" >> $GITHUB_STEP_SUMMARY
+        echo "3. **Vercel**: Connect repo to Vercel for serverless deployment" >> $GITHUB_STEP_SUMMARY
+        echo "4. **Docker**: Use \`docker build -t hospital-bill-calculator .\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "See [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) for detailed instructions." >> $GITHUB_STEP_SUMMARY
