@@ -1225,6 +1225,9 @@ export default function Inpatient() {
   // Get permanent inpatient categories (already filtered for inpatient use)
   const categories = getCategoryNames(false); // Use permanent inpatient categories
 
+  // Categories that use simple toggle buttons instead of search/dropdown (like outpatient)
+  const categoriesWithoutSearch = ['Registration Fees'];
+
   // Use categories directly since they're already in correct order from permanent config
   const orderedCategories = categories;
 
@@ -5138,8 +5141,89 @@ export default function Inpatient() {
                       </div>
                     </div>
 
+                  ) : categoriesWithoutSearch.includes(selectedCategory) ? (
+                    /* Simple toggle interface for Registration Fees (matching Outpatient design) */
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {categoryItems.length > 0 ? (
+                        categoryItems.map((item: MedicalItem) => {
+                          // Make Registration Fees more compact
+                          const isCompactCategory = categoriesWithoutSearch.includes(selectedCategory);
+                          const isInBill = billItems.some(billItem => billItem.id === item.id.toString());
+                          
+                          const handleItemClick = () => {
+                            if (isInBill) {
+                              // Remove from bill
+                              const billItem = billItems.find(billItem => billItem.id === item.id.toString());
+                              if (billItem) {
+                                const updatedBillItems = billItems.filter(b => b.billId !== billItem.billId);
+                                setBillItems(updatedBillItems);
+                              }
+                            } else {
+                              // Add to bill
+                              const billId = `${selectedCategory.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                              const billItem = {
+                                id: item.id.toString(),
+                                name: item.name,
+                                category: selectedCategory,
+                                price: parseFloat(item.price.toString()),
+                                billId,
+                                quantity: 1
+                              };
+                              setBillItems(prev => [...prev, billItem]);
+                            }
+                          };
+                          
+                          return (
+                            <div 
+                              key={item.id} 
+                              onClick={handleItemClick}
+                              className={`flex items-center justify-between ${isCompactCategory ? 'p-2' : 'p-3'} ${
+                                isInBill 
+                                  ? 'bg-medical-primary/20 border border-medical-primary/30' 
+                                  : 'bg-muted/30'
+                              } rounded-lg hover:bg-muted/50 transition-colors cursor-pointer`}
+                            >
+                              <div className="flex-1">
+                                <div className={`font-medium ${isInBill ? 'text-medical-primary' : 'text-foreground'} ${isCompactCategory ? 'text-sm' : ''}`}>
+                                  {item.name}
+                                  {isInBill && <span className="ml-2 text-xs">✓ Added</span>}
+                                </div>
+                                {item.description && (
+                                  <div className={`text-muted-foreground ${isCompactCategory ? 'text-xs' : 'text-sm'}`}>{item.description}</div>
+                                )}
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <span className={`font-semibold text-medical-primary ${isCompactCategory ? 'text-sm' : ''}`}>
+                                  {format(item.price)}
+                                </span>
+                                <div 
+                                  className={`flex items-center justify-center ${
+                                    isCompactCategory ? "h-7 w-7" : "h-8 w-8"
+                                  } rounded ${
+                                    isInBill 
+                                      ? 'bg-red-500/20 text-red-600 hover:bg-red-500/30' 
+                                      : 'bg-medical-primary/20 text-medical-primary hover:bg-medical-primary/30'
+                                  } transition-colors`}
+                                >
+                                  {isInBill ? (
+                                    <X className={isCompactCategory ? "h-3 w-3" : "h-4 w-4"} />
+                                  ) : (
+                                    <Plus className={isCompactCategory ? "h-3 w-3" : "h-4 w-4"} />
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="text-center text-muted-foreground py-8">
+                          No items in this category.
+                        </div>
+                      )}
+                    </div>
+
                   ) : (
-                    // Universal Laboratory-style dropdown interface for ALL categories
+                    // Universal Laboratory-style dropdown interface for ALL OTHER categories
                     <div className="space-y-4">
                       {(() => {
                         // Get the appropriate dropdown items and states based on category
