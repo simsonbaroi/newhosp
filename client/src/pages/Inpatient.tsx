@@ -1227,6 +1227,9 @@ export default function Inpatient() {
 
   // Categories that use simple toggle buttons instead of search/dropdown (like outpatient)
   const categoriesWithoutSearch = ['Registration Fees'];
+  
+  // Categories that use manual entry interface (service name + price)
+  const manualEntryCategories = ['Blood', 'Food', 'Others'];
 
   // Use categories directly since they're already in correct order from permanent config
   const orderedCategories = categories;
@@ -4826,9 +4829,9 @@ export default function Inpatient() {
                       </div>
                     </div>
                   ) : selectedCategory === 'Blood' ? (
-                    /* Blood category with dropdown and quantity controls */
+                    /* Blood category with dropdown and manual entry */
                     <div className="space-y-4">
-                      {/* Selected Blood items - matching outpatient Laboratory design */}
+                      {/* Selected dropdown items - matching outpatient Laboratory design */}
                       {bloodDropdownSelectedItems.length > 0 && (
                         <div className="space-y-2">
                           <div className="flex flex-wrap gap-1 p-2 bg-muted/20 rounded-md">
@@ -5082,6 +5085,132 @@ export default function Inpatient() {
                       <div className="text-sm text-muted-foreground">
                         • <strong>Dropdown:</strong> Select predefined blood items with quantity controls<br/>
                         • <strong>Dynamic Manual Entry:</strong> Fill service name and price - new rows automatically appear<br/>
+                        • <strong>Remove Rows:</strong> Click X button to remove unwanted rows (first row cannot be removed)<br/>
+                        • <strong>Batch Add:</strong> Click "Add All to Bill" when ready to add all completed entries<br/>
+                        • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
+                      </div>
+                    </div>
+
+                  ) : ['Food', 'Others'].includes(selectedCategory) ? (
+                    /* Food & Others categories with manual entry only */
+                    <div className="space-y-4">
+                      {/* Manual Entry Interface */}
+                      <div className="space-y-4">
+                        <div className="text-sm font-medium text-muted-foreground">
+                          Manual Entry - {selectedCategory}
+                        </div>
+                        
+                        {/* Dynamic manual entry rows */}
+                        <div className="space-y-2">
+                          {bloodManualEntries.map((entry, index) => (
+                            <div key={entry.id} className="flex items-center space-x-2">
+                              <div className="flex-1 space-x-2 flex">
+                                <input
+                                  type="text"
+                                  placeholder="Service name..."
+                                  value={entry.serviceName}
+                                  onChange={(e) => {
+                                    const newEntries = [...bloodManualEntries];
+                                    newEntries[index] = { ...entry, serviceName: e.target.value };
+                                    setBloodManualEntries(newEntries);
+                                    
+                                    // Add new empty row if this is the last row and both fields have content
+                                    if (index === bloodManualEntries.length - 1 && e.target.value && entry.price) {
+                                      const newEmptyEntry = {
+                                        id: Date.now().toString(),
+                                        serviceName: '',
+                                        price: ''
+                                      };
+                                      setBloodManualEntries([...newEntries, newEmptyEntry]);
+                                    }
+                                  }}
+                                  className="flex-1 px-3 py-2 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-medical-primary focus:ring-offset-2"
+                                />
+                                <input
+                                  type="number"
+                                  placeholder="Price..."
+                                  value={entry.price}
+                                  onChange={(e) => {
+                                    const newEntries = [...bloodManualEntries];
+                                    newEntries[index] = { ...entry, price: e.target.value };
+                                    setBloodManualEntries(newEntries);
+                                    
+                                    // Add new empty row if this is the last row and both fields have content
+                                    if (index === bloodManualEntries.length - 1 && entry.serviceName && e.target.value) {
+                                      const newEmptyEntry = {
+                                        id: Date.now().toString(),
+                                        serviceName: '',
+                                        price: ''
+                                      };
+                                      setBloodManualEntries([...newEntries, newEmptyEntry]);
+                                    }
+                                  }}
+                                  className="w-24 px-3 py-2 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-medical-primary focus:ring-offset-2"
+                                />
+                              </div>
+                              
+                              {/* Remove button - only show if there's more than one entry */}
+                              {bloodManualEntries.length > 1 && (
+                                <Button
+                                  onClick={() => {
+                                    const newEntries = bloodManualEntries.filter(e => e.id !== entry.id);
+                                    setBloodManualEntries(newEntries);
+                                  }}
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        
+                        {/* Add to Bill button - only show if there are completed entries */}
+                        {bloodManualEntries.some(entry => entry.serviceName.trim() && entry.price.trim()) && (
+                          <div className="flex justify-end">
+                            <Button
+                              onClick={() => {
+                                // Get completed entries
+                                const completedEntries = bloodManualEntries.filter(entry => 
+                                  entry.serviceName.trim() && entry.price.trim() && !isNaN(parseFloat(entry.price))
+                                );
+                                
+                                // Add to bill
+                                completedEntries.forEach(entry => {
+                                  const billId = `${selectedCategory.toLowerCase()}-manual-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                                  const manualItem = {
+                                    id: billId,
+                                    name: entry.serviceName.trim(),
+                                    category: selectedCategory,
+                                    price: parseFloat(entry.price),
+                                    billId,
+                                    quantity: 1
+                                  };
+                                  setBillItems(prev => [...prev, manualItem]);
+                                });
+                                
+                                // Reset to single empty entry
+                                setBloodManualEntries([{ id: '1', serviceName: '', price: '' }]);
+                              }}
+                              variant="medical"
+                              size="sm"
+                              className="px-4"
+                            >
+                              Add All to Bill
+                            </Button>
+                          </div>
+                        )}
+                        
+                        {/* Help text */}
+                        <div className="text-xs text-muted-foreground bg-muted/20 p-2 rounded">
+                          💡 <strong>Dynamic entries:</strong> Fill service name and price - new rows appear automatically. Click "Add All to Bill" when ready.
+                        </div>
+                      </div>
+
+                      <div className="text-sm text-muted-foreground">
+                        • <strong>Manual Entry:</strong> Fill service name and price - new rows automatically appear<br/>
                         • <strong>Remove Rows:</strong> Click X button to remove unwanted rows (first row cannot be removed)<br/>
                         • <strong>Batch Add:</strong> Click "Add All to Bill" when ready to add all completed entries<br/>
                         • <strong>Global Navigation:</strong> Use ← → arrow keys to switch categories, Escape to exit carousel
