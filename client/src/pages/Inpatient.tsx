@@ -1769,6 +1769,138 @@ export default function Inpatient() {
     }
   };
 
+  // Handle keyboard navigation for Orthopedic dropdown
+  const handleOrthopedicDropdownKeyDown = (e: React.KeyboardEvent) => {
+    const orderedItems = categoryItems;
+    
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setOrthopedicHighlightedDropdownIndex(prev => 
+        prev < orderedItems.length - 1 ? prev + 1 : 0
+      );
+      if (!isOrthopedicDropdownOpen) setIsOrthopedicDropdownOpen(true);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setOrthopedicHighlightedDropdownIndex(prev => 
+        prev > 0 ? prev - 1 : orderedItems.length - 1
+      );
+      if (!isOrthopedicDropdownOpen) setIsOrthopedicDropdownOpen(true);
+    } else if (e.key === 'Enter' && orthopedicHighlightedDropdownIndex >= 0) {
+      e.preventDefault();
+      const selectedItem = orderedItems[orthopedicHighlightedDropdownIndex];
+      if (selectedItem) {
+        const alreadySelected = orthopedicDropdownSelectedItems.find(item => item.id === selectedItem.id);
+        const alreadyInBill = billItems.find(billItem => billItem.id === selectedItem.id.toString());
+        if (!alreadySelected && !alreadyInBill) {
+          setOrthopedicDropdownSelectedItems(prev => [...prev, selectedItem]);
+        }
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setIsOrthopedicDropdownOpen(false);
+      setOrthopedicHighlightedDropdownIndex(-1);
+      setOrthopedicDropdownFilterQuery('');
+    } else if (e.key.length === 1 && e.key.match(/[a-zA-Z0-9\s]/)) {
+      e.preventDefault();
+      const newQuery = orthopedicDropdownFilterQuery + e.key.toLowerCase();
+      setOrthopedicDropdownFilterQuery(newQuery);
+      setOrthopedicHighlightedDropdownIndex(0);
+      if (!isOrthopedicDropdownOpen) setIsOrthopedicDropdownOpen(true);
+    } else if (e.key === 'Backspace') {
+      e.preventDefault();
+      setOrthopedicDropdownFilterQuery(prev => prev.slice(0, -1));
+      setOrthopedicHighlightedDropdownIndex(0);
+    }
+  };
+
+  // Handle keyboard navigation for Surgery dropdown
+  const handleSurgeryDropdownKeyDown = (e: React.KeyboardEvent) => {
+    const orderedItems = categoryItems;
+    
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSurgeryHighlightedDropdownIndex(prev => 
+        prev < orderedItems.length - 1 ? prev + 1 : 0
+      );
+      if (!isSurgeryDropdownOpen) setIsSurgeryDropdownOpen(true);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSurgeryHighlightedDropdownIndex(prev => 
+        prev > 0 ? prev - 1 : orderedItems.length - 1
+      );
+      if (!isSurgeryDropdownOpen) setIsSurgeryDropdownOpen(true);
+    } else if (e.key === 'Enter' && surgeryHighlightedDropdownIndex >= 0) {
+      e.preventDefault();
+      const selectedItem = orderedItems[surgeryHighlightedDropdownIndex];
+      if (selectedItem) {
+        const alreadySelected = surgeryDropdownSelectedItems.find(item => item.id === selectedItem.id);
+        const alreadyInBill = billItems.find(billItem => billItem.id === selectedItem.id.toString());
+        if (!alreadySelected && !alreadyInBill) {
+          setSurgeryDropdownSelectedItems(prev => [...prev, selectedItem]);
+        }
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setIsSurgeryDropdownOpen(false);
+      setSurgeryHighlightedDropdownIndex(-1);
+      setSurgeryDropdownFilterQuery('');
+    } else if (e.key.length === 1 && e.key.match(/[a-zA-Z0-9\s]/)) {
+      e.preventDefault();
+      const newQuery = surgeryDropdownFilterQuery + e.key.toLowerCase();
+      setSurgeryDropdownFilterQuery(newQuery);
+      setSurgeryHighlightedDropdownIndex(0);
+      if (!isSurgeryDropdownOpen) setIsSurgeryDropdownOpen(true);
+    } else if (e.key === 'Backspace') {
+      e.preventDefault();
+      setSurgeryDropdownFilterQuery(prev => prev.slice(0, -1));
+      setSurgeryHighlightedDropdownIndex(0);
+    }
+  };
+
+  // Handle keyboard navigation for Procedures dropdown
+  const handleProceduresDropdownKeyDown = (e: React.KeyboardEvent) => {
+    const orderedItems = categoryItems;
+    
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setProceduresHighlightedDropdownIndex(prev => 
+        prev < orderedItems.length - 1 ? prev + 1 : 0
+      );
+      if (!isProceduresDropdownOpen) setIsProceduresDropdownOpen(true);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setProceduresHighlightedDropdownIndex(prev => 
+        prev > 0 ? prev - 1 : orderedItems.length - 1
+      );
+      if (!isProceduresDropdownOpen) setIsProceduresDropdownOpen(true);
+    } else if (e.key === 'Enter' && proceduresHighlightedDropdownIndex >= 0) {
+      e.preventDefault();
+      const selectedItem = orderedItems[proceduresHighlightedDropdownIndex];
+      if (selectedItem) {
+        const alreadySelected = proceduresDropdownSelectedItems.find(item => item.id === selectedItem.id);
+        const alreadyInBill = billItems.find(billItem => billItem.id === selectedItem.id.toString());
+        if (!alreadySelected && !alreadyInBill) {
+          setProceduresDropdownSelectedItems(prev => [...prev, selectedItem]);
+        }
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setIsProceduresDropdownOpen(false);
+      setProceduresHighlightedDropdownIndex(-1);
+      setProceduresDropdownFilterQuery('');
+    } else if (e.key.length === 1 && e.key.match(/[a-zA-Z0-9\s]/)) {
+      e.preventDefault();
+      const newQuery = proceduresDropdownFilterQuery + e.key.toLowerCase();
+      setProceduresDropdownFilterQuery(newQuery);
+      setProceduresHighlightedDropdownIndex(0);
+      if (!isProceduresDropdownOpen) setIsProceduresDropdownOpen(true);
+    } else if (e.key === 'Backspace') {
+      e.preventDefault();
+      setProceduresDropdownFilterQuery(prev => prev.slice(0, -1));
+      setProceduresHighlightedDropdownIndex(0);
+    }
+  };
+
   // Get filtered dropdown items
   const getFilteredDropdownItems = () => {
     if (!categoryItems) return [];
@@ -3375,6 +3507,18 @@ export default function Inpatient() {
                             }
                           };
                           
+                          const getKeyboardHandler = () => {
+                            switch (selectedCategory) {
+                              case 'Laboratory': return handleDropdownKeyDown;
+                              case 'Orthopedic, S.Roll, etc.': return handleOrthopedicDropdownKeyDown;
+                              case 'Surgery': return handleSurgeryDropdownKeyDown;
+                              case 'Procedures': return handleProceduresDropdownKeyDown;
+                              case 'Halo, O2, NO2, etc.': return handleOrthopedicDropdownKeyDown; // Reuse same handler
+                              case 'Medicine, ORS & Anesthesia, Ket, Spinal': return handleSurgeryDropdownKeyDown; // Reuse same handler
+                              default: return handleDropdownKeyDown; // Default fallback
+                            }
+                          };
+                          
                           const isDropdownOpenValue = getIsDropdownOpen();
                           const setIsDropdownOpenValue = setIsDropdownOpenFn();
                           const highlightedDropdownIndexValue = getHighlightedDropdownIndex();
@@ -3393,6 +3537,7 @@ export default function Inpatient() {
                                   setIsDropdownOpenValue(!isDropdownOpenValue);
                                   setHighlightedDropdownIndexValue(-1);
                                 }}
+                                onKeyDown={getKeyboardHandler()}
                                 className="w-full flex items-center justify-between px-3 py-2 border border-border rounded-md bg-background hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-medical-primary focus:ring-offset-2"
                               >
                                 <span className="text-sm text-muted-foreground">
