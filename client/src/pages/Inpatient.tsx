@@ -1177,6 +1177,27 @@ export default function Inpatient() {
     }
   }, [dropdownFilterQuery, dropdownSelectedItems.length]);
 
+  // Ensure Orthopedic dropdown button stays focused for continuous keyboard input
+  useEffect(() => {
+    if (isOrthopedicDropdownOpen && orthopedicDropdownButtonRef.current) {
+      orthopedicDropdownButtonRef.current.focus();
+    }
+  }, [orthopedicDropdownFilterQuery, orthopedicDropdownSelectedItems.length]);
+
+  // Ensure Surgery dropdown button stays focused for continuous keyboard input
+  useEffect(() => {
+    if (isSurgeryDropdownOpen && surgeryDropdownButtonRef.current) {
+      surgeryDropdownButtonRef.current.focus();
+    }
+  }, [surgeryDropdownFilterQuery, surgeryDropdownSelectedItems.length]);
+
+  // Ensure Procedures dropdown button stays focused for continuous keyboard input
+  useEffect(() => {
+    if (isProceduresDropdownOpen && proceduresDropdownButtonRef.current) {
+      proceduresDropdownButtonRef.current.focus();
+    }
+  }, [proceduresDropdownFilterQuery, proceduresDropdownSelectedItems.length]);
+
   // Auto-focus search input when Laboratory category is selected
   useEffect(() => {
     if (selectedCategory === 'Laboratory' && isCarouselMode && searchInputRef.current) {
@@ -1952,6 +1973,27 @@ export default function Inpatient() {
       dropdownButtonRef.current.focus();
     }
   }, [dropdownFilterQuery, dropdownSelectedItems.length]);
+
+  // Ensure Orthopedic dropdown button stays focused for continuous keyboard input
+  useEffect(() => {
+    if (isOrthopedicDropdownOpen && orthopedicDropdownButtonRef.current) {
+      orthopedicDropdownButtonRef.current.focus();
+    }
+  }, [orthopedicDropdownFilterQuery, orthopedicDropdownSelectedItems.length]);
+
+  // Ensure Surgery dropdown button stays focused for continuous keyboard input
+  useEffect(() => {
+    if (isSurgeryDropdownOpen && surgeryDropdownButtonRef.current) {
+      surgeryDropdownButtonRef.current.focus();
+    }
+  }, [surgeryDropdownFilterQuery, surgeryDropdownSelectedItems.length]);
+
+  // Ensure Procedures dropdown button stays focused for continuous keyboard input
+  useEffect(() => {
+    if (isProceduresDropdownOpen && proceduresDropdownButtonRef.current) {
+      proceduresDropdownButtonRef.current.focus();
+    }
+  }, [proceduresDropdownFilterQuery, proceduresDropdownSelectedItems.length]);
 
   // Auto-focus search input when Laboratory category is selected
   useEffect(() => {
