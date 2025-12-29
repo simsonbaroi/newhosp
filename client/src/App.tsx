@@ -8,7 +8,6 @@ import Index from "./pages/Index";
 import Outpatient from "./pages/Outpatient";
 import Inpatient from "./pages/Inpatient";
 import Database from "./pages/Database";
-import AIAnalytics from "./pages/AIAnalytics";
 import NotFound from "./pages/NotFound";
 
 const App = () => (
@@ -22,7 +21,6 @@ const App = () => (
           <Route path="/outpatient" component={Outpatient} />
           <Route path="/inpatient" component={Inpatient} />
           <Route path="/database" component={Database} />
-          <Route path="/ai-analytics" component={AIAnalytics} />
           <Route component={NotFound} />
         </Switch>
       </Router>

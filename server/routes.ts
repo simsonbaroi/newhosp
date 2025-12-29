@@ -1,7 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import aiRoutes from "./aiRoutes";
+import { registerChatRoutes } from "./replit_integrations/chat";
+import { registerImageRoutes } from "./replit_integrations/image";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Health check endpoints for deployment platforms
@@ -26,8 +27,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize database with default data
   await storage.initializeDatabase();
 
-  // AI and ML Routes
-  app.use("/api/ai", aiRoutes);
+  // Google Gemini AI Routes
+  registerChatRoutes(app);
+  registerImageRoutes(app);
 
   // Medical Items API Routes
   app.get("/api/medical-items", async (req, res) => {

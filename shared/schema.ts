@@ -61,3 +61,7 @@ export const insertBillSchema = createInsertSchema(bills).omit({
 
 export type InsertBill = z.infer<typeof insertBillSchema>;
 export type Bill = typeof bills.$inferSelect;
+
+// Re-export chat tables from models
+export { conversations, messages } from "./models/chat";
+export type { Conversation, InsertConversation, Message, InsertMessage } from "./models/chat";
