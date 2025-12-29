@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
-import { Calculator, Database, Users, Stethoscope, Brain } from 'lucide-react';
+import { Calculator, Database, Users, Stethoscope } from 'lucide-react';
 
 interface LayoutProps {
   children: ReactNode;
@@ -14,7 +14,6 @@ const Layout = ({ children }: LayoutProps) => {
     { name: 'Outpatient', href: '/outpatient', icon: Users },
     { name: 'Inpatient', href: '/inpatient', icon: Stethoscope },
     { name: 'Database', href: '/database', icon: Database },
-    { name: 'AI Analytics', href: '/ai-analytics', icon: Brain },
   ];
 
   return (
