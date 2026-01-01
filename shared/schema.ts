@@ -16,7 +16,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
-// Medical item prices table - only stores prices, categories are hardcoded
+// Medical item prices table
 export const medicalItemPrices = sqliteTable("medical_item_prices", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   category: text("category").notNull(),
@@ -36,16 +36,15 @@ export const insertMedicalItemPriceSchema = createInsertSchema(medicalItemPrices
 export type InsertMedicalItemPrice = z.infer<typeof insertMedicalItemPriceSchema>;
 export type MedicalItemPrice = typeof medicalItemPrices.$inferSelect;
 
-// Legacy interface for compatibility - maps to the new price table
 export type MedicalItem = MedicalItemPrice;
 export type InsertMedicalItem = InsertMedicalItemPrice;
 
-// Bills table for saved calculations
+// Bills table
 export const bills = sqliteTable("bills", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   type: text("type", { enum: ["outpatient", "inpatient"] }).notNull(),
-  sessionId: text("session_id").notNull(), // For browser session persistence
-  billData: text("bill_data").notNull(), // JSON string of bill items
+  sessionId: text("session_id").notNull(),
+  billData: text("bill_data").notNull(),
   daysAdmitted: integer("days_admitted").default(1),
   total: real("total").notNull(),
   currency: text("currency").notNull().default("BDT"),
@@ -61,3 +60,38 @@ export const insertBillSchema = createInsertSchema(bills).omit({
 
 export type InsertBill = z.infer<typeof insertBillSchema>;
 export type Bill = typeof bills.$inferSelect;
+
+// App Settings table
+export const appSettings = sqliteTable("app_settings", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  appName: text("app_name").notNull().default("Hospital Bill Calculator"),
+  logoUrl: text("logo_url"),
+  faviconUrl: text("favicon_url"),
+  primaryColor: text("primary_color").notNull().default("222.2 47.4% 11.2%"), // HSL
+  secondaryColor: text("secondary_color").notNull().default("210 40% 96.1%"),
+  accentColor: text("accent_color").notNull().default("210 40% 96.1%"),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+});
+
+export const insertAppSettingsSchema = createInsertSchema(appSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type AppSettings = typeof appSettings.$inferSelect;
+export type InsertAppSettings = z.infer<typeof insertAppSettingsSchema>;
+
+// Categories table for dynamic category management
+export const itemCategories = sqliteTable("item_categories", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  isOutpatient: integer("is_outpatient", { mode: "boolean" }).notNull(),
+  order: integer("order").notNull().default(0),
+});
+
+export const insertItemCategorySchema = createInsertSchema(itemCategories).omit({
+  id: true,
+});
+
+export type ItemCategory = typeof itemCategories.$inferSelect;
+export type InsertItemCategory = z.infer<typeof insertItemCategorySchema>;

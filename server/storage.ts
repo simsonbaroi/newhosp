@@ -5,9 +5,15 @@ import {
   type InsertMedicalItem,
   type Bill,
   type InsertBill,
+  type AppSettings,
+  type InsertAppSettings,
+  type ItemCategory,
+  type InsertItemCategory,
   medicalItemPrices,
   users,
-  bills
+  bills,
+  appSettings,
+  itemCategories
 } from "@shared/schema";
 import { db, initializeDatabase } from "./db";
 import { eq, and, like } from "drizzle-orm";
@@ -31,11 +37,69 @@ export interface IStorage {
   // Bills methods
   saveBill(bill: InsertBill): Promise<Bill>;
   getBillBySession(sessionId: string, type: "outpatient" | "inpatient"): Promise<Bill | undefined>;
+  
+  // Settings methods
+  getSettings(): Promise<AppSettings>;
+  updateSettings(settings: Partial<InsertAppSettings>): Promise<AppSettings>;
+  
+  // Category methods
+  getAllCategories(): Promise<ItemCategory[]>;
+  createCategory(category: InsertItemCategory): Promise<ItemCategory>;
+  updateCategory(id: number, category: Partial<InsertItemCategory>): Promise<ItemCategory | undefined>;
+  deleteCategory(id: number): Promise<boolean>;
+
   initializeDatabase(): Promise<void>;
 }
 
 export class SQLiteStorage implements IStorage {
   private initialized = false;
+
+  async getSettings(): Promise<AppSettings> {
+    const result = await db.select().from(appSettings).limit(1);
+    if (result.length === 0) {
+      const defaultSettings = await db.insert(appSettings).values({
+        appName: "Hospital Bill Calculator",
+        primaryColor: "222.2 47.4% 11.2%",
+        secondaryColor: "210 40% 96.1%",
+        accentColor: "210 40% 96.1%",
+      }).returning();
+      return defaultSettings[0];
+    }
+    return result[0];
+  }
+
+  async updateSettings(settings: Partial<InsertAppSettings>): Promise<AppSettings> {
+    const existing = await this.getSettings();
+    const result = await db.update(appSettings)
+      .set({ ...settings, updatedAt: new Date() })
+      .where(eq(appSettings.id, existing.id))
+      .returning();
+    return result[0];
+  }
+
+  async getAllCategories(): Promise<ItemCategory[]> {
+    return await db.select().from(itemCategories).orderBy(itemCategories.order);
+  }
+
+  async createCategory(category: InsertItemCategory): Promise<ItemCategory> {
+    const result = await db.insert(itemCategories).values(category).returning();
+    return result[0];
+  }
+
+  async updateCategory(id: number, category: Partial<InsertItemCategory>): Promise<ItemCategory | undefined> {
+    const result = await db.update(itemCategories)
+      .set(category)
+      .where(eq(itemCategories.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteCategory(id: number): Promise<boolean> {
+    const result = await db.delete(itemCategories)
+      .where(eq(itemCategories.id, id))
+      .returning();
+    return result.length > 0;
+  }
 
   async getUser(id: number): Promise<User | undefined> {
     const result = await db.select().from(users).where(eq(users.id, id)).limit(1);

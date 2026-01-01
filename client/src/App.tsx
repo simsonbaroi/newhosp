@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Outpatient from "./pages/Outpatient";
 import Inpatient from "./pages/Inpatient";
 import Database from "./pages/Database";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const App = () => (
@@ -21,6 +22,7 @@ const App = () => (
           <Route path="/outpatient" component={Outpatient} />
           <Route path="/inpatient" component={Inpatient} />
           <Route path="/database" component={Database} />
+          <Route path="/settings" component={Settings} />
           <Route component={NotFound} />
         </Switch>
       </Router>

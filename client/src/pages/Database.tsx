@@ -182,13 +182,20 @@ const Database = () => {
             <DatabaseIcon className="h-8 w-8 text-emerald-600" />
             <h1 className="text-3xl font-bold text-emerald-800">Medical Items Database</h1>
           </div>
-          <Button 
-            onClick={() => setIsAdding(true)}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Item
-          </Button>
+          <div className="flex gap-2">
+            <Link href="/settings">
+              <Button variant="outline" size="icon" className="text-emerald-600 border-emerald-600">
+                <SettingsIcon className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Button 
+              onClick={() => setIsAdding(true)}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Item
+            </Button>
+          </div>
         </div>
 
         {/* Search and Filter Controls */}
