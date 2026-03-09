@@ -309,49 +309,126 @@
         };
 
         // --- Pages ---
-        const IndexPage = ({ onNavigate }) => (
-            <div className="min-h-screen">
-                <div className="medical-gradient text-white py-10 sm:py-20 px-4 sm:px-6 relative overflow-hidden">
-                    <div className="absolute inset-0 opacity-20">
-                        <div className="absolute top-10 right-10 w-40 h-40 bg-white rounded-full blur-3xl"></div>
-                        <div className="absolute bottom-10 left-10 w-40 h-40 bg-emerald-300 rounded-full blur-3xl"></div>
-                    </div>
-                    <div className="max-w-5xl mx-auto text-center relative z-10">
-                        <div className="float-in flex justify-center mb-6 sm:mb-8">
-                            <div className="p-4 sm:p-5 bg-white/20 rounded-full backdrop-blur-md border border-white/30">
-                                <Icon name="heart-handshake" className="w-12 h-12 sm:w-16 sm:h-16 text-white" />
-                            </div>
-                        </div>
-                        <h1 className="text-3xl sm:text-5xl font-bold mb-3 sm:mb-6 tracking-tight leading-tight">Hospital Bill Calculator</h1>
-                        <p className="text-sm sm:text-lg text-emerald-50/80 mb-8 sm:mb-10 max-w-2xl mx-auto leading-relaxed">
-                            Fast, accurate, and beautiful. Calculate medical bills with confidence.
-                        </p>
-                        <Button variant="medical" size="lg" onClick={() => onNavigate('outpatient')} className="font-bold cta-button-mobile shadow-2xl">
-                            Get Started <Icon name="arrow-right" className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
-                        </Button>
-                    </div>
-                </div>
+        const IndexPage = ({ onNavigate }) => {
+            const [activeFeature, setActiveFeature] = useState(0);
+            
+            const features = [
+                { title: 'Outpatient', icon: 'users', color: 'from-blue-500/30 to-blue-600/20', desc: 'Quick billing for consultations and tests', action: 'outpatient' },
+                { title: 'Inpatient', icon: 'stethoscope', color: 'from-purple-500/30 to-purple-600/20', desc: 'Manage room charges and procedures', action: 'inpatient' },
+                { title: 'Database', icon: 'database', color: 'from-pink-500/30 to-pink-600/20', desc: 'Control pricing and items', action: 'database' },
+            ];
 
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-20 grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
-                    {[
-                        { title: 'Outpatient', desc: 'Lab tests, x-rays, consultations', icon: 'users', action: 'outpatient' },
-                        { title: 'Inpatient', desc: 'Admission, room charges, surgery', icon: 'stethoscope', action: 'inpatient' },
-                        { title: 'Database', desc: 'Configure items and pricing', icon: 'database', action: 'database' },
-                    ].map((item, i) => (
-                        <div key={i} className="glass-card-mobile p-5 sm:p-8 rounded-2xl sm:rounded-3xl group cursor-pointer hover:scale-105 transition-transform duration-300" onClick={() => onNavigate(item.action)} style={{animation: `floatIn 0.5s ease-out ${i * 100}ms both`}}>
-                            <div className="mb-5 sm:mb-6 p-3 sm:p-4 bg-emerald-900/40 rounded-2xl w-fit group-hover:scale-110 group-hover:bg-emerald-900/60 transition-all duration-300">
-                                <Icon name={item.icon} className="w-7 h-7 sm:w-10 sm:h-10 text-emerald-300" />
+            return (
+                <div className="min-h-screen bg-background flex flex-col">
+                    {/* Mobile Hero Section */}
+                    <div className="medical-gradient text-white px-4 pt-8 pb-12 relative overflow-hidden">
+                        <div className="absolute inset-0">
+                            <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                            <div className="absolute bottom-0 left-0 w-60 h-60 bg-emerald-300/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+                        </div>
+
+                        <div className="relative z-10 max-w-2xl mx-auto">
+                            {/* Animated Icon */}
+                            <div className="flex justify-center mb-6">
+                                <div className="relative w-20 h-20">
+                                    <div className="absolute inset-0 bg-white/20 rounded-full blur-2xl animate-pulse"></div>
+                                    <div className="absolute inset-0 bg-white/10 rounded-full border border-white/30 flex items-center justify-center">
+                                        <Icon name="heart" className="w-10 h-10 text-white" style={{animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'}} />
+                                    </div>
+                                </div>
                             </div>
-                            <h3 className="text-lg sm:text-2xl font-bold mb-2 sm:mb-3">{item.title}</h3>
-                            <p className="text-xs sm:text-base text-emerald-100/60 mb-5 sm:mb-8 leading-relaxed">{item.desc}</p>
-                            <Button variant="primary" className="w-full text-xs sm:text-sm">
-                                {item.action === 'database' ? 'Manage' : 'Open'}
+
+                            {/* Main Heading */}
+                            <h1 className="text-4xl font-black text-center mb-2 leading-tight" style={{animation: 'floatIn 0.6s ease-out'}}>
+                                Hospital Bill
+                                <span className="block text-emerald-200">Calculator</span>
+                            </h1>
+
+                            {/* Subheading with gradient */}
+                            <p className="text-center text-sm text-white/80 mb-8" style={{animation: 'floatIn 0.7s ease-out'}}>
+                                Fast • Accurate • Beautiful
+                            </p>
+
+                            {/* CTA Button */}
+                            <Button variant="medical" size="lg" onClick={() => onNavigate('outpatient')} className="w-full font-bold text-base cta-button-mobile shadow-2xl" style={{animation: 'floatIn 0.8s ease-out'}}>
+                                <Icon name="zap" className="w-5 h-5" /> Start Now
                             </Button>
                         </div>
-                    ))}
+                    </div>
+
+                    {/* Feature Carousel Section */}
+                    <div className="flex-1 px-4 py-8 flex flex-col">
+                        <div className="mb-6">
+                            <h2 className="text-2xl font-bold mb-1">Features</h2>
+                            <p className="text-emerald-100/60 text-sm">Everything you need for billing</p>
+                        </div>
+
+                        {/* Carousel Cards */}
+                        <div className="space-y-3 flex-1">
+                            {features.map((feature, idx) => (
+                                <div 
+                                    key={idx}
+                                    onClick={() => { setActiveFeature(idx); onNavigate(feature.action); }}
+                                    className={`group cursor-pointer transition-all duration-300 ${activeFeature === idx ? 'scale-100' : 'scale-95 opacity-60'}`}
+                                    style={{animation: `slideInRight 0.5s ease-out ${idx * 100}ms both`}}
+                                >
+                                    <div className={`bg-gradient-to-br ${feature.color} border border-white/10 rounded-2xl p-5 relative overflow-hidden`}>
+                                        {/* Animated Background */}
+                                        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent"></div>
+                                        </div>
+
+                                        <div className="relative z-10 flex items-center gap-4">
+                                            <div className="p-4 bg-white/10 rounded-xl backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
+                                                <Icon name={feature.icon} className="w-6 h-6 text-white" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <h3 className="font-bold text-white text-lg">{feature.title}</h3>
+                                                <p className="text-white/70 text-xs">{feature.desc}</p>
+                                            </div>
+                                            <Icon name="chevron-right" className="w-5 h-5 text-white/50 group-hover:text-white group-hover:translate-x-1 transition-all flex-shrink-0" />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Statistics Section */}
+                        <div className="grid grid-cols-3 gap-3 mt-8">
+                            {[
+                                { label: 'Fast', value: '< 1s', icon: 'zap' },
+                                { label: 'Accurate', value: '100%', icon: 'check-circle' },
+                                { label: 'Simple', value: '3 Taps', icon: 'smile' },
+                            ].map((stat, idx) => (
+                                <div key={idx} className="glass-card-mobile p-4 rounded-xl text-center border border-emerald-500/20 hover:border-emerald-500/40 transition-all duration-300" style={{animation: `floatIn 0.6s ease-out ${idx * 150 + 300}ms both`}}>
+                                    <Icon name={stat.icon} className="w-5 h-5 text-emerald-400 mx-auto mb-2" />
+                                    <p className="text-lg font-bold text-white">{stat.value}</p>
+                                    <p className="text-xs text-white/60">{stat.label}</p>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Quick Links */}
+                        <div className="grid grid-cols-2 gap-3 mt-8">
+                            <Button variant="secondary" className="w-full text-sm font-semibold gap-2" onClick={() => onNavigate('database')}>
+                                <Icon name="settings" className="w-4 h-4" /> Settings
+                            </Button>
+                            <Button variant="outline" className="w-full text-sm font-semibold gap-2" onClick={() => alert('Help center coming soon!')}>
+                                <Icon name="help-circle" className="w-4 h-4" /> Help
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* Floating Status */}
+                    <div className="px-4 pb-4">
+                        <div className="flex items-center justify-center gap-2 text-xs text-emerald-100/50 bg-emerald-900/10 rounded-lg p-3 border border-emerald-900/20">
+                            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                            <span>All systems operational</span>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        );
+            );
+        };
 
         const CalculatorPage = ({ type, onNavigate }) => {
             const [billItems, setBillItems] = useState([]);
