@@ -31,35 +31,30 @@
             --medical-gradient-end: 160 65% 45%;
         }
 
+        * {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        input, textarea, button, [contenteditable] {
+            -webkit-user-select: text;
+            user-select: text;
+        }
+
         body {
             background-color: hsl(220, 15%, 6%);
             color: hsl(160, 20%, 95%);
             font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             margin: 0;
             padding: 0;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         .header-enhanced {
             background: linear-gradient(135deg, hsl(160, 60%, 30%), hsl(160, 65%, 45%));
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-        }
-
-        .nav-button-enhanced {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-        }
-
-        .nav-button-enhanced:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.25);
-        }
-
-        .nav-button-active {
-            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
-            transform: translateY(-2px);
-            background-color: rgba(255, 255, 255, 0.25);
         }
 
         .glass-card {
@@ -89,6 +84,89 @@
                 0 8px 32px rgba(0, 0, 0, 0.15);
         }
 
+        .mobile-drawer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 40;
+            animation: slideInLeft 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .mobile-drawer-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
+
+        .mobile-drawer-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 80%;
+            max-width: 280px;
+            background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%);
+            overflow-y-auto;
+            border-right: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .floating-bill {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 30;
+            animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .bill-drawer-mobile {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 50;
+            animation: slideUpModal 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 24px 24px 0 0;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @keyframes slideUpModal {
+            from {
+                opacity: 0;
+                transform: translateY(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         ::-webkit-scrollbar {
             width: 8px;
         }
@@ -101,6 +179,12 @@
         }
         ::-webkit-scrollbar-thumb:hover {
             background: hsl(160, 60%, 45%);
+        }
+
+        @media (max-width: 768px) {
+            .header-enhanced {
+                padding: 0.75rem 1rem;
+            }
         }
     </style>
 </head>
@@ -132,10 +216,11 @@
 
         const Button = ({ children, variant = 'primary', className = '', onClick, size = 'default' }) => {
             const sizes = {
-                default: "h-10 px-4 py-2",
-                sm: "h-9 px-3 rounded-md",
-                lg: "h-11 px-8 rounded-md",
-                icon: "h-10 w-10"
+                default: "h-10 px-4 py-2 text-sm",
+                sm: "h-9 px-3 rounded-md text-xs",
+                lg: "h-12 px-6 rounded-lg text-base",
+                icon: "h-10 w-10 min-h-[44px] min-w-[44px]",
+                "icon-lg": "h-12 w-12 min-h-[48px] min-w-[48px]"
             };
             const variants = {
                 primary: "bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg",
@@ -146,7 +231,7 @@
             };
             return (
                 <button 
-                    className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 ${sizes[size]} ${variants[variant]} ${className}`} 
+                    className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium transition-colors focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 ${sizes[size]} ${variants[variant]} ${className}`} 
                     onClick={onClick}
                 >
                     {children}
@@ -157,48 +242,47 @@
         // --- Pages ---
         const IndexPage = ({ onNavigate }) => (
             <div className="min-h-screen">
-                <div className="medical-gradient text-white py-20 px-6">
+                <div className="medical-gradient text-white py-12 sm:py-20 px-4 sm:px-6">
                     <div className="max-w-5xl mx-auto text-center">
-                        <div className="flex justify-center mb-8">
-                            <div className="p-5 bg-white/20 rounded-full backdrop-blur-md">
-                                <Icon name="heart" className="w-16 h-16 text-white" />
+                        <div className="flex justify-center mb-6 sm:mb-8">
+                            <div className="p-4 sm:p-5 bg-white/20 rounded-full backdrop-blur-md">
+                                <Icon name="heart" className="w-12 h-12 sm:w-16 sm:h-16 text-white" />
                             </div>
                         </div>
-                        <h1 className="text-5xl font-bold mb-6 tracking-tight">Hospital Bill Calculator</h1>
-                        <p className="text-xl text-emerald-50/90 mb-10 max-w-2xl mx-auto leading-relaxed">
-                            Professional medical billing system with high-fidelity glass morphism design. 
-                            Manage hospital finances with precision and modern UI aesthetics.
+                        <h1 className="text-3xl sm:text-5xl font-bold mb-4 sm:mb-6 tracking-tight">Hospital Bill Calculator</h1>
+                        <p className="text-base sm:text-xl text-emerald-50/90 mb-8 sm:mb-10 max-w-2xl mx-auto leading-relaxed">
+                            Professional medical billing system. Manage hospital finances with precision.
                         </p>
-                        <Button variant="medical" size="lg" onClick={() => onNavigate('outpatient')} className="font-bold text-lg">
-                            Start Calculating <Icon name="arrow-right" className="w-5 h-5 ml-2" />
+                        <Button variant="medical" size="lg" onClick={() => onNavigate('outpatient')} className="font-bold">
+                            Start Calculating <Icon name="arrow-right" className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
                         </Button>
                     </div>
                 </div>
 
-                <div className="max-w-7xl mx-auto px-6 py-20 grid md:grid-cols-3 gap-8">
-                    <div className="glass-card p-8 group cursor-pointer" onClick={() => onNavigate('outpatient')}>
-                        <div className="mb-6 p-4 bg-emerald-900/30 rounded-2xl w-fit group-hover:scale-110 transition-transform">
-                            <Icon name="users" className="w-10 h-10 text-emerald-400" />
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-20 grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
+                    <div className="glass-card p-6 sm:p-8 group cursor-pointer" onClick={() => onNavigate('outpatient')}>
+                        <div className="mb-6 p-3 sm:p-4 bg-emerald-900/30 rounded-2xl w-fit group-hover:scale-110 transition-transform">
+                            <Icon name="users" className="w-8 h-8 sm:w-10 sm:h-10 text-emerald-400" />
                         </div>
-                        <h3 className="text-2xl font-bold mb-4">Outpatient</h3>
-                        <p className="text-emerald-100/60 mb-8 leading-relaxed">Calculate bills for lab tests, x-rays, and daily medical consultations.</p>
-                        <Button variant="primary" className="w-full">Open Calculator</Button>
+                        <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Outpatient</h3>
+                        <p className="text-sm sm:text-base text-emerald-100/60 mb-6 sm:mb-8 leading-relaxed">Calculate bills for lab tests, x-rays, and consultations.</p>
+                        <Button variant="primary" className="w-full text-sm sm:text-base">Open</Button>
                     </div>
-                    <div className="glass-card p-8 group cursor-pointer" onClick={() => onNavigate('inpatient')}>
-                        <div className="mb-6 p-4 bg-emerald-900/30 rounded-2xl w-fit group-hover:scale-110 transition-transform">
-                            <Icon name="stethoscope" className="w-10 h-10 text-emerald-400" />
+                    <div className="glass-card p-6 sm:p-8 group cursor-pointer" onClick={() => onNavigate('inpatient')}>
+                        <div className="mb-6 p-3 sm:p-4 bg-emerald-900/30 rounded-2xl w-fit group-hover:scale-110 transition-transform">
+                            <Icon name="stethoscope" className="w-8 h-8 sm:w-10 sm:h-10 text-emerald-400" />
                         </div>
-                        <h3 className="text-2xl font-bold mb-4">Inpatient</h3>
-                        <p className="text-emerald-100/60 mb-8 leading-relaxed">Manage admission fees, room charges, and surgical procedures.</p>
-                        <Button variant="primary" className="w-full">Open Calculator</Button>
+                        <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Inpatient</h3>
+                        <p className="text-sm sm:text-base text-emerald-100/60 mb-6 sm:mb-8 leading-relaxed">Manage admission fees and room charges.</p>
+                        <Button variant="primary" className="w-full text-sm sm:text-base">Open</Button>
                     </div>
-                    <div className="glass-card p-8 group cursor-pointer" onClick={() => onNavigate('database')}>
-                        <div className="mb-6 p-4 bg-emerald-900/30 rounded-2xl w-fit group-hover:scale-110 transition-transform">
-                            <Icon name="database" className="w-10 h-10 text-emerald-400" />
+                    <div className="glass-card p-6 sm:p-8 group cursor-pointer" onClick={() => onNavigate('database')}>
+                        <div className="mb-6 p-3 sm:p-4 bg-emerald-900/30 rounded-2xl w-fit group-hover:scale-110 transition-transform">
+                            <Icon name="database" className="w-8 h-8 sm:w-10 sm:h-10 text-emerald-400" />
                         </div>
-                        <h3 className="text-2xl font-bold mb-4">Database</h3>
-                        <p className="text-emerald-100/60 mb-8 leading-relaxed">Configure medical item pricing and customize hospital categories.</p>
-                        <Button variant="outline" className="w-full">Manage Data</Button>
+                        <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Database</h3>
+                        <p className="text-sm sm:text-base text-emerald-100/60 mb-6 sm:mb-8 leading-relaxed">Configure items and categories.</p>
+                        <Button variant="outline" className="w-full text-sm sm:text-base">Manage</Button>
                     </div>
                 </div>
             </div>
@@ -207,6 +291,7 @@
         const CalculatorPage = ({ type, onNavigate }) => {
             const [billItems, setBillItems] = useState([]);
             const [search, setSearch] = useState('');
+            const [showBillMobile, setShowBillMobile] = useState(false);
 
             const filtered = MEDICAL_ITEMS.filter(i => 
                 (type === 'outpatient' ? i.isOutpatient : !i.isOutpatient) &&
@@ -215,162 +300,207 @@
 
             const total = billItems.reduce((acc, i) => acc + i.price, 0);
 
-            return (
-                <div className="max-w-7xl mx-auto px-6 py-10 grid lg:grid-cols-3 gap-10">
-                    <div className="lg:col-span-2 space-y-8">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-3xl font-bold flex items-center gap-3">
-                                <Icon name={type === 'outpatient' ? 'users' : 'stethoscope'} className="w-8 h-8 text-emerald-500" />
-                                {type.charAt(0).toUpperCase() + type.slice(1)} Billing
-                            </h2>
-                        </div>
-
-                        <div className="glass-card p-6">
-                            <div className="relative mb-8">
-                                <Icon name="search" className="absolute left-4 top-3.5 text-emerald-500/50 w-5 h-5" />
-                                <input 
-                                    className="w-full bg-black/40 border border-emerald-900/50 rounded-xl py-3 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all placeholder:text-emerald-900/50"
-                                    placeholder={`Search for ${type} medical items...`}
-                                    value={search}
-                                    onChange={e => setSearch(e.target.value)}
-                                />
+            const BillContent = () => (
+                <div className="space-y-4">
+                    <div className="flex items-center gap-2 pb-4 border-b border-emerald-900/30">
+                        <Icon name="file-text" className="w-5 h-5 text-emerald-500" />
+                        <h3 className="text-lg sm:text-xl font-bold">Current Bill</h3>
+                    </div>
+                    
+                    <div className="space-y-2 max-h-[300px] sm:max-h-[400px] overflow-y-auto pr-2">
+                        {billItems.map(item => (
+                            <div key={item.billId} className="flex justify-between items-center group bg-white/5 p-3 rounded-lg border border-transparent hover:border-red-500/30 transition-all">
+                                <span className="text-sm font-medium">{item.name}</span>
+                                <div className="flex items-center gap-2 sm:gap-3">
+                                    <span className="text-emerald-400 font-mono font-bold text-sm">৳{item.price}</span>
+                                    <button 
+                                        onClick={() => setBillItems(billItems.filter(i => i.billId !== item.billId))}
+                                        className="text-red-500/50 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                                    >
+                                        <Icon name="x" className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </div>
-
-                            <div className="grid sm:grid-cols-2 gap-4">
-                                {filtered.map(item => (
-                                    <div key={item.id} className="p-4 rounded-xl bg-emerald-900/10 border border-emerald-900/20 hover:border-emerald-500/40 transition-all flex justify-between items-center group">
-                                        <div>
-                                            <div className="font-bold text-lg">{item.name}</div>
-                                            <div className="text-xs uppercase tracking-wider text-emerald-500/70 font-semibold">{item.category}</div>
-                                        </div>
-                                        <div className="flex items-center gap-4">
-                                            <div className="font-mono text-emerald-400 font-bold">৳{item.price}</div>
-                                            <Button size="sm" variant="secondary" onClick={() => setBillItems([...billItems, {...item, billId: Date.now()}])}>
-                                                <Icon name="plus" className="w-4 h-4" />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                ))}
+                        ))}
+                        {billItems.length === 0 && (
+                            <div className="py-8 text-center flex flex-col items-center gap-3 opacity-20">
+                                <Icon name="shopping-cart" className="w-10 h-10" />
+                                <p className="text-sm font-medium">No items in bill</p>
                             </div>
-                        </div>
+                        )}
                     </div>
 
-                    <div className="space-y-8">
-                        <div className="glass-card p-6 sticky top-24">
-                            <div className="flex items-center gap-2 mb-6 border-b border-emerald-900/30 pb-4">
-                                <Icon name="file-text" className="w-5 h-5 text-emerald-500" />
-                                <h3 className="text-xl font-bold">Current Bill</h3>
-                            </div>
-                            
-                            <div className="space-y-3 mb-8 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                                {billItems.map(item => (
-                                    <div key={item.billId} className="flex justify-between items-center group bg-white/5 p-3 rounded-lg border border-transparent hover:border-red-500/30 transition-all">
-                                        <span className="text-sm font-medium">{item.name}</span>
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-emerald-400 font-mono font-bold">৳{item.price}</span>
-                                            <button 
-                                                onClick={() => setBillItems(billItems.filter(i => i.billId !== item.billId))}
-                                                className="text-red-500/50 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                            >
-                                                <Icon name="x" className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                                {billItems.length === 0 && (
-                                    <div className="py-10 text-center flex flex-col items-center gap-3 opacity-20">
-                                        <Icon name="shopping-cart" className="w-12 h-12" />
-                                        <p className="font-medium">No items in bill</p>
-                                    </div>
-                                )}
-                            </div>
+                    <div className="space-y-3 pt-4 border-t border-emerald-900/50">
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-emerald-100/50 font-medium">Subtotal</span>
+                            <span className="font-mono">৳{total}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-lg sm:text-2xl font-bold text-emerald-400">
+                            <span>Total</span>
+                            <span className="font-mono">৳{total}</span>
+                        </div>
+                        <Button variant="primary" className="w-full h-11 sm:h-12 text-sm sm:text-base shadow-xl neo-shadow" onClick={() => alert('Invoice generated!')}>
+                            Print Invoice <Icon name="printer" className="w-4 h-4 sm:w-5 sm:h-5 ml-1 sm:ml-2" />
+                        </Button>
+                    </div>
+                </div>
+            );
 
-                            <div className="space-y-4 pt-6 border-t border-emerald-900/50">
-                                <div className="flex justify-between items-center">
-                                    <span className="text-emerald-100/50 font-medium">Subtotal</span>
-                                    <span className="font-mono">৳{total}</span>
-                                </div>
-                                <div className="flex justify-between items-center text-2xl font-bold text-emerald-400">
-                                    <span>Total Amount</span>
-                                    <span className="font-mono">৳{total}</span>
-                                </div>
-                                <Button variant="primary" className="w-full h-12 text-lg shadow-xl neo-shadow" onClick={() => alert('Invoice generated!')}>
-                                    Print Invoice <Icon name="printer" className="w-5 h-5 ml-2" />
+            return (
+                <div className="pb-24 sm:pb-0">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10 grid lg:grid-cols-3 gap-6 sm:gap-10">
+                        <div className="lg:col-span-2 space-y-6 sm:space-y-8">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-2xl sm:text-3xl font-bold flex items-center gap-2 sm:gap-3">
+                                    <Icon name={type === 'outpatient' ? 'users' : 'stethoscope'} className="w-7 h-7 sm:w-8 sm:h-8 text-emerald-500" />
+                                    <span>{type.charAt(0).toUpperCase() + type.slice(1)}</span>
+                                </h2>
+                                <Button variant="secondary" size="icon" className="lg:hidden" onClick={() => setShowBillMobile(true)}>
+                                    <Icon name="shopping-cart" className="w-5 h-5" />
                                 </Button>
                             </div>
+
+                            <div className="glass-card p-4 sm:p-6">
+                                <div className="relative mb-6 sm:mb-8">
+                                    <Icon name="search" className="absolute left-3 sm:left-4 top-3 sm:top-3.5 text-emerald-500/50 w-4 h-4 sm:w-5 sm:h-5" />
+                                    <input 
+                                        className="w-full bg-black/40 border border-emerald-900/50 rounded-lg sm:rounded-xl py-2.5 sm:py-3 pl-10 sm:pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all placeholder:text-emerald-900/50 text-sm sm:text-base"
+                                        placeholder={`Search ${type}...`}
+                                        value={search}
+                                        onChange={e => setSearch(e.target.value)}
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    {filtered.map(item => (
+                                        <div key={item.id} className="p-3 sm:p-4 rounded-lg sm:rounded-xl bg-emerald-900/10 border border-emerald-900/20 hover:border-emerald-500/40 transition-all flex justify-between items-center group">
+                                            <div className="min-w-0 flex-1">
+                                                <div className="font-bold text-sm sm:text-base truncate">{item.name}</div>
+                                                <div className="text-xs uppercase tracking-wider text-emerald-500/70 font-semibold">{item.category}</div>
+                                            </div>
+                                            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 ml-2">
+                                                <div className="font-mono text-emerald-400 font-bold text-xs sm:text-sm whitespace-nowrap">৳{item.price}</div>
+                                                <Button size="sm" variant="secondary" onClick={() => setBillItems([...billItems, {...item, billId: Date.now()}])} className="h-8 w-8 sm:h-9 sm:w-9">
+                                                    <Icon name="plus" className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="hidden lg:block">
+                            <div className="glass-card p-6 sticky top-24">
+                                <BillContent />
+                            </div>
                         </div>
                     </div>
+
+                    {/* Mobile Bill Drawer */}
+                    {showBillMobile && (
+                        <div className="fixed inset-0 z-50 lg:hidden">
+                            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowBillMobile(false)}></div>
+                            <div className="bill-drawer-mobile glass-card p-4">
+                                <div className="flex justify-between items-center mb-4 pb-4 border-b border-emerald-900/30">
+                                    <h3 className="text-lg font-bold">Current Bill</h3>
+                                    <Button size="icon" variant="ghost" onClick={() => setShowBillMobile(false)} className="h-8 w-8">
+                                        <Icon name="x" className="w-5 h-5" />
+                                    </Button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto">
+                                    <BillContent />
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         };
 
         const Main = () => {
             const [currentPage, setCurrentPage] = useState('home');
+            const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
             return (
                 <div className="min-h-screen flex flex-col">
-                    <header className="header-enhanced text-white sticky top-0 z-50 border-b border-white/10 shadow-xl">
-                        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-                            <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setCurrentPage('home')}>
-                                <div className="bg-white/20 p-2 rounded-xl backdrop-blur-md group-hover:bg-white/30 transition-all">
-                                    <Icon name="calculator" className="w-6 h-6" />
+                    <header className="header-enhanced text-white sticky top-0 z-40 border-b border-white/10 shadow-xl">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
+                            <div className="flex items-center gap-2 sm:gap-3 cursor-pointer group flex-1 min-w-0" onClick={() => { setCurrentPage('home'); setMobileMenuOpen(false); }}>
+                                <div className="bg-white/20 p-1.5 sm:p-2 rounded-lg sm:rounded-xl backdrop-blur-md group-hover:bg-white/30 transition-all flex-shrink-0">
+                                    <Icon name="calculator" className="w-5 h-5 sm:w-6 sm:h-6" />
                                 </div>
-                                <div className="flex flex-col">
-                                    <span className="text-xl font-black tracking-tighter">MCH SYSTEM</span>
-                                    <span className="text-[10px] uppercase tracking-[0.2em] text-white/60 -mt-1 font-bold">Billing Dept</span>
+                                <div className="flex flex-col min-w-0">
+                                    <span className="text-base sm:text-xl font-black tracking-tighter">MCH</span>
+                                    <span className="text-[8px] sm:text-[10px] uppercase tracking-[0.15em] text-white/60 -mt-0.5 font-bold hidden sm:block">Billing</span>
                                 </div>
                             </div>
                             
-                            <div className="flex items-center gap-2">
-                                <nav className="hidden md:flex items-center gap-1 bg-black/20 p-1 rounded-xl backdrop-blur-sm border border-white/5 mr-4">
-                                    <Button variant="ghost" size="sm" onClick={() => setCurrentPage('home')} className={currentPage === 'home' ? 'bg-white/10' : ''}>Home</Button>
-                                    <Button variant="ghost" size="sm" onClick={() => setCurrentPage('outpatient')} className={currentPage === 'outpatient' ? 'bg-white/10' : ''}>Outpatient</Button>
-                                    <Button variant="ghost" size="sm" onClick={() => setCurrentPage('inpatient')} className={currentPage === 'inpatient' ? 'bg-white/10' : ''}>Inpatient</Button>
-                                    <Button variant="ghost" size="sm" onClick={() => setCurrentPage('database')} className={currentPage === 'database' ? 'bg-white/10' : ''}>Database</Button>
+                            <div className="flex items-center gap-1 sm:gap-3">
+                                <nav className="hidden md:flex items-center gap-0.5 bg-black/20 p-1 rounded-lg sm:rounded-xl backdrop-blur-sm border border-white/5">
+                                    {['home', 'outpatient', 'inpatient', 'database'].map(page => (
+                                        <Button key={page} variant="ghost" size="sm" onClick={() => setCurrentPage(page)} className={`text-xs sm:text-sm ${currentPage === page ? 'bg-white/10' : ''}`}>
+                                            {page.charAt(0).toUpperCase() + page.slice(1)}
+                                        </Button>
+                                    ))}
                                 </nav>
-                                <Button variant="secondary" size="icon" className="rounded-xl border border-white/10" onClick={() => setCurrentPage('settings')}>
-                                    <Icon name="settings" className="w-5 h-5" />
+                                <Button variant="secondary" size="icon" className="rounded-lg sm:rounded-xl border border-white/10" onClick={() => setCurrentPage('settings')}>
+                                    <Icon name="settings" className="w-4 h-4 sm:w-5 sm:h-5" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+                                    <Icon name={mobileMenuOpen ? "x" : "menu"} className="w-5 h-5" />
                                 </Button>
                             </div>
                         </div>
+
+                        {/* Mobile Menu */}
+                        {mobileMenuOpen && (
+                            <div className="md:hidden border-t border-white/10 bg-black/20 backdrop-blur-sm p-2 space-y-1">
+                                {['home', 'outpatient', 'inpatient', 'database'].map(page => (
+                                    <button key={page} onClick={() => { setCurrentPage(page); setMobileMenuOpen(false); }} className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${currentPage === page ? 'bg-white/15 text-white' : 'text-white/70 hover:bg-white/10'}`}>
+                                        {page.charAt(0).toUpperCase() + page.slice(1)}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </header>
 
                     <main className="flex-1 bg-background relative overflow-hidden">
                         {/* Decorative Background Elements */}
-                        <div className="absolute top-[-10%] -left-[-10%] w-[500px] h-[500px] bg-emerald-600/10 rounded-full blur-[120px] pointer-events-none"></div>
-                        <div className="absolute bottom-[-10%] -right-[-10%] w-[500px] h-[500px] bg-emerald-900/10 rounded-full blur-[120px] pointer-events-none"></div>
+                        <div className="absolute top-[-10%] -left-[-10%] w-[300px] h-[300px] sm:w-[500px] sm:h-[500px] bg-emerald-600/10 rounded-full blur-[120px] pointer-events-none"></div>
+                        <div className="absolute bottom-[-10%] -right-[-10%] w-[300px] h-[300px] sm:w-[500px] sm:h-[500px] bg-emerald-900/10 rounded-full blur-[120px] pointer-events-none"></div>
                         
                         <div className="relative z-10">
                             {currentPage === 'home' && <IndexPage onNavigate={setCurrentPage} />}
                             {currentPage === 'outpatient' && <CalculatorPage type="outpatient" onNavigate={setCurrentPage} />}
                             {currentPage === 'inpatient' && <CalculatorPage type="inpatient" onNavigate={setCurrentPage} />}
                             {currentPage === 'database' && (
-                                <div className="max-w-4xl mx-auto py-20 px-6">
-                                    <div className="glass-card p-12 text-center">
-                                        <Icon name="shield-check" className="w-20 h-20 text-emerald-500 mx-auto mb-6" />
-                                        <h2 className="text-4xl font-bold mb-4 tracking-tight">Database Management</h2>
-                                        <p className="text-xl text-emerald-100/50 mb-10">Protected administrator interface for hospital configuration.</p>
-                                        <Button variant="primary" size="lg" onClick={() => setCurrentPage('home')}>Back to Home</Button>
+                                <div className="max-w-4xl mx-auto py-12 sm:py-20 px-4 sm:px-6">
+                                    <div className="glass-card p-8 sm:p-12 text-center">
+                                        <Icon name="shield-check" className="w-16 h-16 sm:w-20 sm:h-20 text-emerald-500 mx-auto mb-4 sm:mb-6" />
+                                        <h2 className="text-2xl sm:text-4xl font-bold mb-3 sm:mb-4 tracking-tight">Database Management</h2>
+                                        <p className="text-base sm:text-xl text-emerald-100/50 mb-8 sm:mb-10">Protected administrator interface.</p>
+                                        <Button variant="primary" size="lg" onClick={() => setCurrentPage('home')} className="text-sm sm:text-base">Back to Home</Button>
                                     </div>
                                 </div>
                             )}
                             {currentPage === 'settings' && (
-                                <div className="max-w-4xl mx-auto py-20 px-6">
-                                    <div className="glass-card p-12 text-center">
-                                        <Icon name="settings" className="w-20 h-20 text-emerald-500 mx-auto mb-6" />
-                                        <h2 className="text-4xl font-bold mb-4 tracking-tight">System Settings</h2>
-                                        <p className="text-xl text-emerald-100/50 mb-10">Configure branding, currency, and visual identity.</p>
-                                        <Button variant="primary" size="lg" onClick={() => setCurrentPage('home')}>Back to Home</Button>
+                                <div className="max-w-4xl mx-auto py-12 sm:py-20 px-4 sm:px-6">
+                                    <div className="glass-card p-8 sm:p-12 text-center">
+                                        <Icon name="settings" className="w-16 h-16 sm:w-20 sm:h-20 text-emerald-500 mx-auto mb-4 sm:mb-6" />
+                                        <h2 className="text-2xl sm:text-4xl font-bold mb-3 sm:mb-4 tracking-tight">System Settings</h2>
+                                        <p className="text-base sm:text-xl text-emerald-100/50 mb-8 sm:mb-10">Configure branding and visual identity.</p>
+                                        <Button variant="primary" size="lg" onClick={() => setCurrentPage('home')} className="text-sm sm:text-base">Back to Home</Button>
                                     </div>
                                 </div>
                             )}
                         </div>
                     </main>
 
-                    <footer className="py-10 border-t border-emerald-900/20 text-center px-6">
-                        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 text-sm text-emerald-100/30">
+                    <footer className="py-6 sm:py-10 border-t border-emerald-900/20 text-center px-4 sm:px-6">
+                        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-6 text-xs sm:text-sm text-emerald-100/30">
                             <p>&copy; 2026 MCH Hospital Billing. All Systems Healthy.</p>
-                            <div className="flex gap-8">
+                            <div className="flex gap-4 sm:gap-8">
                                 <a href="#" className="hover:text-emerald-400 transition-colors">Privacy</a>
                                 <a href="#" className="hover:text-emerald-400 transition-colors">Security</a>
                                 <a href="#" className="hover:text-emerald-400 transition-colors">Support</a>
