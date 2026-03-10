@@ -1,7 +1,16 @@
 # Hospital Bill Calculator
 
 ## Overview
-A professional medical billing calculator application for hospitals and clinics. It enables calculation of bills for outpatient and inpatient services, with comprehensive database management for medical items and procedures. The project aims to provide a robust, secure, and user-friendly solution for medical billing, including advanced features like AI-powered analytics for cost prediction and billing optimization, and a cross-platform presence with a native mobile application.
+A professional medical billing calculator application for hospitals and clinics. Enables calculation of bills for outpatient and inpatient services with comprehensive database management.
+
+## Project Scope
+**Web Application Only** - Professional medical billing system focused on core functionality.
+- ✅ Outpatient and Inpatient billing
+- ✅ Database management for medical items
+- ✅ Settings system for customization
+- ✅ Responsive design (mobile & desktop)
+- ❌ AI features (removed - simplified)
+- ❌ Mobile native app (web-only)
 
 ## User Preferences
 - Language: English
@@ -9,43 +18,114 @@ A professional medical billing calculator application for hospitals and clinics.
 - Focus: Professional medical billing accuracy
 - Currency: Bangladeshi Taka (৳)
 - Color Scheme: Professional-level dark theme with glass morphism effects
-- UI Design: Glass cards with backdrop blur, neo-morphic shadows, and emerald accents
-- UI Layout: Grid button layout for categories (6 buttons per row preferred)
-- Button Style: Left-aligned text, rounded corners, enhanced shadows and hover effects
-- Navigation: Dark gradient header with glass effects and emerald accents
-- Total Section: Dark green color scheme with emerald gradient background
 
-## System Architecture
-**Web Frontend:** React with TypeScript, utilizing shadcn/ui components and wouter for routing.
-**Mobile Frontend:** React Native with TypeScript, React Navigation, and React Native Paper, structured for native Android development.
-**Backend:** Express.js server with an in-memory storage system (`MemoryStorage` class) for Replit compatibility.
-**API:** Comprehensive REST API supporting medical items and bills management.
-**Web Styling:** Tailwind CSS, implementing a consistent dark green medical theme with glass morphism effects and professional contrast ratios.
-**Mobile Styling:** React Native Paper, featuring a custom medical theme and glass morphism effects.
-**Data Management:** TanStack Query for web application state management, AsyncStorage for mobile data caching, and in-memory storage for core persistence.
-**Core Functionality:**
-- Outpatient and Inpatient bill calculation with extensive categories (10+ for outpatient, 19+ for inpatient, including daily rates).
-- Dynamic manual entry systems for various categories (e.g., Blood, Limb and Brace) with auto-expanding rows and batch "Add All to Bill" functionality.
-- Advanced search and dropdown functionalities (e.g., Laboratory, X-Ray, Orthopedic, Surgery, Procedures) with tag selection, keyboard navigation, real-time price counters, and intelligent duplicate prevention.
-- Comprehensive medicine dosage system with manual entry, medication types, frequency selection, and calculated quantities, differentiating between outpatient (full bottles) and inpatient (partial/full bottles) rules.
-- Patient information management for inpatient services, including admission/discharge dates, calculated admitted days, and collapsible sections.
-- Categorized bill summary display with individual item removal, category totals, and grand total calculation.
-- Responsive design across web and mobile platforms, including touch/swipe gestures for carousel navigation.
-- AI and Machine Learning integration for medical billing analytics, including cost prediction, demand forecasting, billing optimization, and fraud detection, with an analytics dashboard.
+## Technology Stack
+**Frontend:**
+- React 18 + TypeScript
+- Tailwind CSS with dark theme
+- shadcn/ui components (only essential: card, button, dialog, select, badge, input, toast, toast notifications)
+- Wouter for routing
+- TanStack Query for state management
 
-## Recent Changes
-- **2025-02-01**: PREPARED: Complete GitHub open source preparation with comprehensive documentation, deployment guides, Docker support, and CI/CD workflows
-- **2025-02-01**: ENHANCED: Inpatient Registration Fees now includes same options as Outpatient (Outpatient Registration ₹100, Emergency Registration ₹200, Admission Fee ₹500, ICU Admission ₹1000, plus existing room fees)
-- **2025-02-01**: COMPLETED: Project migration from Replit Agent to standard Replit environment with full functionality restored
+**Backend:**
+- Express.js
+- SQLite (better-sqlite3)
+- Drizzle ORM with Zod validation
 
-## GitHub Open Source Preparation
-- **Documentation**: Comprehensive README.md, API documentation, deployment guides, and contributing guidelines
-- **Legal**: MIT License for open source distribution
-- **CI/CD**: GitHub Actions workflows for automated testing and deployment to Railway/Render
-- **Docker**: Full containerization support with Dockerfile and docker-compose.yml
-- **Development**: Complete .gitignore, issue templates, and development setup guides
-- **Deployment Options**: Multiple platform support (Railway, Render, Vercel, Docker) with detailed guides
+**UI/UX:**
+- Lucide React icons
+- Glass-morphism design
+- Mobile-first responsive layouts
+- Smooth animations
 
-## External Dependencies
-- **Replit Environment:** Standard Replit platform for deployment and execution.
-- **Node.js/npm:** For dependency management and runtime environment.
+## Project Structure
+```
+hospital-bill-calculator/
+├── client/
+│   ├── src/
+│   │   ├── pages/          # Main pages (Index, Outpatient, Inpatient, Database, Settings)
+│   │   ├── components/     # Layout, essential UI components
+│   │   ├── hooks/          # Custom hooks (useToast, useMobileDetect, currency formatting)
+│   │   ├── lib/            # Utilities, query client, database helpers
+│   │   └── App.tsx         # Main router
+│   └── index.html
+├── server/
+│   ├── index.ts            # Express server
+│   ├── routes.ts           # API endpoints
+│   ├── storage.ts          # In-memory data persistence
+│   └── vite.ts             # Vite integration
+├── shared/
+│   ├── schema.ts           # Database schema (Drizzle)
+│   └── categories.ts       # Medical categories (8 outpatient, 19 inpatient)
+├── styled_standalone.html  # Mobile-first standalone app with all features
+└── package.json
+```
+
+## Features Implemented
+- **Outpatient Billing**: Categories include registration, Dr fees, medicines, lab, x-ray, physical therapy
+- **Inpatient Billing**: Room charges, daily rates, registration, admission, ICU, surgery, procedures
+- **Database Management**: Add/edit/delete medical items with category management
+- **Settings Page**: Logo/favicon upload, HSL color customization, app name editing
+- **Responsive Design**: Mobile-optimized navigation, split-pane calculator, floating bill drawer
+- **Standalone HTML**: Complete app as single HTML file for quick previews
+
+## Recent Cleanup (2026-03-10)
+**Removed (No Feature Loss):**
+- 38 unused UI component files (accordion, avatar, breadcrumb, calendar, carousel, chart, checkbox, collapsible, command, context-menu, dropdown-menu, form, hover-card, input-otp, label, menubar, navigation-menu, pagination, popover, progress, radio-group, resizable, scroll-area, separator, sheet, sidebar, skeleton, slider, switch, table, tabs, textarea, toggle-group, toggle, tooltip)
+- AIAnalytics.tsx (old AI feature, not used in current app)
+- CupertinoDateTimePicker.tsx (mobile-only component)
+- Deployment files: Dockerfile, docker-compose.yml, render.yaml
+- Platform-specific docs: GOOGLE_AI_STUDIO_SETUP.md, RENDER_SETUP.md
+- Outdated folders: docs/, mobile/
+- Archive file: project_code.tar.gz
+- Duplicate HTML: standalone_app.html
+
+**Cleaned Up Dependencies:**
+- Removed unused: react-router-dom, framer-motion, react-resizable-panels, next-themes, recharts, regression, simple-statistics, tw-animate-css, embla-carousel-react, p-limit, p-retry
+- Kept only essential: React, TanStack Query, Express, Drizzle, Zod, Tailwind, Lucide, form libraries
+
+**Simplified Documentation:**
+- Consolidated README with essential info
+- Cleaned .gitignore to necessary entries
+- Removed CONTRIBUTING.md (not needed for single developer)
+
+## Current App Size
+- **UI Components**: 13 essential files only
+- **Main Pages**: 5 pages (Index, Outpatient, Inpatient, Database, Settings)
+- **Dependencies**: ~32 production packages (down from 50+)
+- **Standalone File**: styled_standalone.html (37KB - includes all features)
+
+## API Endpoints
+- `GET /api/items` - Fetch medical items
+- `POST /api/items` - Create item
+- `PUT /api/items/:id` - Update item
+- `DELETE /api/items/:id` - Delete item
+- `GET /api/settings` - Fetch app settings
+- `PUT /api/settings` - Update settings
+
+## Development
+```bash
+npm install
+npm run dev        # Start dev server on port 5000
+npm run check      # Type checking
+npm run build      # Build for production
+npm start          # Run production build
+```
+
+## Deployment Options
+- Railway, Render, or any Node.js hosting
+- Docker support available if needed
+- Standalone HTML for quick previews
+
+## Future Considerations
+- Could add data export/import (CSV, JSON)
+- Could add print-to-PDF functionality
+- Could add patient history tracking
+- Could add billing reports and analytics
+
+## Notes
+- All data stored locally in SQLite (hospital.db)
+- No external API dependencies
+- No AI or ML features (kept simple and focused)
+- No mobile native app (web is responsive and mobile-friendly)
+- No authentication system (single-user/local use)
