@@ -76,16 +76,21 @@ hospital-bill-calculator/
 - **Standalone HTML**: Complete app as single HTML file for quick previews
 
 ## Latest Updates (2026-03-11)
-**Settings System & Theme System:**
+**Settings System & Full Theme System:**
 - Settings button added to main navigation (right of Database)
 - Full Settings.tsx page with 6 tabs (Categories, Buttons, Appearance, General, Database, System)
 - Terminal buttons configuration: Create custom quick-access buttons for outpatient/inpatient
 - **Light/Dark Mode Toggle**: Prominent button in main header (top-left, Sun/Moon icon)
   - Visible from every page - always accessible
   - Click to instantly toggle between light and dark modes
-  - Professional medical color themes for both modes
-- Light Mode: Clean white backgrounds, dark text, emerald green accents
-- Dark Mode: Professional dark theme with light emerald green, glass-morphism effects
+  - Professional medical color themes (MCH-Stable inspired)
+- **Light Mode**: Clean white backgrounds (97% lightness), dark text (10% lightness), emerald accents
+  - Perfect for daytime use and printing
+  - High contrast for medical accuracy
+  - Professional hospital appearance
+- **Dark Mode**: Professional dark theme (6% background), light text (95%), emerald green accents with glass-morphism
+  - Easy on eyes for night use
+  - Professional medical appearance
 - Theme presets: 6 pre-configured colors (Emerald, Cobalt, Amethyst, Rose, Amber, Slate) + custom HSL slider (0-360°)
 - Additional toggle in Settings → Appearance tab for advanced users
 - SQLite query interface: Run SQL queries, view results
@@ -94,6 +99,12 @@ hospital-bill-calculator/
 - Button persistence: Terminal buttons saved to localStorage
 - Theme persistence: Light/Dark mode saved to localStorage
 - Logo/Favicon management: Upload custom branding
+
+## How to Use Theme Toggle
+1. Look for the **☀️ (Sun)** or **🌙 (Moon)** icon in the top-left corner of the header
+2. Click it to instantly switch between light and dark modes
+3. Your preference is automatically saved and remembered on your next visit
+4. Also available in Settings → Appearance tab for detailed theme customization
 
 ## Previous Cleanup (2026-03-10)
 **Removed (No Feature Loss):**
