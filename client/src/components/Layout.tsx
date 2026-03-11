@@ -57,14 +57,16 @@ const Layout = ({ children }: LayoutProps) => {
             {/* Theme Toggle - Left Corner */}
             <button
               onClick={toggleTheme}
-              className="absolute left-2 sm:left-4 flex items-center justify-center h-10 w-10 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+              className="absolute left-2 sm:left-4 flex items-center justify-center h-11 w-11 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md shadow-lg hover:shadow-xl transition-all duration-300 border border-white/30"
               title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
             >
-              {isDarkMode ? (
-                <Sun className="h-5 w-5 text-yellow-300" />
-              ) : (
-                <Moon className="h-5 w-5 text-slate-700" />
-              )}
+              <div className="relative">
+                {isDarkMode ? (
+                  <Sun className="h-5 w-5 text-yellow-300 animate-spin-slow" />
+                ) : (
+                  <Moon className="h-5 w-5 text-blue-400 animate-pulse" />
+                )}
+              </div>
             </button>
 
             {/* Logo and Title - Centered - Mobile Optimized */}

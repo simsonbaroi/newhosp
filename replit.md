@@ -101,15 +101,24 @@ hospital-bill-calculator/
 - Logo/Favicon management: Upload custom branding
 
 ## How to Use Theme Toggle
-1. Look for the **☀️ (Sun)** or **🌙 (Moon)** icon in the top-left corner of the header
+1. Look for the **beautiful animated toggle button** in the top-left corner of the header
+   - **☀️ Spinning Sun** when in dark mode
+   - **🌙 Pulsing Moon** when in light mode
 2. Click it to instantly switch between light and dark modes
 3. Your preference is automatically saved and remembered on your next visit
 4. Also available in Settings → Appearance tab for detailed theme customization
 
 ## Theme Default
 - **Light Mode** is now the default (professional medical application theme, MCH-Stable inspired)
-- Click the moon icon to switch to dark mode
+- Click to switch to dark mode
 - Your choice is persistent across sessions
+
+## Home Page Features
+- **Responsive Hero Section** with improved typography and spacing
+- **Beautiful Feature Cards** with icon backgrounds and hover effects
+- **Statistics Section** showing categories and customization options
+- **Animated Toggle Button** with smooth transitions
+- **Professional Medical Theme** optimized for both light and dark modes
 
 ## Previous Cleanup (2026-03-10)
 **Removed (No Feature Loss):**

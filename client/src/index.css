@@ -197,6 +197,19 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  @keyframes spin-slow {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .animate-spin-slow {
+    animation: spin-slow 3s linear infinite;
+  }
 }
 
 /* Professional Dark Green Medical Theme */
@@ -274,6 +287,22 @@
   background: linear-gradient(135deg, 
     hsl(var(--medical-gradient-start)), 
     hsl(var(--medical-gradient-end)));
+}
+
+.hero-gradient {
+  background: linear-gradient(135deg, 
+    hsl(160 60% 45%), 
+    hsl(160 65% 50%));
+}
+
+.light .hero-gradient {
+  background: linear-gradient(135deg, 
+    hsl(160 60% 45%), 
+    hsl(160 65% 50%));
+}
+
+.feature-card {
+  border-color: hsl(var(--border));
 }
 
 .medical-gradient-soft {
