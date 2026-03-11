@@ -14,8 +14,8 @@ import NotFound from "./pages/NotFound";
 
 const App = () => {
   useEffect(() => {
-    // Initialize theme from localStorage
-    const savedTheme = localStorage.getItem('theme') || 'dark';
+    // Initialize theme from localStorage - Default to LIGHT mode
+    const savedTheme = localStorage.getItem('theme') || 'light';
     const root = document.documentElement;
     
     if (savedTheme === 'light') {

@@ -8,21 +8,21 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const [location] = useLocation();
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {
-    // Initialize theme from localStorage
-    const savedTheme = localStorage.getItem('theme') || 'dark';
+    // Initialize theme from localStorage - Default to LIGHT mode
+    const savedTheme = localStorage.getItem('theme') || 'light';
     setIsDarkMode(savedTheme === 'dark');
     
     // Apply theme
     const root = document.documentElement;
-    if (savedTheme === 'dark') {
-      root.classList.add('dark');
-      root.classList.remove('light');
-    } else {
+    if (savedTheme === 'light') {
       root.classList.add('light');
       root.classList.remove('dark');
+    } else {
+      root.classList.add('dark');
+      root.classList.remove('light');
     }
   }, []);
 

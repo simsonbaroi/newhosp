@@ -106,6 +106,11 @@ hospital-bill-calculator/
 3. Your preference is automatically saved and remembered on your next visit
 4. Also available in Settings → Appearance tab for detailed theme customization
 
+## Theme Default
+- **Light Mode** is now the default (professional medical application theme, MCH-Stable inspired)
+- Click the moon icon to switch to dark mode
+- Your choice is persistent across sessions
+
 ## Previous Cleanup (2026-03-10)
 **Removed (No Feature Loss):**
 - 38 unused UI component files (accordion, avatar, breadcrumb, calendar, carousel, chart, checkbox, collapsible, command, context-menu, dropdown-menu, form, hover-card, input-otp, label, menubar, navigation-menu, pagination, popover, progress, radio-group, resizable, scroll-area, separator, sheet, sidebar, skeleton, slider, switch, table, tabs, textarea, toggle-group, toggle, tooltip)
