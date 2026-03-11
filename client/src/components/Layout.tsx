@@ -1,6 +1,6 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
-import { Calculator, Database, Users, Stethoscope, Settings as SettingsIcon } from 'lucide-react';
+import { Calculator, Database, Users, Stethoscope, Settings as SettingsIcon, Moon, Sun } from 'lucide-react';
 
 interface LayoutProps {
   children: ReactNode;
@@ -8,6 +8,38 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const [location] = useLocation();
+  const [isDarkMode, setIsDarkMode] = useState(true);
+
+  useEffect(() => {
+    // Initialize theme from localStorage
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    setIsDarkMode(savedTheme === 'dark');
+    
+    // Apply theme
+    const root = document.documentElement;
+    if (savedTheme === 'dark') {
+      root.classList.add('dark');
+      root.classList.remove('light');
+    } else {
+      root.classList.add('light');
+      root.classList.remove('dark');
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = isDarkMode ? 'light' : 'dark';
+    setIsDarkMode(!isDarkMode);
+    localStorage.setItem('theme', newTheme);
+    
+    const root = document.documentElement;
+    if (newTheme === 'light') {
+      root.classList.add('light');
+      root.classList.remove('dark');
+    } else {
+      root.classList.add('dark');
+      root.classList.remove('light');
+    }
+  };
 
   const navigation = [
     { name: 'Home', href: '/', icon: Calculator },
@@ -22,6 +54,19 @@ const Layout = ({ children }: LayoutProps) => {
       <header className="header-enhanced text-white sticky top-0 z-50 border-b border-medical-primary/20 shadow-lg">
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
           <div className="flex items-center justify-center h-14 sm:h-16 relative">
+            {/* Theme Toggle - Left Corner */}
+            <button
+              onClick={toggleTheme}
+              className="absolute left-2 sm:left-4 flex items-center justify-center h-10 w-10 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+              title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {isDarkMode ? (
+                <Sun className="h-5 w-5 text-yellow-300" />
+              ) : (
+                <Moon className="h-5 w-5 text-slate-700" />
+              )}
+            </button>
+
             {/* Logo and Title - Centered - Mobile Optimized */}
             <div className="flex items-center justify-center flex-1">
               <Calculator className="h-7 w-7 sm:h-8 sm:w-8 text-white mr-2 sm:mr-3" />

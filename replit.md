@@ -80,10 +80,14 @@ hospital-bill-calculator/
 - Settings button added to main navigation (right of Database)
 - Full Settings.tsx page with 6 tabs (Categories, Buttons, Appearance, General, Database, System)
 - Terminal buttons configuration: Create custom quick-access buttons for outpatient/inpatient
-- **Light/Dark Mode Toggle**: Toggle in Appearance tab with instant theme switching
+- **Light/Dark Mode Toggle**: Prominent button in main header (top-left, Sun/Moon icon)
+  - Visible from every page - always accessible
+  - Click to instantly toggle between light and dark modes
+  - Professional medical color themes for both modes
 - Light Mode: Clean white backgrounds, dark text, emerald green accents
 - Dark Mode: Professional dark theme with light emerald green, glass-morphism effects
 - Theme presets: 6 pre-configured colors (Emerald, Cobalt, Amethyst, Rose, Amber, Slate) + custom HSL slider (0-360°)
+- Additional toggle in Settings → Appearance tab for advanced users
 - SQLite query interface: Run SQL queries, view results
 - Database operations: Export, re-seed defaults, reset to defaults
 - System monitoring: Database type, category count, button count, health status
