@@ -65,11 +65,29 @@ hospital-bill-calculator/
 - **Outpatient Billing**: Categories include registration, Dr fees, medicines, lab, x-ray, physical therapy
 - **Inpatient Billing**: Room charges, daily rates, registration, admission, ICU, surgery, procedures
 - **Database Management**: Add/edit/delete medical items with category management
-- **Settings Page**: Logo/favicon upload, HSL color customization, app name editing
+- **Settings Page** (6 comprehensive tabs):
+  - Categories: Add/delete outpatient & inpatient categories
+  - Buttons: Configure terminal quick-access buttons (outpatient/inpatient)
+  - Appearance: 6 theme presets + custom HSL color slider
+  - General: App name, logo/favicon upload
+  - Database: SQL interface, export, re-seed defaults
+  - System: System info & health status
 - **Responsive Design**: Mobile-optimized navigation, split-pane calculator, floating bill drawer
 - **Standalone HTML**: Complete app as single HTML file for quick previews
 
-## Recent Cleanup (2026-03-10)
+## Latest Updates (2026-03-11)
+**Settings System Enhanced:**
+- Settings button added to main navigation (right of Database)
+- Full Settings.tsx page with 6 tabs (Categories, Buttons, Appearance, General, Database, System)
+- Terminal buttons configuration: Create custom quick-access buttons for outpatient/inpatient
+- Theme presets: 6 pre-configured colors + custom HSL slider (0-360°)
+- SQLite query interface: Run SQL queries, view results
+- Database operations: Export, re-seed defaults, reset to defaults
+- System monitoring: Database type, category count, button count, health status
+- Button persistence: Terminal buttons saved to localStorage
+- Logo/Favicon management: Upload custom branding
+
+## Previous Cleanup (2026-03-10)
 **Removed (No Feature Loss):**
 - 38 unused UI component files (accordion, avatar, breadcrumb, calendar, carousel, chart, checkbox, collapsible, command, context-menu, dropdown-menu, form, hover-card, input-otp, label, menubar, navigation-menu, pagination, popover, progress, radio-group, resizable, scroll-area, separator, sheet, sidebar, skeleton, slider, switch, table, tabs, textarea, toggle-group, toggle, tooltip)
 - AIAnalytics.tsx (old AI feature, not used in current app)
