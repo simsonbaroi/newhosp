@@ -8,12 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import Layout from "@/components/Layout";
 import { 
   Loader2, Save, Upload, Plus, Trash2, Palette, Settings as SettingsIcon, 
   Download, RefreshCw, Database, Terminal, Search, AlertTriangle, 
-  LayoutGrid, Pencil, GripVertical, X, Check
+  LayoutGrid, Pencil, GripVertical, X, Check, Moon, Sun
 } from "lucide-react";
 import { AppSettings, ItemCategory, InsertAppSettings } from "@shared/schema";
 import { Slider } from "@/components/ui/slider";
@@ -45,6 +46,7 @@ export default function Settings() {
   const [queryResults, setQueryResults] = useState<any[]>([]);
   const [queryError, setQueryError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [isDarkMode, setIsDarkMode] = useState(true);
   
   const { data: settings, isLoading: settingsLoading } = useQuery<AppSettings>({
     queryKey: ["/api/settings"],
@@ -63,7 +65,27 @@ export default function Settings() {
     // Load terminal buttons from localStorage
     const saved = localStorage.getItem('terminalButtons');
     if (saved) setTerminalButtons(JSON.parse(saved));
+    
+    // Load theme from localStorage
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    setIsDarkMode(savedTheme === 'dark');
   }, [settings]);
+
+  const toggleTheme = () => {
+    const newTheme = isDarkMode ? 'light' : 'dark';
+    setIsDarkMode(!isDarkMode);
+    localStorage.setItem('theme', newTheme);
+    
+    const root = document.documentElement;
+    if (newTheme === 'light') {
+      root.classList.add('light');
+      root.classList.remove('dark');
+    } else {
+      root.classList.add('dark');
+      root.classList.remove('light');
+    }
+    toast({ title: `Switched to ${newTheme} mode` });
+  };
 
   const updateSettingsMutation = useMutation({
     mutationFn: async (newSettings: Partial<InsertAppSettings>) => {
@@ -379,6 +401,28 @@ export default function Settings() {
 
           {/* Appearance Tab */}
           <TabsContent value="appearance" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Light / Dark Mode</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-muted rounded-lg border">
+                  <div className="flex items-center gap-3">
+                    {isDarkMode ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+                    <div>
+                      <div className="font-semibold">{isDarkMode ? 'Dark Mode' : 'Light Mode'}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {isDarkMode ? 'Professional dark medical theme' : 'Clean light medical theme'}
+                      </div>
+                    </div>
+                  </div>
+                  <Switch checked={isDarkMode} onCheckedChange={toggleTheme} />
+                </div>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle>Theme Presets</CardTitle>
